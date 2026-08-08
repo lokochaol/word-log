@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --color-bg: #eaecf0;
+  --color-surface: #ffffff;
+  --color-surface-alt: #dce0e5;
+  --color-ink: #000000;
+  --color-ink-soft: #4b5a63;
+  --color-line: #d6dadf;
+  --color-line-strong: #233d4d;
+  --color-accent: #fe7f2d;
+  --color-accent-soft: #fde0c7;
+  --color-on-accent: #ffffff;
+  --color-link: #233d4d;
+  --color-link-soft: #e1e5ea;
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-alt: var(--color-surface-alt);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-on-accent: var(--color-on-accent);
+  --color-link: var(--color-link);
+  --color-link-soft: var(--color-link-soft);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}

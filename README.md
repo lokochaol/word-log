@@ -90,3 +90,7 @@ npm run lint
 ## デザイン
 
 Figmaのワイヤーフレーム/ビジュアルデザイン: https://www.figma.com/design/iUwPKGIvCehJfzlrT8jYF6
+
+## デプロイ
+
+Oracle Cloudの無料枠に全部乗せて月額$0で動かす手順は [DEPLOY.md](./DEPLOY.md) を参照。

@@ -43,3 +43,9 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// Only bootJar's fat jar is deployed (see backend/Dockerfile); disabling the
+// plain jar keeps build/libs/*.jar unambiguous for the Docker build.
+tasks.named('jar') {
+	enabled = false
+}

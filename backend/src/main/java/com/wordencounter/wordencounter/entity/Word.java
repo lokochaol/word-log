@@ -53,6 +53,10 @@ public class Word {
     @OrderBy("createdAt ASC")
     private List<WordRelation> relations = new ArrayList<>();
 
+    @OneToMany(mappedBy = "word", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("position ASC")
+    private List<WordMeaningBlock> meaningBlocks = new ArrayList<>();
+
     public Word(String ownerSub, String text, String meaning, Instant encounteredAt) {
         this.id = UUID.randomUUID();
         this.ownerSub = ownerSub;
@@ -72,6 +76,21 @@ public class Word {
     public void removeRelation(WordRelation relation) {
         relations.remove(relation);
         relation.setWord(null);
+    }
+
+    public void replaceMeaningBlocks(List<WordMeaningBlock> newBlocks) {
+        meaningBlocks.clear();
+        for (int i = 0; i < newBlocks.size(); i++) {
+            WordMeaningBlock block = newBlocks.get(i);
+            block.setPosition(i);
+            block.setWord(this);
+            meaningBlocks.add(block);
+        }
+        this.meaning = newBlocks.stream()
+                .filter(b -> b.getType() == MeaningBlockType.TEXT)
+                .map(WordMeaningBlock::getContent)
+                .reduce((a, b) -> a + "\n\n" + b)
+                .orElse(null);
     }
 
     public void touch() {

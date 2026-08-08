@@ -49,4 +49,34 @@ public class WordSearchQueryService {
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Fuzzy-matches other words' text against {@code text} (spelling-distance tolerant),
+     * scoped to the owner and excluding {@code excludeId}. Used to suggest related-word
+     * candidates while the owner is editing a word's meaning.
+     */
+    public List<ScoredWord> suggestByFuzzyText(String ownerSub, String text, String excludeId, int limit) {
+        Query ownerFilter = Query.of(q -> q.term(t -> t.field("ownerSub").value(ownerSub)));
+        Query notSelf = Query.of(q -> q.term(t -> t.field("_id").value(excludeId)));
+        Query fuzzyMatch = Query.of(q -> q.match(m -> m.field("text").query(text).fuzziness("AUTO")));
+
+        Query boolQuery = Query.of(q -> q.bool(b -> b
+                .filter(ownerFilter)
+                .mustNot(notSelf)
+                .must(fuzzyMatch)));
+
+        NativeQuery nativeQuery = NativeQuery.builder()
+                .withQuery(boolQuery)
+                .withMaxResults(limit)
+                .build();
+
+        return elasticsearchOperations.search(nativeQuery, WordDocument.class)
+                .getSearchHits()
+                .stream()
+                .map(hit -> new ScoredWord(hit.getContent(), hit.getScore()))
+                .collect(Collectors.toList());
+    }
+
+    public record ScoredWord(WordDocument document, double score) {
+    }
 }

@@ -4,8 +4,9 @@ import com.wordencounter.wordencounter.config.CurrentUser;
 import com.wordencounter.wordencounter.dto.AddRelatedWordRequest;
 import com.wordencounter.wordencounter.dto.CreateWordRequest;
 import com.wordencounter.wordencounter.dto.PageResponse;
+import com.wordencounter.wordencounter.dto.RelatedSuggestionResponse;
+import com.wordencounter.wordencounter.dto.ReplaceMeaningBlocksRequest;
 import com.wordencounter.wordencounter.dto.SearchResultResponse;
-import com.wordencounter.wordencounter.dto.UpdateMeaningRequest;
 import com.wordencounter.wordencounter.dto.WordDetailResponse;
 import com.wordencounter.wordencounter.dto.WordSummaryResponse;
 import com.wordencounter.wordencounter.service.WordService;
@@ -62,9 +63,10 @@ public class WordController {
         return wordService.create(currentUser.ownerSub(), request);
     }
 
-    @PutMapping("/{id}/meaning")
-    public WordDetailResponse updateMeaning(@PathVariable UUID id, @Valid @RequestBody UpdateMeaningRequest request) {
-        return wordService.updateMeaning(currentUser.ownerSub(), id, request);
+    @PutMapping("/{id}/meaning-blocks")
+    public WordDetailResponse replaceMeaningBlocks(
+            @PathVariable UUID id, @Valid @RequestBody ReplaceMeaningBlocksRequest request) {
+        return wordService.replaceMeaningBlocks(currentUser.ownerSub(), id, request);
     }
 
     @PostMapping("/{id}/related")
@@ -78,5 +80,11 @@ public class WordController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeRelatedWord(@PathVariable UUID id, @PathVariable UUID relationId) {
         wordService.removeRelatedWord(currentUser.ownerSub(), id, relationId);
+    }
+
+    @GetMapping("/{id}/related/suggestions")
+    public List<RelatedSuggestionResponse> suggestRelatedWords(
+            @PathVariable UUID id, @RequestParam(name = "limit", defaultValue = "8") int limit) {
+        return wordService.suggestRelatedWords(currentUser.ownerSub(), id, limit);
     }
 }

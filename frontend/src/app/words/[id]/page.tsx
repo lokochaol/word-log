@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-import { MeaningEditor } from "@/components/MeaningEditor";
+import { MeaningBlocksEditor } from "@/components/MeaningBlocksEditor";
 import { RelatedWords } from "@/components/RelatedWords";
 
 function formatDate(iso: string) {
@@ -41,7 +41,7 @@ export default async function WordDetailPage(props: PageProps<"/words/[id]">) {
 
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-bold text-ink">意味（自分の言葉で）</h2>
-          <MeaningEditor wordId={word.id} meaning={word.meaning} />
+          <MeaningBlocksEditor wordId={word.id} blocks={word.meaningBlocks} />
         </section>
 
         <section className="flex flex-col gap-3">

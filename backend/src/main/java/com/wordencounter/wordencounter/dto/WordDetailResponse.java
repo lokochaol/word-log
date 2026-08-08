@@ -8,6 +8,7 @@ public record WordDetailResponse(
         UUID id,
         String text,
         String meaning,
+        List<MeaningBlockResponse> meaningBlocks,
         Instant encounteredAt,
         Instant updatedAt,
         List<RelatedWordResponse> relatedWords) {

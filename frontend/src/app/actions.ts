@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { api, ApiError, type SearchResult } from "@/lib/api";
+import { api, ApiError, type MeaningBlockInput, type RelatedSuggestion, type SearchResult } from "@/lib/api";
 import { signIn, signOut } from "@/auth";
 
 export async function googleSignIn() {
@@ -26,8 +26,8 @@ export async function createWordAction(formData: FormData) {
   }
 }
 
-export async function updateMeaningAction(id: string, meaning: string) {
-  await api.updateMeaning(id, meaning);
+export async function replaceMeaningBlocksAction(id: string, blocks: MeaningBlockInput[]) {
+  await api.replaceMeaningBlocks(id, blocks);
   revalidatePath(`/words/${id}`);
   revalidatePath("/");
 }
@@ -55,4 +55,8 @@ export async function findExactMatch(text: string): Promise<SearchResult | null>
   if (!q) return null;
   const results = await api.search(q, 5);
   return results.find((r) => r.text.localeCompare(q, undefined, { sensitivity: "base" }) === 0) ?? null;
+}
+
+export async function suggestRelatedWordsAction(id: string): Promise<RelatedSuggestion[]> {
+  return api.suggestRelatedWords(id);
 }

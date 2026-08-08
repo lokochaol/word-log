@@ -50,10 +50,28 @@ export interface RelatedWord {
   wordId: string | null;
 }
 
+export type MeaningBlockType = "TEXT" | "CODE" | "MERMAID" | "IMAGE";
+
+export interface MeaningBlock {
+  id: string;
+  type: MeaningBlockType;
+  content: string;
+  language: string | null;
+  caption: string | null;
+}
+
+export interface MeaningBlockInput {
+  type: MeaningBlockType;
+  content: string;
+  language?: string | null;
+  caption?: string | null;
+}
+
 export interface WordDetail {
   id: string;
   text: string;
   meaning: string | null;
+  meaningBlocks: MeaningBlock[];
   encounteredAt: string;
   updatedAt: string;
   relatedWords: RelatedWord[];
@@ -63,6 +81,13 @@ export interface SearchResult {
   id: string;
   text: string;
   meaning: string | null;
+}
+
+export interface RelatedSuggestion {
+  wordId: string;
+  text: string;
+  reason: "FUZZY_MATCH" | "REVERSE_RELATION";
+  score: number | null;
 }
 
 export interface PageResponse<T> {
@@ -85,10 +110,10 @@ export const api = {
       body: JSON.stringify({ text }),
     }),
 
-  updateMeaning: (id: string, meaning: string) =>
-    request<WordDetail>(`/api/words/${id}/meaning`, {
+  replaceMeaningBlocks: (id: string, blocks: MeaningBlockInput[]) =>
+    request<WordDetail>(`/api/words/${id}/meaning-blocks`, {
       method: "PUT",
-      body: JSON.stringify({ meaning }),
+      body: JSON.stringify({ blocks }),
     }),
 
   addRelatedWord: (id: string, text: string) =>
@@ -101,6 +126,9 @@ export const api = {
     request<void>(`/api/words/${id}/related/${relationId}`, {
       method: "DELETE",
     }),
+
+  suggestRelatedWords: (id: string, limit = 8) =>
+    request<RelatedSuggestion[]>(`/api/words/${id}/related/suggestions?limit=${limit}`),
 
   search: (query: string, limit = 20) =>
     request<SearchResult[]>(`/api/words/search?q=${encodeURIComponent(query)}&limit=${limit}`),

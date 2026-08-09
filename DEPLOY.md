@@ -1,93 +1,56 @@
-# Deploying to Oracle Cloud (Always Free)
+# Deploying to Vercel + Neon (free)
 
-Runs the whole stack (PostgreSQL, Elasticsearch, backend, frontend, and a
-Caddy reverse proxy that gets you free HTTPS) as Docker containers on a
-single Oracle Cloud "Always Free" VM. Total cost: **$0/month**.
+The whole app is a single Next.js project talking to one Postgres database,
+so deployment is just "push the frontend, point it at a managed Postgres."
+Total cost: **$0/month** on both services' free tiers.
 
-## 1. Create the VM
+## 1. Create a Neon Postgres database
 
-1. In the [Oracle Cloud Console](https://cloud.oracle.com/), create a Compute
-   instance using an **Ampere A1 (ARM)** shape from the Always Free tier —
-   e.g. 2 OCPU / 12 GB RAM. Ampere A1 gives you far more free RAM than the
-   x86 Always Free shapes, which matters for running Elasticsearch. All the
-   images this project uses (Postgres, Elasticsearch, Eclipse Temurin,
-   Node) support ARM64, so this just works.
-2. Pick Ubuntu as the image, and download/keep the SSH key pair Oracle
-   generates.
-3. Note the instance's public IP address.
+1. Sign up at [neon.tech](https://neon.tech) and create a project.
+2. Copy the connection string it gives you (the "pooled connection" one is
+   fine — Prisma works through it). It looks like:
+   `postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require`
+3. `pg_trgm` (used for search and related-word suggestions) is available on
+   Neon by default — no extra setup needed, the app's own migration enables
+   it.
 
-## 2. Open ports 80 and 443
-
-Oracle blocks everything but SSH (22) by default, in two places — both need
-opening:
-
-1. **Security List / Network Security Group**: in the VCN's subnet, add
-   ingress rules for `0.0.0.0/0` → TCP `80` and TCP `443`.
-2. **The VM's own firewall** (Ubuntu images ship with `iptables` rules that
-   also block these ports): SSH in and run:
-   ```bash
-   sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
-   sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-   sudo netfilter-persistent save
-   ```
-
-## 3. Point a domain at the VM
-
-Caddy needs a real domain name to issue a Let's Encrypt certificate (a bare
-IP won't work). A free option is [DuckDNS](https://www.duckdns.org/): sign
-in, create a subdomain (e.g. `word-log.duckdns.org`), and point it at the
-VM's public IP. A domain you already own works too — just add an `A` record.
-
-## 4. Install Docker
-
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-# log out and back in for the group change to take effect
-```
-
-## 5. Configure Google OAuth for the domain
+## 2. Create a Google OAuth client for the production domain
 
 In the same [Google Cloud OAuth client](https://console.cloud.google.com/apis/credentials)
-used for local dev, add:
+used for local dev (or a new one), add:
 
-- Authorized JavaScript origin: `https://<your-domain>`
-- Authorized redirect URI: `https://<your-domain>/api/auth/callback/google`
+- Authorized JavaScript origin: `https://<your-vercel-domain>`
+- Authorized redirect URI: `https://<your-vercel-domain>/api/auth/callback/google`
 
-## 6. Deploy
+(`<your-vercel-domain>` is either the `*.vercel.app` domain Vercel assigns,
+or a custom domain you attach afterward — either way, come back and add it
+here once you know it.)
 
-```bash
-git clone <this-repo-url> word-log
-cd word-log
-cp .env.prod.example .env
-# edit .env: DOMAIN, AUTH_SECRET, GOOGLE_CLIENT_ID, AUTH_GOOGLE_SECRET, DB_PASSWORD
+## 3. Deploy to Vercel
 
-docker compose -f docker-compose.prod.yml up -d --build
-```
+1. Import this repository into [Vercel](https://vercel.com/new).
+2. Set the **Root Directory** to `frontend`.
+3. Add these Environment Variables:
+   - `DATABASE_URL` — the Neon connection string from step 1
+   - `AUTH_SECRET` — a random string, e.g. `openssl rand -base64 33`
+   - `AUTH_GOOGLE_ID` — the Google OAuth client ID
+   - `AUTH_GOOGLE_SECRET` — the Google OAuth client secret
+4. Deploy. The build runs `prisma migrate deploy` before `next build` (see
+   `frontend/package.json`), so the database schema is created/updated on
+   every deploy automatically — no separate migration step needed.
 
-First boot takes a few minutes (Elasticsearch starting, Caddy requesting a
-certificate, Flyway migrating the database). Check status with:
-
-```bash
-docker compose -f docker-compose.prod.yml ps
-docker compose -f docker-compose.prod.yml logs -f
-```
-
-Once healthy, `https://<your-domain>` should show the sign-in page.
+That's it — no servers, containers, or reverse proxy to manage. Vercel
+terminates HTTPS and handles scaling/cold starts on its free tier.
 
 ## Updating
 
-```bash
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-```
+Just push to the branch Vercel is tracking — it redeploys (and re-runs
+migrations) automatically.
 
 ## Notes
 
-- Only Caddy (80/443) is exposed to the internet. PostgreSQL, Elasticsearch,
-  and the backend stay on the internal Docker network — the frontend talks
-  to the backend server-side, so nothing but the reverse proxy needs a
-  public port.
-- Data lives in the `postgres_data` / `elasticsearch_data` Docker volumes.
-  Back them up (e.g. `docker run --rm -v word-log_postgres_data:/data ...`)
-  if you care about not losing your dictionary.
+- The app talks to Postgres directly from Next.js server code (Server
+  Actions / Server Components), so there's nothing else to expose publicly.
+- If you outgrow Neon's free tier (usage-based compute/storage limits) or
+  Vercel's, both have inexpensive paid tiers that scale up without changing
+  anything in this repo.

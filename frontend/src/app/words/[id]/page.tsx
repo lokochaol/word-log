@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import * as words from "@/lib/words";
+import { requireOwnerSub } from "@/lib/session";
 import { MeaningBlocksEditor } from "@/components/MeaningBlocksEditor";
 import { RelatedWords } from "@/components/RelatedWords";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("ja-JP", {
+function formatDate(date: Date) {
+  return date.toLocaleString("ja-JP", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -16,12 +17,13 @@ function formatDate(iso: string) {
 
 export default async function WordDetailPage(props: PageProps<"/words/[id]">) {
   const { id } = await props.params;
+  const ownerSub = await requireOwnerSub();
 
   let word;
   try {
-    word = await api.getWord(id);
+    word = await words.getDetail(ownerSub, id);
   } catch (e) {
-    if (e instanceof ApiError && e.status === 404) notFound();
+    if (e instanceof words.NotFoundError) notFound();
     throw e;
   }
 

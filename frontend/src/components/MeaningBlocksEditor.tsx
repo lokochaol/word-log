@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { replaceMeaningBlocksAction } from "@/app/actions";
-import type { MeaningBlock, MeaningBlockInput, MeaningBlockType } from "@/lib/api";
+import type { MeaningBlock, MeaningBlockInput, MeaningBlockType } from "@/lib/words";
 import { MermaidPreview } from "@/components/MermaidPreview";
 
 type EditableBlock = MeaningBlockInput & { key: string };

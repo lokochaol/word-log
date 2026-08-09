@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { searchWordsAction } from "@/app/actions";
-import type { SearchResult } from "@/lib/api";
+import type { SearchResult } from "@/lib/words";
 
 export function SearchClient({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);

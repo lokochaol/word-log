@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { addRelatedWordAction, removeRelatedWordAction, suggestRelatedWordsAction } from "@/app/actions";
-import type { RelatedSuggestion, RelatedWord } from "@/lib/api";
+import type { RelatedSuggestion, RelatedWord } from "@/lib/words";
 
 const REASON_LABEL: Record<RelatedSuggestion["reason"], string> = {
   FUZZY_MATCH: "曖昧一致",

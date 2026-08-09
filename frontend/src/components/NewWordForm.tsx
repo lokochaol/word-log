@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { createWordAction, findExactMatch } from "@/app/actions";
-import type { SearchResult } from "@/lib/api";
+import type { SearchResult } from "@/lib/words";
 
 export function NewWordForm({ initialText = "" }: { initialText?: string }) {
   const [text, setText] = useState(initialText);

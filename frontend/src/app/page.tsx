@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { api } from "@/lib/api";
+import * as words from "@/lib/words";
+import { requireOwnerSub } from "@/lib/session";
 import { HomeSearchBar } from "@/components/HomeSearchBar";
 import { SignOutButton } from "@/components/SignOutButton";
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString("ja-JP", {
+function formatDate(date: Date) {
+  return date.toLocaleString("ja-JP", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -15,8 +15,8 @@ function formatDate(iso: string) {
 }
 
 export default async function HomePage() {
-  const page = await api.listWords(0, 100);
-  const words = page.items;
+  const ownerSub = await requireOwnerSub();
+  const wordList = await words.listChronological(ownerSub);
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
@@ -29,20 +29,20 @@ export default async function HomePage() {
         <HomeSearchBar />
 
         <div className="relative flex flex-col items-center">
-          {words.length > 0 && (
+          {wordList.length > 0 && (
             <div
               aria-hidden="true"
               className="absolute top-9 bottom-9 left-1/2 w-px -translate-x-1/2 bg-line-strong"
             />
           )}
 
-          {words.length === 0 && (
+          {wordList.length === 0 && (
             <p className="py-16 text-center text-sm text-ink-soft">
               まだ単語がありません。最初の出会いを記録しましょう。
             </p>
           )}
 
-          {words.map((word) => (
+          {wordList.map((word) => (
             <Link
               key={word.id}
               href={`/words/${word.id}`}

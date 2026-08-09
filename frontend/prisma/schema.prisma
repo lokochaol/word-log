@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MeaningBlockType {
+  TEXT
+  CODE
+  MERMAID
+  IMAGE
+}
+
+/// A word the owner encountered for the first time, recorded in chronological
+/// (encounter) order.
+model Word {
+  id            String   @id @default(uuid())
+  ownerSub      String   @map("owner_sub")
+  text          String
+  /// Plain-text excerpt derived from TEXT meaning blocks, used for the search index.
+  meaning       String?
+  encounteredAt DateTime @default(now()) @map("encountered_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  relations     WordRelation[]
+  meaningBlocks WordMeaningBlock[]
+
+  @@unique([ownerSub, text])
+  @@index([ownerSub, encounteredAt])
+  @@map("word")
+}
+
+/// A related word entered as free text. Whether it points at an already-registered
+/// Word is resolved at read time (by matching text), not stored as a hard foreign
+/// key, so a relation set before the related word exists still links up once that
+/// word is registered later.
+model WordRelation {
+  id          String   @id @default(uuid())
+  wordId      String   @map("word_id")
+  word        Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  relatedText String   @map("related_text")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([wordId, relatedText])
+  @@map("word_relation")
+}
+
+/// One block of a word's meaning: free-form text, a code snippet, Mermaid diagram
+/// source, or an image reference. Ordered by position and rendered in sequence.
+model WordMeaningBlock {
+  id       String           @id @default(uuid())
+  wordId   String           @map("word_id")
+  word     Word             @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  position Int
+  type     MeaningBlockType @map("block_type")
+  /// Free text for TEXT blocks, source code for CODE, Mermaid source for MERMAID,
+  /// image URL for IMAGE.
+  content  String
+  /// CODE blocks only, e.g. "javascript".
+  language String?
+  /// IMAGE blocks only.
+  caption  String?
+
+  @@index([wordId, position])
+  @@map("word_meaning_block")
+}

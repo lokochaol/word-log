@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { searchWordsAction } from "@/app/actions";
 import type { SearchResult } from "@/lib/words";
+import { SearchIcon } from "@/components/SearchIcon";
 
 export function SearchClient({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [pending, startTransition] = useTransition();
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     const q = query.trim();
@@ -28,15 +30,29 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-5 py-4 text-sm text-ink-soft shadow-sm transition-all duration-200 focus-within:border-accent focus-within:shadow-[0_0_0_4px_var(--color-accent-soft)]">
-        <span aria-hidden="true">🔍</span>
+      <div
+        className={`relative flex items-center gap-3 rounded-2xl border bg-surface px-5 py-4 text-sm transition-all duration-300 ${
+          focused
+            ? "border-accent shadow-[0_0_0_4px_var(--color-accent-soft),0_0_28px_-8px_var(--color-accent)]"
+            : "border-line shadow-none"
+        }`}
+      >
+        <SearchIcon active={focused} />
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder="単語・意味・関連語で検索…"
           className="w-full bg-transparent text-ink placeholder:text-ink-soft focus:outline-none"
         />
+        {pending && (
+          <span
+            aria-hidden="true"
+            className="h-1.5 w-1.5 shrink-0 animate-pulse-dot rounded-full bg-accent"
+          />
+        )}
       </div>
 
       {trimmed && results && results.length > 0 && (

@@ -11,7 +11,20 @@ export function MermaidPreview({ source }: { source: string }) {
     let cancelled = false;
     if (!source.trim()) return;
     import("mermaid").then(async ({ default: mermaid }) => {
-      mermaid.initialize({ startOnLoad: false, theme: "neutral", fontFamily: "var(--font-inter)" });
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "base",
+        fontFamily: "var(--font-inter)",
+        themeVariables: {
+          background: "#121212",
+          primaryColor: "#1c1c1c",
+          primaryTextColor: "#f5f5f5",
+          primaryBorderColor: "#ff3d1a",
+          lineColor: "#8a8a8a",
+          secondaryColor: "#1c1c1c",
+          tertiaryColor: "#1c1c1c",
+        },
+      });
       try {
         const { svg: rendered } = await mermaid.render(`mermaid-${id}`, source);
         if (!cancelled) {

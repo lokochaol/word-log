@@ -3,6 +3,7 @@ import * as words from "@/lib/words";
 import { requireOwnerSub } from "@/lib/session";
 import { HomeSearchBar } from "@/components/HomeSearchBar";
 import { SignOutButton } from "@/components/SignOutButton";
+import { WordGraphBackground } from "@/components/WordGraphBackground";
 
 function formatDate(date: Date) {
   return date.toLocaleString("ja-JP", {
@@ -16,11 +17,15 @@ function formatDate(date: Date) {
 
 export default async function HomePage() {
   const ownerSub = await requireOwnerSub();
-  const wordList = await words.listChronological(ownerSub);
+  const [wordList, graph] = await Promise.all([
+    words.listChronological(ownerSub),
+    words.getWordGraph(ownerSub),
+  ]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
-      <div className="flex w-full max-w-[720px] flex-col gap-8">
+    <main className="relative flex min-h-screen flex-col items-center bg-bg px-6 py-16">
+      <WordGraphBackground graph={graph} />
+      <div className="relative flex w-full max-w-[720px] flex-col gap-8">
         <div className="flex items-center justify-between">
           <span className="text-lg font-extrabold tracking-tight text-ink">Word Log</span>
           <SignOutButton />

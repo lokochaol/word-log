@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SearchIcon } from "@/components/SearchIcon";
+import { HudSearchFrame } from "@/components/HudSearchFrame";
 
 export function HomeSearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -20,14 +21,11 @@ export function HomeSearchBar() {
 
   return (
     <form action="/search" method="GET">
-      <div
-        className={`relative flex items-center gap-3 rounded-2xl border bg-surface px-5 py-4 text-sm transition-all duration-300 ${
-          focused
-            ? "border-accent shadow-[0_0_0_4px_var(--color-accent-soft),0_0_28px_-8px_var(--color-accent)]"
-            : "border-line shadow-none"
-        }`}
-      >
+      <HudSearchFrame active={focused}>
         <SearchIcon active={focused} />
+        <span aria-hidden="true" className="shrink-0 font-mono text-sm text-accent">
+          &gt;
+        </span>
         <input
           ref={inputRef}
           type="text"
@@ -35,7 +33,8 @@ export function HomeSearchBar() {
           placeholder="単語・意味・関連語で検索…"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          className="w-full bg-transparent text-ink placeholder:text-ink-soft focus:outline-none"
+          style={{ caretColor: "var(--color-accent)" }}
+          className="w-full bg-transparent font-mono text-ink placeholder:font-sans placeholder:text-ink-soft focus:outline-none"
         />
         <kbd
           aria-hidden="true"
@@ -45,7 +44,7 @@ export function HomeSearchBar() {
         >
           /
         </kbd>
-      </div>
+      </HudSearchFrame>
     </form>
   );
 }

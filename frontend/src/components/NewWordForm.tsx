@@ -71,7 +71,7 @@ export function NewWordForm({ initialText = "" }: { initialText?: string }) {
         <button
           type="submit"
           disabled={pending || !text.trim()}
-          className="inline-flex items-center rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:hover:scale-100"
+          className="btn-sheen inline-flex items-center rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:hover:scale-100"
         >
           {pending ? "記録中…" : "出会いを記録"}
         </button>

@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #eaecf0;
-  --color-surface: #ffffff;
-  --color-surface-alt: #dce0e5;
-  --color-ink: #000000;
-  --color-ink-soft: #4b5a63;
-  --color-line: #d6dadf;
-  --color-line-strong: #233d4d;
-  --color-accent: #fe7f2d;
-  --color-accent-soft: #fde0c7;
-  --color-on-accent: #ffffff;
-  --color-link: #233d4d;
-  --color-link-soft: #e1e5ea;
+  --color-bg: #050505;
+  --color-surface: #121212;
+  --color-surface-alt: #1c1c1c;
+  --color-ink: #f5f5f5;
+  --color-ink-soft: #8a8a8a;
+  --color-line: #2a2a2a;
+  --color-line-strong: #454545;
+  --color-accent: #ff3d1a;
+  --color-accent-soft: color-mix(in srgb, #ff3d1a 16%, #121212);
+  --color-on-accent: #f5f5f5;
+  --color-link: #d8d8d8;
+  --color-link-soft: #1c1c1c;
 }
 
 @theme inline {
@@ -36,6 +36,12 @@ body {
   color: var(--color-ink);
 }
 
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+}
+
 @keyframes pulse-dot {
   0%,
   100% {
@@ -48,4 +54,16 @@ body {
 
 .animate-pulse-dot {
   animation: pulse-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes cursor-click {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }

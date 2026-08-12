@@ -56,6 +56,22 @@ export interface RelatedSuggestion {
   score: number | null;
 }
 
+export interface WordGraphNode {
+  id: string;
+  text: string;
+  degree: number;
+}
+
+export interface WordGraphEdge {
+  source: string;
+  target: string;
+}
+
+export interface WordGraph {
+  nodes: WordGraphNode[];
+  edges: WordGraphEdge[];
+}
+
 const wordWithRelationsInclude = {
   relations: { orderBy: { createdAt: "asc" } },
   meaningBlocks: { orderBy: { position: "asc" } },
@@ -273,4 +289,37 @@ export async function suggestRelatedWords(ownerSub: string, id: string, limit = 
   }
 
   return Array.from(suggestions.values()).slice(0, limit);
+}
+
+/** Every word plus the resolved (registered-to-registered) edges between them, for the ambient background graph. */
+export async function getWordGraph(ownerSub: string): Promise<WordGraph> {
+  const allWords = await prisma.word.findMany({
+    where: { ownerSub },
+    select: { id: true, text: true },
+  });
+  const idByLowerText = new Map(allWords.map((w) => [w.text.toLowerCase(), w.id]));
+
+  const relations = await prisma.wordRelation.findMany({
+    where: { word: { ownerSub } },
+    select: { wordId: true, relatedText: true },
+  });
+
+  const edgeKeys = new Set<string>();
+  const edges: WordGraphEdge[] = [];
+  const degree = new Map<string, number>();
+  for (const rel of relations) {
+    const targetId = idByLowerText.get(rel.relatedText.toLowerCase());
+    if (!targetId || targetId === rel.wordId) continue;
+    const key = [rel.wordId, targetId].sort().join("|");
+    if (edgeKeys.has(key)) continue;
+    edgeKeys.add(key);
+    edges.push({ source: rel.wordId, target: targetId });
+    degree.set(rel.wordId, (degree.get(rel.wordId) ?? 0) + 1);
+    degree.set(targetId, (degree.get(targetId) ?? 0) + 1);
+  }
+
+  return {
+    nodes: allWords.map((w) => ({ id: w.id, text: w.text, degree: degree.get(w.id) ?? 0 })),
+    edges,
+  };
 }

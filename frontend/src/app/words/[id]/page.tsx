@@ -30,8 +30,11 @@ export default async function WordDetailPage(props: PageProps<"/words/[id]">) {
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
       <div className="flex w-full max-w-[720px] flex-col gap-8">
-        <Link href="/" className="text-xs font-medium tracking-wide text-ink-soft hover:text-ink">
-          ← 一覧へ戻る
+        <Link
+          href="/"
+          className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
+        >
+          <span className="text-accent">&lt;</span> 一覧へ戻る
         </Link>
 
         <div className="flex flex-col gap-1.5">
@@ -42,12 +45,16 @@ export default async function WordDetailPage(props: PageProps<"/words/[id]">) {
         </div>
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-bold text-ink">意味（自分の言葉で）</h2>
+          <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+            <span className="text-accent">{"//"}</span> 意味（自分の言葉で）
+          </h2>
           <MeaningBlocksEditor wordId={word.id} blocks={word.meaningBlocks} />
         </section>
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-bold text-ink">関連語</h2>
+          <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+            <span className="text-accent">{"//"}</span> 関連語
+          </h2>
           <RelatedWords wordId={word.id} relatedWords={word.relatedWords} />
         </section>
       </div>

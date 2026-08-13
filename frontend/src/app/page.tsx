@@ -1,6 +1,6 @@
 import Link from "next/link";
 import * as words from "@/lib/words";
-import { requireOwnerSub } from "@/lib/session";
+import { requireSession } from "@/lib/session";
 import { HomeSearchBar } from "@/components/HomeSearchBar";
 import { SignOutButton } from "@/components/SignOutButton";
 import { WordGraphBackground } from "@/components/WordGraphBackground";
@@ -17,7 +17,8 @@ function formatDate(date: Date) {
 }
 
 export default async function HomePage() {
-  const ownerSub = await requireOwnerSub();
+  const session = await requireSession();
+  const ownerSub = session.ownerSub;
   const [wordList, graph] = await Promise.all([
     words.listChronological(ownerSub),
     words.getWordGraph(ownerSub),
@@ -29,7 +30,12 @@ export default async function HomePage() {
       <div className="relative flex w-full max-w-[720px] flex-col gap-8">
         <div className="flex items-center justify-between">
           <span className="text-lg font-extrabold tracking-tight text-ink">Word Log</span>
-          <SignOutButton />
+          <div className="flex items-center gap-3">
+            <span className="hidden font-mono text-[10px] text-ink-soft sm:inline" title={`account id …${ownerSub.slice(-8)}`}>
+              {session.user?.email ?? "unknown"}
+            </span>
+            <SignOutButton />
+          </div>
         </div>
 
         <HomeSearchBar />

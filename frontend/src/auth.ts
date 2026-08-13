@@ -13,6 +13,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // to `profile.sub` explicitly, with no fallback, means a missing
       // `sub` fails loudly instead.
       profile(profile) {
+        // TEMPORARY diagnostic logging for the "ownerSub changes every login"
+        // report — check Vercel's Runtime Logs after a sign-in attempt.
+        console.log("[auth-debug] google profile", {
+          sub: profile.sub,
+          email: profile.email,
+          keys: Object.keys(profile),
+        });
         return {
           id: profile.sub,
           name: profile.name,
@@ -23,8 +30,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async jwt({ token, trigger }) {
+      // TEMPORARY diagnostic logging — see the profile() log above.
+      console.log("[auth-debug] jwt callback", { trigger, tokenSub: token.sub });
+      return token;
+    },
     async session({ session, token }) {
       if (token.sub) session.ownerSub = token.sub;
+      console.log("[auth-debug] session callback", { tokenSub: token.sub, ownerSub: session.ownerSub });
       return session;
     },
   },

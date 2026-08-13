@@ -56,6 +56,7 @@ export function NewWordForm({ initialText = "" }: { initialText?: string }) {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             placeholder="例）serendipity"
+            autoComplete="off"
             autoFocus
             required
             style={{ caretColor: "var(--color-accent)" }}

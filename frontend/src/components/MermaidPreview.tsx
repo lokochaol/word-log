@@ -15,6 +15,7 @@ export function MermaidPreview({ source }: { source: string }) {
         startOnLoad: false,
         theme: "base",
         fontFamily: "var(--font-inter)",
+        suppressErrorRendering: true,
         themeVariables: {
           background: "#121212",
           primaryColor: "#1c1c1c",

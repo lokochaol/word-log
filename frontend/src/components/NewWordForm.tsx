@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { createWordAction, findExactMatch } from "@/app/actions";
 import type { SearchResult } from "@/lib/words";
+import { HudFrame } from "@/components/HudFrame";
 
 export function NewWordForm({ initialText = "" }: { initialText?: string }) {
   const [text, setText] = useState(initialText);
   const [duplicate, setDuplicate] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -35,22 +37,40 @@ export function NewWordForm({ initialText = "" }: { initialText?: string }) {
       className="flex flex-col gap-6"
     >
       <div className="flex flex-col gap-2">
-        <label htmlFor="text" className="text-[10.5px] font-semibold tracking-wider text-ink-soft uppercase">
-          単語 *
+        <label
+          htmlFor="text"
+          className="font-mono text-[10.5px] font-semibold tracking-[0.15em] text-ink-soft uppercase"
+        >
+          単語 <span className="text-accent">*</span>
         </label>
-        <input
-          id="text"
-          name="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="例）serendipity"
-          autoFocus
-          required
-          className="rounded-lg border border-line bg-surface px-4 py-3 text-base text-ink shadow-sm transition-all duration-200 focus:border-accent focus:shadow-[0_0_0_4px_var(--color-accent-soft)] focus:outline-none"
-        />
+
+        <HudFrame active={focused} innerClassName="flex items-center gap-2 rounded-xl px-4 py-3">
+          <span aria-hidden="true" className="shrink-0 font-mono text-sm text-accent">
+            &gt;
+          </span>
+          <input
+            id="text"
+            name="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder="例）serendipity"
+            autoFocus
+            required
+            style={{ caretColor: "var(--color-accent)" }}
+            className="w-full bg-transparent font-mono text-base text-ink placeholder:font-sans placeholder:text-ink-soft focus:outline-none"
+          />
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-300 ${
+              pending ? "animate-pulse-dot bg-accent" : "bg-transparent"
+            }`}
+          />
+        </HudFrame>
 
         {visibleDuplicate && (
-          <div className="flex items-center justify-between rounded-lg bg-accent-soft px-3 py-2 text-xs text-ink">
+          <div className="flex items-center justify-between rounded-lg border border-accent/40 bg-accent-soft px-3 py-2 font-mono text-xs text-ink">
             <span>⚠ すでに「{visibleDuplicate.text}」は登録済みです</span>
             <Link href={`/words/${visibleDuplicate.id}`} className="font-semibold text-accent hover:underline">
               詳細を見る →
@@ -58,7 +78,7 @@ export function NewWordForm({ initialText = "" }: { initialText?: string }) {
           </div>
         )}
 
-        {error && <p className="text-xs text-accent">{error}</p>}
+        {error && <p className="font-mono text-xs text-accent">{error}</p>}
       </div>
 
       <div className="flex justify-end gap-3">

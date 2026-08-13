@@ -4,6 +4,7 @@ import { requireOwnerSub } from "@/lib/session";
 import { HomeSearchBar } from "@/components/HomeSearchBar";
 import { SignOutButton } from "@/components/SignOutButton";
 import { WordGraphBackground } from "@/components/WordGraphBackground";
+import { AddWordButton } from "@/components/AddWordButton";
 
 function formatDate(date: Date) {
   return date.toLocaleString("ja-JP", {
@@ -37,7 +38,7 @@ export default async function HomePage() {
           {wordList.length > 0 && (
             <div
               aria-hidden="true"
-              className="absolute top-9 bottom-9 left-1/2 w-px -translate-x-1/2 bg-line-strong"
+              className="absolute top-9 bottom-24 left-1/2 w-px -translate-x-1/2 bg-line-strong"
             />
           )}
 
@@ -63,16 +64,7 @@ export default async function HomePage() {
             </Link>
           ))}
 
-          <Link
-            href="/words/new"
-            className="group relative flex flex-col items-center gap-3 pt-12 pb-2"
-          >
-            <span className="relative flex h-3 w-3 items-center justify-center">
-              <span className="animate-radar-ping absolute h-3 w-3 rounded-full bg-accent" aria-hidden="true" />
-              <span className="animate-pulse-dot relative h-3 w-3 rounded-full border-2 border-dashed border-accent transition-transform duration-200 group-hover:scale-110" />
-            </span>
-            <span className="font-mono text-xs font-semibold tracking-wide text-accent">＋ 新規登録</span>
-          </Link>
+          <AddWordButton />
         </div>
       </div>
     </main>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { addRelatedWordAction, removeRelatedWordAction, suggestRelatedWordsAction } from "@/app/actions";
 import type { RelatedSuggestion, RelatedWord } from "@/lib/words";
+import { HudFrame } from "@/components/HudFrame";
 
 const REASON_LABEL: Record<RelatedSuggestion["reason"], string> = {
   FUZZY_MATCH: "曖昧一致",
@@ -13,6 +14,7 @@ const REASON_LABEL: Record<RelatedSuggestion["reason"], string> = {
 export function RelatedWords({ wordId, relatedWords }: { wordId: string; relatedWords: RelatedWord[] }) {
   const [text, setText] = useState("");
   const [pending, startTransition] = useTransition();
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [suggestions, setSuggestions] = useState<RelatedSuggestion[] | null>(null);
@@ -43,10 +45,10 @@ export function RelatedWords({ wordId, relatedWords }: { wordId: string; related
             <Link
               key={rel.relationId}
               href={`/words/${rel.wordId}`}
-              className="group inline-flex items-center gap-1.5 rounded-full border border-link bg-link-soft px-3 py-1.5 text-xs font-medium text-link transition-transform hover:scale-105"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-link bg-link-soft px-3 py-1.5 text-xs font-medium text-link transition-all hover:scale-105 hover:border-accent hover:text-accent hover:shadow-[0_0_16px_-6px_var(--color-accent)]"
             >
               {rel.text}
-              <span className="font-mono text-[9px] text-link/70">→</span>
+              <span className="font-mono text-[9px] opacity-70">→</span>
               <RemoveButton
                 onClick={() =>
                   startTransition(() => removeRelatedWordAction(wordId, rel.relationId))
@@ -82,14 +84,23 @@ export function RelatedWords({ wordId, relatedWords }: { wordId: string; related
           });
         }}
       >
-        <input
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={pending}
-          placeholder="＋ 関連語を追加してEnter"
-          className="w-full rounded-lg border border-dashed border-line bg-surface px-4 py-2.5 text-xs text-ink placeholder:text-ink-soft transition-all duration-200 focus:border-accent focus:border-solid focus:shadow-[0_0_0_4px_var(--color-accent-soft)] focus:outline-none"
-        />
+        <HudFrame active={focused} innerClassName="flex items-center gap-2 rounded-xl px-4 py-2.5">
+          <span aria-hidden="true" className="shrink-0 font-mono text-xs text-accent">
+            &gt;
+          </span>
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            disabled={pending}
+            autoComplete="off"
+            placeholder="関連語を追加してEnter"
+            style={{ caretColor: "var(--color-accent)" }}
+            className="w-full bg-transparent font-mono text-xs text-ink placeholder:font-sans placeholder:text-ink-soft focus:outline-none"
+          />
+        </HudFrame>
       </form>
 
       {(loadingSuggestions || (suggestions && suggestions.length > 0)) && (
@@ -106,7 +117,7 @@ export function RelatedWords({ wordId, relatedWords }: { wordId: string; related
                 key={s.wordId}
                 onClick={() => addSuggestion(s)}
                 disabled={pending}
-                className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-line px-3 py-1.5 text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-line px-3 py-1.5 text-xs text-ink-soft transition-all hover:border-accent hover:text-accent hover:shadow-[0_0_16px_-6px_var(--color-accent)] disabled:opacity-50"
               >
                 {s.text}
                 <span className="font-mono text-[9px]">{REASON_LABEL[s.reason]}</span>

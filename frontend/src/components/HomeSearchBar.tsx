@@ -30,6 +30,7 @@ export function HomeSearchBar() {
           ref={inputRef}
           type="text"
           name="q"
+          autoComplete="off"
           placeholder="単語・意味・関連語で検索…"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}

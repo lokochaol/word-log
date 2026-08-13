@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { searchWordsAction } from "@/app/actions";
 import type { SearchResult } from "@/lib/words";
 import { SearchIcon } from "@/components/SearchIcon";
-import { HudSearchFrame } from "@/components/HudSearchFrame";
+import { HudFrame } from "@/components/HudFrame";
 
 export function SearchClient({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);
@@ -31,7 +31,7 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <HudSearchFrame active={focused}>
+      <HudFrame active={focused}>
         <SearchIcon active={focused} />
         <span aria-hidden="true" className="shrink-0 font-mono text-sm text-accent">
           &gt;
@@ -49,7 +49,7 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
         {pending && (
           <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 animate-pulse-dot rounded-full bg-accent" />
         )}
-      </HudSearchFrame>
+      </HudFrame>
 
       {trimmed && results && results.length > 0 && (
         <div className="flex flex-col">

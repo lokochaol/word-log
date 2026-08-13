@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SearchIcon } from "@/components/SearchIcon";
-import { HudSearchFrame } from "@/components/HudSearchFrame";
+import { HudFrame } from "@/components/HudFrame";
 
 export function HomeSearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +21,7 @@ export function HomeSearchBar() {
 
   return (
     <form action="/search" method="GET">
-      <HudSearchFrame active={focused}>
+      <HudFrame active={focused}>
         <SearchIcon active={focused} />
         <span aria-hidden="true" className="shrink-0 font-mono text-sm text-accent">
           &gt;
@@ -44,7 +44,7 @@ export function HomeSearchBar() {
         >
           /
         </kbd>
-      </HudSearchFrame>
+      </HudFrame>
     </form>
   );
 }

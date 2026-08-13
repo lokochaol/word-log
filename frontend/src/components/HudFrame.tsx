@@ -33,12 +33,20 @@ function HudCorners({ active }: { active: boolean }) {
   );
 }
 
-export function HudSearchFrame({ active, children }: { active: boolean; children: ReactNode }) {
+export function HudFrame({
+  active,
+  children,
+  innerClassName = "flex items-center gap-3 rounded-xl px-5 py-4 text-sm",
+}: {
+  active: boolean;
+  children: ReactNode;
+  innerClassName?: string;
+}) {
   return (
     <div className="relative px-1.5 py-1.5">
       <HudCorners active={active} />
       <div
-        className={`hud-scanline relative flex items-center gap-3 rounded-xl border bg-surface px-5 py-4 text-sm transition-all duration-300 ${
+        className={`hud-scanline relative border bg-surface transition-all duration-300 ${innerClassName} ${
           active
             ? "border-accent shadow-[0_0_0_4px_var(--color-accent-soft),0_0_28px_-6px_var(--color-accent)]"
             : "border-line shadow-none"

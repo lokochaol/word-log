@@ -30,9 +30,12 @@ export default async function HomePage() {
       <div className="relative flex w-full max-w-[720px] flex-col gap-8">
         <div className="flex items-center justify-between">
           <span className="text-lg font-extrabold tracking-tight text-ink">Word Log</span>
-          <div className="flex items-center gap-3">
-            <span className="hidden font-mono text-[10px] text-ink-soft sm:inline" title={`account id …${ownerSub.slice(-8)}`}>
+          <div className="flex items-center gap-2">
+            <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
               {session.user?.email ?? "unknown"}
+            </span>
+            <span className="hidden rounded border border-line px-1.5 py-0.5 font-mono text-[9px] text-ink-soft sm:inline">
+              #{ownerSub.slice(-8)}
             </span>
             <SignOutButton />
           </div>

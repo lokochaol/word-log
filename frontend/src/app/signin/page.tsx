@@ -11,7 +11,7 @@ export default function SignInPage() {
         <form action={googleSignIn}>
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center gap-3 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-on-accent transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+            className="btn-sheen inline-flex w-full items-center justify-center gap-3 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-on-accent transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
           >
             <GoogleIcon />
             Googleでログイン

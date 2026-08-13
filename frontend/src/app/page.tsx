@@ -67,8 +67,11 @@ export default async function HomePage() {
             href="/words/new"
             className="group relative flex flex-col items-center gap-3 pt-12 pb-2"
           >
-            <span className="animate-pulse-dot h-3 w-3 rounded-full border-2 border-dashed border-accent transition-transform duration-200 group-hover:scale-110" />
-            <span className="text-xs font-semibold tracking-wide text-accent">＋ 新規登録</span>
+            <span className="relative flex h-3 w-3 items-center justify-center">
+              <span className="animate-radar-ping absolute h-3 w-3 rounded-full bg-accent" aria-hidden="true" />
+              <span className="animate-pulse-dot relative h-3 w-3 rounded-full border-2 border-dashed border-accent transition-transform duration-200 group-hover:scale-110" />
+            </span>
+            <span className="font-mono text-xs font-semibold tracking-wide text-accent">＋ 新規登録</span>
           </Link>
         </div>
       </div>

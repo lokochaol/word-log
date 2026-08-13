@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { searchWordsAction } from "@/app/actions";
 import type { SearchResult } from "@/lib/words";
 import { SearchIcon } from "@/components/SearchIcon";
+import { HudSearchFrame } from "@/components/HudSearchFrame";
 
 export function SearchClient({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);
@@ -30,14 +31,11 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div
-        className={`relative flex items-center gap-3 rounded-2xl border bg-surface px-5 py-4 text-sm transition-all duration-300 ${
-          focused
-            ? "border-accent shadow-[0_0_0_4px_var(--color-accent-soft),0_0_28px_-8px_var(--color-accent)]"
-            : "border-line shadow-none"
-        }`}
-      >
+      <HudSearchFrame active={focused}>
         <SearchIcon active={focused} />
+        <span aria-hidden="true" className="shrink-0 font-mono text-sm text-accent">
+          &gt;
+        </span>
         <input
           autoFocus
           value={query}
@@ -45,15 +43,13 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder="単語・意味・関連語で検索…"
-          className="w-full bg-transparent text-ink placeholder:text-ink-soft focus:outline-none"
+          style={{ caretColor: "var(--color-accent)" }}
+          className="w-full bg-transparent font-mono text-ink placeholder:font-sans placeholder:text-ink-soft focus:outline-none"
         />
         {pending && (
-          <span
-            aria-hidden="true"
-            className="h-1.5 w-1.5 shrink-0 animate-pulse-dot rounded-full bg-accent"
-          />
+          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 animate-pulse-dot rounded-full bg-accent" />
         )}
-      </div>
+      </HudSearchFrame>
 
       {trimmed && results && results.length > 0 && (
         <div className="flex flex-col">
@@ -101,7 +97,7 @@ function QuickAddButton({ text }: { text: string }) {
   return (
     <Link
       href={`/words/new?text=${encodeURIComponent(text)}`}
-      className="inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97]"
+      className="btn-sheen inline-flex items-center rounded-lg bg-accent px-4 py-2.5 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97]"
     >
       ＋「{text}」を新規登録
     </Link>

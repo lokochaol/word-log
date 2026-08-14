@@ -34,9 +34,6 @@ export default async function HomePage() {
             <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
               {session.user?.email ?? "unknown"}
             </span>
-            <span className="hidden rounded border border-line px-1.5 py-0.5 font-mono text-[9px] text-ink-soft sm:inline">
-              #{ownerSub.slice(-8)}
-            </span>
             <SignOutButton />
           </div>
         </div>

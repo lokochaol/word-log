@@ -284,13 +284,19 @@ export function ZettelkastenScreen({
                 card: (
                   <button
                     onClick={() => toggleQuickNoteSelection(note.id)}
-                    className={`w-full max-w-[360px] rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
+                    className={`flex w-full max-w-[360px] flex-col gap-1.5 rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
                       selectedQuickNoteIds.has(note.id)
                         ? "border-accent/70 bg-accent-soft"
                         : "border-line bg-surface-alt hover:border-line-strong"
                     }`}
                   >
                     {note.preview || "(内容未記入)"}
+                    {note.literatureCitation && (
+                      <span className="flex items-start gap-1.5 border-t border-line/60 pt-1.5 font-mono text-[9.5px] text-ink-soft">
+                        <span className="shrink-0 text-accent">📖</span>
+                        <span className="line-clamp-1">{note.literatureCitation}</span>
+                      </span>
+                    )}
                   </button>
                 ),
                 dotClassName: selectedQuickNoteIds.has(note.id) ? "bg-accent" : "",

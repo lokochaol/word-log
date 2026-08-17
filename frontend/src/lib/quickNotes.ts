@@ -15,6 +15,8 @@ export interface QuickNoteSummary {
   /** First TEXT block's content, for a one-line summary in timelines/pickers. */
   preview: string;
   hasLiterature: boolean;
+  /** Linked LiteratureMemo's citation, if any — shown inline on the /scratch timeline card. */
+  literatureCitation: string | null;
 }
 
 export interface QuickNoteDetail {
@@ -67,6 +69,7 @@ function toSummary(note: QuickNoteWithBlocks): QuickNoteSummary {
     encounteredAt: note.encounteredAt,
     preview: firstText?.content.slice(0, 200) ?? "",
     hasLiterature: !!note.literatureMemo,
+    literatureCitation: note.literatureMemo?.citation ?? null,
   };
 }
 

@@ -40,18 +40,24 @@ export type ZoteroSearchResponse =
 
 export async function zoteroSearchAction(query: string): Promise<ZoteroSearchResponse> {
   const ownerSub = await requireOwnerSub();
-  const credential = await zoteroCredentials.get(ownerSub);
-  if (!credential) {
-    return { status: "unconfigured" };
-  }
   try {
+    const credential = await zoteroCredentials.get(ownerSub);
+    if (!credential) {
+      return { status: "unconfigured" };
+    }
     const results = await zotero.searchItems(credential, query);
     return { status: "ok", results };
   } catch (e) {
     if (e instanceof zotero.ZoteroApiError) {
       return { status: "error", message: e.message };
     }
-    throw e;
+    // Anything else (e.g. decryption failing because CREDENTIAL_ENCRYPTION_KEY
+    // was rotated after the credential was saved) must still resolve to a
+    // visible state — never let this reject and leave the UI stuck "searching".
+    return {
+      status: "error",
+      message: "Zotero連携の読み込みに失敗しました。設定画面でAPIキーを保存し直してください。",
+    };
   }
 }
 

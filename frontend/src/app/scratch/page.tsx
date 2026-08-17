@@ -34,6 +34,12 @@ export default async function ScratchPage() {
             </span>
             <ZettelkastenNavButton />
             <Link
+              href="/literature"
+              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+            >
+              文献メモ
+            </Link>
+            <Link
               href="/settings"
               className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
             >
@@ -53,15 +59,20 @@ export default async function ScratchPage() {
               meta: (
                 <span className="font-mono text-[10px] tracking-wider text-ink-soft">
                   {formatDate(note.encounteredAt)}
-                  {note.hasLiterature && <span className="ml-1.5 text-accent">📖</span>}
                 </span>
               ),
               card: (
                 <Link
                   href={`/scratch/${note.id}`}
-                  className="group w-full max-w-[420px] rounded-lg border border-line bg-surface-alt p-4 text-sm text-ink transition-colors hover:border-accent/60"
+                  className="group flex w-full max-w-[420px] flex-col gap-2 rounded-lg border border-line bg-surface-alt p-4 text-sm text-ink transition-colors hover:border-accent/60"
                 >
                   {note.preview || "(内容未記入)"}
+                  {note.literatureCitation && (
+                    <span className="flex items-start gap-1.5 border-t border-line pt-2 font-mono text-[10.5px] text-ink-soft">
+                      <span className="shrink-0 text-accent">📖</span>
+                      <span className="line-clamp-1">{note.literatureCitation}</span>
+                    </span>
+                  )}
                 </Link>
               ),
             }))}

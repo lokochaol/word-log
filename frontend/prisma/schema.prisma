@@ -40,10 +40,8 @@ model QuickNote {
   source   QuickNoteSource @default(SCRATCH)
   status   QuickNoteStatus @default(ACTIVE)
 
-  literatureCitation  String? @map("literature_citation")
-  literatureUrl       String? @map("literature_url")
-  literatureZoteroKey String? @map("literature_zotero_key")
-  literatureSummary   String? @map("literature_summary")
+  literatureMemoId String?         @map("literature_memo_id")
+  literatureMemo   LiteratureMemo? @relation(fields: [literatureMemoId], references: [id], onDelete: SetNull)
 
   // Phase 2 hooks — not populated by any Phase 1 code path.
   voiceAudioUrl        String? @map("voice_audio_url")
@@ -58,6 +56,7 @@ model QuickNote {
   promotionSourceLinks PromotionSourceQuickNote[]
 
   @@index([ownerSub, status, encounteredAt])
+  @@index([literatureMemoId])
   @@map("quick_note")
 }
 
@@ -85,6 +84,9 @@ model PermanentNote {
   title    String
   orderKey String @map("order_key")
 
+  literatureMemoId String?         @map("literature_memo_id")
+  literatureMemo   LiteratureMemo? @relation(fields: [literatureMemoId], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -96,6 +98,7 @@ model PermanentNote {
 
   @@unique([ownerSub, orderKey])
   @@index([ownerSub, orderKey])
+  @@index([literatureMemoId])
   @@map("permanent_note")
 }
 
@@ -189,6 +192,30 @@ model PromotionOutputPermanentNote {
   @@unique([batchId, permanentNoteId])
   @@index([permanentNoteId])
   @@map("promotion_output_permanent_note")
+}
+
+/// A shared 文献メモ (literature memo) — citation info + an "in my own words"
+/// summary for something read. 1:1 with a specific Zotero library item per
+/// owner (deduped by ownerSub+zoteroKey — see @@unique below); manually
+/// entered memos (zoteroKey null, e.g. Zotero not configured) skip dedup
+/// entirely since Postgres treats each NULL as distinct. Referenced by many
+/// QuickNotes and many PermanentNotes (many-to-one from each side).
+model LiteratureMemo {
+  id        String   @id @default(uuid())
+  ownerSub  String   @map("owner_sub")
+  zoteroKey String?  @map("zotero_key")
+  citation  String
+  url       String?
+  summary   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  quickNotes     QuickNote[]
+  permanentNotes PermanentNote[]
+
+  @@unique([ownerSub, zoteroKey])
+  @@index([ownerSub])
+  @@map("literature_memo")
 }
 
 /// Per-user Zotero Web API credentials (this is a multi-tenant app — each

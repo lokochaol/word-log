@@ -3,6 +3,8 @@ import { Prisma, LinkTargetType } from "@/generated/prisma/client";
 import { NotFoundError } from "@/lib/errors";
 import { midpointRank } from "@/lib/rank";
 import type { Block, BlockType } from "@/lib/blocks";
+import * as literatureMemos from "@/lib/literatureMemos";
+import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
 
 export interface GlobalOrderEntry {
   id: string;
@@ -33,6 +35,7 @@ export interface PermanentNoteDetail {
   outboundLinks: LinkView[];
   inboundLinks: LinkView[];
   indexEntries: IndexEntryRefView[];
+  literatureMemo: LiteratureMemoRef | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +45,7 @@ const detailInclude = {
   outboundLinks: { include: { targetNote: true, targetIndexEntry: true } },
   inboundLinks: { include: { sourceNote: true } },
   indexEntries: true,
+  literatureMemo: true,
 } satisfies Prisma.PermanentNoteInclude;
 
 type PermanentNoteWithDetail = Prisma.PermanentNoteGetPayload<{ include: typeof detailInclude }>;
@@ -75,6 +79,15 @@ function toDetail(note: PermanentNoteWithDetail): PermanentNoteDetail {
       targetIndexEntryId: null,
     })),
     indexEntries: note.indexEntries.map((e) => ({ id: e.id, keyword: e.keyword })),
+    literatureMemo: note.literatureMemo
+      ? {
+          id: note.literatureMemo.id,
+          zoteroKey: note.literatureMemo.zoteroKey,
+          citation: note.literatureMemo.citation,
+          url: note.literatureMemo.url,
+          summary: note.literatureMemo.summary,
+        }
+      : null,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
   };
@@ -153,6 +166,22 @@ export async function removeLink(ownerSub: string, sourceNoteId: string, linkId:
   const link = note.outboundLinks.find((l) => l.id === linkId);
   if (!link) throw new NotFoundError("Link not found");
   await prisma.permanentNoteLink.delete({ where: { id: linkId } });
+}
+
+export async function setLiteratureMemo(
+  ownerSub: string,
+  id: string,
+  selection: LiteratureSelection,
+): Promise<PermanentNoteDetail> {
+  await requireOwnedPermanentNote(ownerSub, id);
+
+  const literatureMemoId = await literatureMemos.resolveSelection(prisma, ownerSub, selection);
+  await prisma.permanentNote.update({
+    where: { id },
+    data: { literatureMemoId },
+  });
+
+  return toDetail(await requireOwnedPermanentNote(ownerSub, id));
 }
 
 export interface PermanentNoteSearchResult {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { validateDraft, type PermanentNoteDraft } from "@/lib/promotionValidation";
 import { midpointRank } from "@/lib/rank";
+import * as literatureMemos from "@/lib/literatureMemos";
 
 export type { DraftLink, PermanentNoteDraft } from "@/lib/promotionValidation";
 export { validateDraft } from "@/lib/promotionValidation";
@@ -140,11 +141,13 @@ async function runPromotionTransaction(
     for (let i = 0; i < input.drafts.length; i++) {
       const draft = input.drafts[i];
       const filteredBlocks = draft.blocks.filter((b) => b.content.trim());
+      const literatureMemoId = await literatureMemos.resolveSelection(tx, ownerSub, draft.literature);
       const created = await tx.permanentNote.create({
         data: {
           ownerSub,
           title: draft.title.trim(),
           orderKey: resolvedOrderKeys[i],
+          literatureMemoId,
           blocks: {
             create: filteredBlocks.map((b, i) => ({
               position: i,

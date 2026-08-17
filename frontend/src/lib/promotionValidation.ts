@@ -1,4 +1,5 @@
 import type { BlockInput } from "@/lib/blocks";
+import type { LiteratureSelection } from "@/lib/literatureMemos";
 
 /**
  * Pure types + validator for the promotion draft, split out of
@@ -18,6 +19,9 @@ export interface PermanentNoteDraft {
   links: DraftLink[];
   /** Resolved via computeInsertRankAction / insertRank before submission — null means "not yet chosen". */
   orderKey: string | null;
+  /** Optional 文献メモ link — resolved (dedup/create) inside the promotion transaction itself, since the
+   * PermanentNote doesn't exist in the DB until that transaction commits. Never required for a draft to be valid. */
+  literature?: LiteratureSelection;
 }
 
 /**

@@ -7,6 +7,8 @@ import { PromotionEditor, type EditableDraft } from "@/components/PromotionEdito
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { MermaidPreview } from "@/components/MermaidPreview";
+import { PermanentNoteLiteratureSection } from "@/components/PermanentNoteLiteratureSection";
+import { LiteratureMemoPane } from "@/components/LiteratureMemoPane";
 import { navigateWithViewTransition } from "@/lib/viewTransition";
 import type { GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
@@ -47,6 +49,7 @@ export function ZettelkastenScreen({
   const [drillPath, setDrillPath] = useState<number[]>([]);
   const [indexPanelOpen, setIndexPanelOpen] = useState(false);
   const [openNoteId, setOpenNoteId] = useState<string | null>(deepLinkOpenId ?? null);
+  const [col1Mode, setCol1Mode] = useState<"notes" | "literature">("notes");
 
   const editorOpen = drafts.length > 0 || selectedQuickNoteIds.size > 0;
 
@@ -95,7 +98,7 @@ export function ZettelkastenScreen({
     const blocks = details.flatMap((d) => d.blocks.map((b) => ({ type: b.type, content: b.content, language: b.language, caption: b.caption })));
     setDrafts((prev) => [
       ...prev,
-      { clientId: crypto.randomUUID(), title: "", blocks, links: [], gap: null, orderKey: null },
+      { clientId: crypto.randomUUID(), title: "", blocks, links: [], gap: null, orderKey: null, literature: undefined },
     ]);
   }
 
@@ -109,6 +112,7 @@ export function ZettelkastenScreen({
         blocks: d.blocks,
         links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
         orderKey: d.orderKey,
+        literature: d.literature,
       })),
     };
     const res = await completePromotionAction(input);
@@ -144,6 +148,12 @@ export function ZettelkastenScreen({
           <span className="rounded-full border border-accent bg-accent-soft px-3 py-1.5 font-mono text-[10.5px] text-ink">
             ツェッテルカステン
           </span>
+          <button
+            onClick={() => setCol1Mode("literature")}
+            className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+          >
+            文献メモ
+          </button>
         </div>
       </div>
 
@@ -154,16 +164,43 @@ export function ZettelkastenScreen({
         {/* ① */}
         <div ref={col1Ref} className="relative min-w-0 overflow-hidden border-r border-line">
           <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
-            <span className="text-accent">①</span> ツェッテルカステン — 全 {globalOrder.length} 件
-            <button
-              onClick={() => setIndexPanelOpen((v) => !v)}
-              className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
-            >
-              索引表示
-            </button>
+            <span className="text-accent">①</span>
+            <div className="flex gap-1 normal-case">
+              <button
+                onClick={() => setCol1Mode("notes")}
+                className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                  col1Mode === "notes"
+                    ? "border-accent bg-accent-soft text-ink"
+                    : "border-line-strong text-ink-soft hover:text-ink"
+                }`}
+              >
+                ツェッテルカステン
+              </button>
+              <button
+                onClick={() => setCol1Mode("literature")}
+                className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                  col1Mode === "literature"
+                    ? "border-accent bg-accent-soft text-ink"
+                    : "border-line-strong text-ink-soft hover:text-ink"
+                }`}
+              >
+                文献メモ
+              </button>
+            </div>
+            {col1Mode === "notes" && (
+              <>
+                <span className="normal-case">全 {globalOrder.length} 件</span>
+                <button
+                  onClick={() => setIndexPanelOpen((v) => !v)}
+                  className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
+                >
+                  索引表示
+                </button>
+              </>
+            )}
           </div>
 
-          {indexPanelOpen && (
+          {col1Mode === "notes" && indexPanelOpen && (
             <IndexPanel
               entries={indexEntries}
               onSelect={(noteId) => {
@@ -177,18 +214,24 @@ export function ZettelkastenScreen({
             />
           )}
 
-          <div className="overflow-auto p-4" style={{ maxHeight: "calc(100vh - 130px)" }}>
-            <PileDrill
-              items={globalOrder}
-              drillPath={drillPath}
-              onDrillPathChange={setDrillPath}
-              columns={columns}
-              mode={mode}
-              onOpenNote={(id) => setOpenNoteId(id)}
-              onSelectGap={handleSelectGap}
-              selectedGap={activeDraft?.gap ?? null}
-              loadBlocks={loadBlocks}
-            />
+          <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 130px)" }}>
+            {col1Mode === "notes" ? (
+              <div className="p-4">
+                <PileDrill
+                  items={globalOrder}
+                  drillPath={drillPath}
+                  onDrillPathChange={setDrillPath}
+                  columns={columns}
+                  mode={mode}
+                  onOpenNote={(id) => setOpenNoteId(id)}
+                  onSelectGap={handleSelectGap}
+                  selectedGap={activeDraft?.gap ?? null}
+                  loadBlocks={loadBlocks}
+                />
+              </div>
+            ) : (
+              <LiteratureMemoPane onOpenPermanentNote={(id) => setOpenNoteId(id)} />
+            )}
           </div>
         </div>
 
@@ -241,13 +284,19 @@ export function ZettelkastenScreen({
                 card: (
                   <button
                     onClick={() => toggleQuickNoteSelection(note.id)}
-                    className={`w-full max-w-[360px] rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
+                    className={`flex w-full max-w-[360px] flex-col gap-1.5 rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
                       selectedQuickNoteIds.has(note.id)
                         ? "border-accent/70 bg-accent-soft"
                         : "border-line bg-surface-alt hover:border-line-strong"
                     }`}
                   >
                     {note.preview || "(内容未記入)"}
+                    {note.literatureCitation && (
+                      <span className="flex items-start gap-1.5 border-t border-line/60 pt-1.5 font-mono text-[9.5px] text-ink-soft">
+                        <span className="shrink-0 text-accent">📖</span>
+                        <span className="line-clamp-1">{note.literatureCitation}</span>
+                      </span>
+                    )}
                   </button>
                 ),
                 dotClassName: selectedQuickNoteIds.has(note.id) ? "bg-accent" : "",
@@ -374,6 +423,13 @@ function NoteDetailOverlay({
                   )}
                 </div>
               ))}
+            </div>
+
+            <div className="mt-4 border-t border-line pt-3">
+              <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+                <span className="text-accent">{"//"}</span> 文献メモ（任意）
+              </h3>
+              <PermanentNoteLiteratureSection key={detail.id} noteId={detail.id} literatureMemo={detail.literatureMemo} />
             </div>
 
             {(detail.outboundLinks.length > 0 || detail.inboundLinks.length > 0) && (

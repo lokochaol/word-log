@@ -17,9 +17,17 @@ export default async function SettingsPage() {
           >
             <span className="text-accent">&lt;</span> 走り書きへ戻る
           </Link>
-          <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
-            {session.user?.email ?? "unknown"}
-          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/literature"
+              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+            >
+              文献メモ
+            </Link>
+            <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
+              {session.user?.email ?? "unknown"}
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1.5">

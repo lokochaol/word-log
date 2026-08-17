@@ -4,7 +4,7 @@ import * as quickNotes from "@/lib/quickNotes";
 import { requireOwnerSub } from "@/lib/session";
 import { NotFoundError } from "@/lib/errors";
 import { QuickNoteBlocksSection } from "@/components/QuickNoteBlocksSection";
-import { LiteratureMemoEditor } from "@/components/LiteratureMemoEditor";
+import { QuickNoteLiteratureSection } from "@/components/QuickNoteLiteratureSection";
 
 function formatDate(date: Date) {
   return date.toLocaleString("ja-JP", {
@@ -59,7 +59,7 @@ export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id
           <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
             <span className="text-accent">{"//"}</span> 文献メモ（任意）
           </h2>
-          <LiteratureMemoEditor noteId={note.id} note={note} />
+          <QuickNoteLiteratureSection noteId={note.id} literatureMemo={note.literatureMemo} />
         </section>
       </div>
     </main>

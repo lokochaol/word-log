@@ -6,6 +6,8 @@ import type { BlockInput, QuickNoteDetail } from "@/lib/quickNotes";
 import * as zotero from "@/lib/zotero";
 import type { ZoteroSearchResult } from "@/lib/zotero";
 import * as zoteroCredentials from "@/lib/zoteroCredentials";
+import * as literatureMemos from "@/lib/literatureMemos";
+import type { LiteratureMemoSummary, LiteratureSelection } from "@/lib/literatureMemos";
 import { requireOwnerSub } from "@/lib/session";
 import { QuickNoteSource } from "@/generated/prisma/client";
 
@@ -23,14 +25,20 @@ export async function replaceQuickNoteBlocksAction(id: string, blocks: BlockInpu
   revalidatePath("/scratch");
 }
 
-export async function setLiteratureMemoAction(
-  id: string,
-  literature: { citation: string | null; url: string | null; zoteroKey: string | null; summary: string | null },
-) {
+export async function setLiteratureMemoAction(id: string, selection: LiteratureSelection): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
-  await quickNotes.setLiteratureMemo(ownerSub, id, literature);
+  const note = await quickNotes.setLiteratureMemo(ownerSub, id, selection);
   revalidatePath(`/scratch/${id}`);
   revalidatePath("/scratch");
+  return note;
+}
+
+/** Owner's existing literature memos, matched by citation substring — backs the
+ * "既存の文献メモから選ぶ" reuse picker so a memo created once doesn't need a
+ * fresh Zotero search to be reused on another note. */
+export async function searchLiteratureMemosAction(query: string): Promise<LiteratureMemoSummary[]> {
+  const ownerSub = await requireOwnerSub();
+  return literatureMemos.search(ownerSub, query);
 }
 
 export type ZoteroSearchResponse =

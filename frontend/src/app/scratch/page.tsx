@@ -34,6 +34,12 @@ export default async function ScratchPage() {
             </span>
             <ZettelkastenNavButton />
             <Link
+              href="/literature"
+              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+            >
+              文献メモ
+            </Link>
+            <Link
               href="/settings"
               className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
             >

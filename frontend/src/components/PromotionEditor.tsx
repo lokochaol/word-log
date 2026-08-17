@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { BlocksEditor } from "@/components/BlocksEditor";
+import { LiteratureMemoDraftField, type DraftLiteratureSelection } from "@/components/LiteratureMemoDraftField";
 import type { BlockInput } from "@/lib/blocks";
 import type { GlobalOrderEntry } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
@@ -20,6 +21,7 @@ export interface EditableDraft {
   links: EditableLink[];
   gap: { beforeId: string | null; afterId: string | null } | null;
   orderKey: string | null;
+  literature?: DraftLiteratureSelection;
 }
 
 function toDraftForValidation(d: EditableDraft): PermanentNoteDraft {
@@ -28,6 +30,7 @@ function toDraftForValidation(d: EditableDraft): PermanentNoteDraft {
     blocks: d.blocks,
     links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
     orderKey: d.orderKey,
+    literature: d.literature,
   };
 }
 
@@ -66,7 +69,7 @@ export function PromotionEditor({
   function addDraft() {
     onChangeDrafts([
       ...drafts,
-      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null },
+      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null, literature: undefined },
     ]);
   }
 
@@ -206,6 +209,14 @@ function DraftCard({
           indexEntries={indexEntries}
           globalOrder={globalOrder}
           onChange={(links) => onChange({ links })}
+        />
+      </div>
+
+      <div className="mt-2.5">
+        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">文献メモ（任意）</label>
+        <LiteratureMemoDraftField
+          selection={draft.literature}
+          onChange={(literature) => onChange({ literature })}
         />
       </div>
 

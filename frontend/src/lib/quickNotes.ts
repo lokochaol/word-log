@@ -2,8 +2,11 @@ import { prisma } from "@/lib/db";
 import { Prisma, QuickNoteSource, QuickNoteStatus } from "@/generated/prisma/client";
 import { NotFoundError } from "@/lib/errors";
 import type { Block, BlockInput } from "@/lib/blocks";
+import * as literatureMemos from "@/lib/literatureMemos";
+import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
 
 export type { Block, BlockInput, BlockType } from "@/lib/blocks";
+export type { LiteratureMemoRef } from "@/lib/literatureMemos";
 
 export interface QuickNoteSummary {
   id: string;
@@ -19,10 +22,7 @@ export interface QuickNoteDetail {
   source: QuickNoteSource;
   status: QuickNoteStatus;
   blocks: Block[];
-  literatureCitation: string | null;
-  literatureUrl: string | null;
-  literatureZoteroKey: string | null;
-  literatureSummary: string | null;
+  literatureMemo: LiteratureMemoRef | null;
   encounteredAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -30,9 +30,15 @@ export interface QuickNoteDetail {
 
 const quickNoteInclude = {
   blocks: { orderBy: { position: "asc" } },
+  literatureMemo: true,
 } satisfies Prisma.QuickNoteInclude;
 
 type QuickNoteWithBlocks = Prisma.QuickNoteGetPayload<{ include: typeof quickNoteInclude }>;
+
+function toLiteratureMemoRef(memo: QuickNoteWithBlocks["literatureMemo"]): LiteratureMemoRef | null {
+  if (!memo) return null;
+  return { id: memo.id, zoteroKey: memo.zoteroKey, citation: memo.citation, url: memo.url, summary: memo.summary };
+}
 
 function toDetail(note: QuickNoteWithBlocks): QuickNoteDetail {
   return {
@@ -46,10 +52,7 @@ function toDetail(note: QuickNoteWithBlocks): QuickNoteDetail {
       language: b.language,
       caption: b.caption,
     })),
-    literatureCitation: note.literatureCitation,
-    literatureUrl: note.literatureUrl,
-    literatureZoteroKey: note.literatureZoteroKey,
-    literatureSummary: note.literatureSummary,
+    literatureMemo: toLiteratureMemoRef(note.literatureMemo),
     encounteredAt: note.encounteredAt,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
@@ -63,7 +66,7 @@ function toSummary(note: QuickNoteWithBlocks): QuickNoteSummary {
     source: note.source,
     encounteredAt: note.encounteredAt,
     preview: firstText?.content.slice(0, 200) ?? "",
-    hasLiterature: !!note.literatureCitation,
+    hasLiterature: !!note.literatureMemo,
   };
 }
 
@@ -126,23 +129,14 @@ export async function replaceBlocks(ownerSub: string, id: string, blocks: BlockI
 export async function setLiteratureMemo(
   ownerSub: string,
   id: string,
-  literature: {
-    citation: string | null;
-    url: string | null;
-    zoteroKey: string | null;
-    summary: string | null;
-  },
+  selection: LiteratureSelection,
 ): Promise<QuickNoteDetail> {
   await requireOwnedQuickNote(ownerSub, id);
 
+  const literatureMemoId = await literatureMemos.resolveSelection(prisma, ownerSub, selection);
   await prisma.quickNote.update({
     where: { id },
-    data: {
-      literatureCitation: literature.citation || null,
-      literatureUrl: literature.url || null,
-      literatureZoteroKey: literature.zoteroKey || null,
-      literatureSummary: literature.summary || null,
-    },
+    data: { literatureMemoId },
   });
 
   return toDetail(await requireOwnedQuickNote(ownerSub, id));

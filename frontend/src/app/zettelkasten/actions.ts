@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import * as permanentNotes from "@/lib/permanentNotes";
+import type { PermanentNoteDetail } from "@/lib/permanentNotes";
 import * as indexEntries from "@/lib/indexEntries";
 import * as promotion from "@/lib/promotion";
 import type { CompletePromotionInput, CompletePromotionResult } from "@/lib/promotion";
+import type { LiteratureSelection } from "@/lib/literatureMemos";
 import { requireOwnerSub } from "@/lib/session";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 
@@ -32,6 +34,16 @@ export async function removePermanentNoteLinkAction(sourceNoteId: string, linkId
   const ownerSub = await requireOwnerSub();
   await permanentNotes.removeLink(ownerSub, sourceNoteId, linkId);
   revalidatePath("/zettelkasten");
+}
+
+export async function setPermanentNoteLiteratureAction(
+  id: string,
+  selection: LiteratureSelection,
+): Promise<PermanentNoteDetail> {
+  const ownerSub = await requireOwnerSub();
+  const note = await permanentNotes.setLiteratureMemo(ownerSub, id, selection);
+  revalidatePath("/zettelkasten");
+  return note;
 }
 
 export async function computeInsertRankAction(beforeId: string | null, afterId: string | null) {

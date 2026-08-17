@@ -31,17 +31,25 @@ export function LiteratureMemoEditor({ noteId, note }: { noteId: string; note: Q
     if (!q) return;
     const handle = setTimeout(async () => {
       setZoteroState("searching");
-      const res = await zoteroSearchAction(q);
-      if (res.status === "ok") {
-        setResults(res.results);
-        setZoteroState("idle");
-      } else if (res.status === "unconfigured") {
-        setResults(null);
-        setZoteroState("unconfigured");
-      } else {
+      try {
+        const res = await zoteroSearchAction(q);
+        if (res.status === "ok") {
+          setResults(res.results);
+          setZoteroState("idle");
+        } else if (res.status === "unconfigured") {
+          setResults(null);
+          setZoteroState("unconfigured");
+        } else {
+          setResults(null);
+          setZoteroState("error");
+          setErrorMessage(res.message);
+        }
+      } catch {
+        // Network failure, session expiry, etc. — never leave the UI stuck
+        // on the "searching" spinner indefinitely.
         setResults(null);
         setZoteroState("error");
-        setErrorMessage(res.message);
+        setErrorMessage("検索に失敗しました。もう一度お試しください。");
       }
     }, 300);
     return () => clearTimeout(handle);

@@ -3,9 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { HudFrame } from "@/components/HudFrame";
-import { setLiteratureMemoAction, zoteroSearchAction } from "@/app/scratch/actions";
-import type { ZoteroSearchResult } from "@/lib/zotero";
+import { setLiteratureMemoAction, zoteroCreateItemAction, zoteroSearchAction } from "@/app/scratch/actions";
+import { CREATABLE_ITEM_TYPES, type CreatableItemType, type ZoteroSearchResult } from "@/lib/zotero";
 import type { QuickNoteDetail } from "@/lib/quickNotes";
+
+const ITEM_TYPE_LABEL: Record<CreatableItemType, string> = {
+  book: "本",
+  journalArticle: "論文",
+  webpage: "Webページ",
+};
 
 /**
  * Optional 文献メモ block on a QuickNote's detail page. Zotero search is
@@ -25,6 +31,21 @@ export function LiteratureMemoEditor({ noteId, note }: { noteId: string; note: Q
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+
+  const [creating, setCreating] = useState(false);
+  const [createTitle, setCreateTitle] = useState("");
+  const [createCreator, setCreateCreator] = useState("");
+  const [createDate, setCreateDate] = useState("");
+  const [createUrl, setCreateUrl] = useState("");
+  const [createItemType, setCreateItemType] = useState<CreatableItemType>("book");
+  const [createPending, startCreateTransition] = useTransition();
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    setCreating(false);
+    setCreateError(null);
+  }
 
   useEffect(() => {
     const q = query.trim();
@@ -85,7 +106,7 @@ export function LiteratureMemoEditor({ noteId, note }: { noteId: string; note: Q
         <HudFrame active={zoteroState === "searching"} innerClassName="flex items-center gap-2 rounded-xl px-3 py-2">
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="タイトル・著者・年で検索…"
             className="w-full bg-transparent text-xs text-ink placeholder:text-ink-soft focus:outline-none"
           />
@@ -116,6 +137,84 @@ export function LiteratureMemoEditor({ noteId, note }: { noteId: string; note: Q
                 </span>
               </button>
             ))}
+          </div>
+        )}
+
+        {query.trim() && zoteroState === "idle" && results !== null && results.length === 0 && (
+          <div className="flex flex-col gap-2 rounded-lg border border-dashed border-line-strong p-2.5">
+            <p className="font-mono text-[10.5px] text-ink-faint">見つかりませんでした。</p>
+            {!creating ? (
+              <button
+                onClick={() => {
+                  setCreating(true);
+                  setCreateTitle(query.trim());
+                }}
+                className="w-fit font-mono text-[10.5px] text-accent underline"
+              >
+                Zoteroに新規登録する
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-1.5">
+                  {CREATABLE_ITEM_TYPES.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setCreateItemType(t)}
+                      className={`rounded-full border px-2.5 py-1 font-mono text-[10px] transition-colors ${
+                        createItemType === t
+                          ? "border-accent bg-accent-soft text-accent"
+                          : "border-line text-ink-soft hover:border-line-strong"
+                      }`}
+                    >
+                      {ITEM_TYPE_LABEL[t]}
+                    </button>
+                  ))}
+                </div>
+                <LabeledInput label="タイトル" value={createTitle} onChange={setCreateTitle} />
+                <LabeledInput label="著者（任意）" value={createCreator} onChange={setCreateCreator} />
+                <LabeledInput label="発行年（任意）" value={createDate} onChange={setCreateDate} placeholder="2024" />
+                <LabeledInput label="URL（任意）" value={createUrl} onChange={setCreateUrl} placeholder="https://…" />
+                {createError && <p className="font-mono text-[10.5px] text-accent">{createError}</p>}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setCreating(false)}
+                    className="font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    disabled={createPending || !createTitle.trim()}
+                    onClick={() => {
+                      setCreateError(null);
+                      startCreateTransition(async () => {
+                        try {
+                          const res = await zoteroCreateItemAction({
+                            itemType: createItemType,
+                            title: createTitle,
+                            creator: createCreator || undefined,
+                            date: createDate || undefined,
+                            url: createUrl || undefined,
+                          });
+                          if (res.status === "ok") {
+                            pickResult(res.result);
+                            setCreating(false);
+                          } else if (res.status === "unconfigured") {
+                            setCreateError("Zotero未設定です");
+                          } else {
+                            setCreateError(res.message);
+                          }
+                        } catch {
+                          setCreateError("登録に失敗しました。もう一度お試しください。");
+                        }
+                      });
+                    }}
+                    className="btn-sheen rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
+                  >
+                    {createPending ? "登録中…" : "Zoteroに登録して使う"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

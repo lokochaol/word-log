@@ -61,6 +61,33 @@ export async function zoteroSearchAction(query: string): Promise<ZoteroSearchRes
   }
 }
 
+export type ZoteroCreateResponse =
+  | { status: "ok"; result: ZoteroSearchResult }
+  | { status: "unconfigured" }
+  | { status: "error"; message: string };
+
+export async function zoteroCreateItemAction(
+  input: zotero.CreateItemInput,
+): Promise<ZoteroCreateResponse> {
+  const ownerSub = await requireOwnerSub();
+  try {
+    const credential = await zoteroCredentials.get(ownerSub);
+    if (!credential) {
+      return { status: "unconfigured" };
+    }
+    const result = await zotero.createItem(credential, input);
+    return { status: "ok", result };
+  } catch (e) {
+    if (e instanceof zotero.ZoteroApiError) {
+      return { status: "error", message: e.message };
+    }
+    return {
+      status: "error",
+      message: "Zotero連携の読み込みに失敗しました。設定画面でAPIキーを保存し直してください。",
+    };
+  }
+}
+
 export async function searchQuickNotesAction(query: string) {
   const ownerSub = await requireOwnerSub();
   return quickNotes.search(ownerSub, query);

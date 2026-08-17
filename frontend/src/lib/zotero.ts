@@ -105,3 +105,80 @@ export async function searchItems(
       url: item.data?.url ?? null,
     }));
 }
+
+export const CREATABLE_ITEM_TYPES = ["book", "journalArticle", "webpage"] as const;
+export type CreatableItemType = (typeof CREATABLE_ITEM_TYPES)[number];
+
+export interface CreateItemInput {
+  itemType: CreatableItemType;
+  title: string;
+  creator?: string;
+  date?: string;
+  url?: string;
+}
+
+/**
+ * Creates a new item in the owner's Zotero library when a search comes up
+ * empty. Requires a write-scoped API key (the default read-only key from
+ * zotero.org/settings/keys will fail here with a 403) — NOT verified against
+ * a live Zotero API in this environment; the request shape follows Zotero's
+ * documented "multi-item write" format (an array body, one item), but the
+ * exact response envelope should be double-checked against a real 200/403
+ * response the first time this runs for real.
+ */
+export async function createItem(
+  credential: ZoteroCredential,
+  input: CreateItemInput,
+): Promise<ZoteroSearchResult> {
+  const { apiKey, libraryId, libraryType } = credential;
+  const title = input.title.trim();
+  if (!title) throw new ZoteroApiError("タイトルを入力してください");
+
+  const url = new URL(`https://api.zotero.org/${libraryType}s/${libraryId}/items`);
+  url.searchParams.set("include", "citation,data");
+
+  const body = [
+    {
+      itemType: input.itemType,
+      title,
+      creators: input.creator?.trim() ? [{ creatorType: "author", name: input.creator.trim() }] : [],
+      date: input.date?.trim() || undefined,
+      url: input.url?.trim() || undefined,
+    },
+  ];
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Zotero-API-Key": apiKey,
+      "Zotero-API-Version": "3",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 403) {
+    throw new ZoteroApiError(
+      "Zoteroへの書き込みが拒否されました。APIキーに書き込み権限（Write Access）を付けて再発行してください。",
+    );
+  }
+  if (!res.ok) {
+    throw new ZoteroApiError(`Zotero API error: ${res.status} ${res.statusText}`);
+  }
+
+  const payload = (await res.json()) as { successful?: Record<string, ZoteroApiItem>; failed?: Record<string, unknown> };
+  const created = payload.successful?.["0"];
+  if (!created) {
+    throw new ZoteroApiError("Zoteroへの登録に失敗しました");
+  }
+
+  return {
+    key: created.key,
+    title: created.data?.title ?? title,
+    creators: formatCreators(created.data?.creators),
+    year: extractYear(created.data?.date),
+    itemType: created.data?.itemType ?? input.itemType,
+    citation: (created.citation ?? created.data?.title ?? title).replace(/<[^>]+>/g, ""),
+    url: created.data?.url ?? null,
+  };
+}

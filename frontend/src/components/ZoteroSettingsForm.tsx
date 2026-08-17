@@ -75,7 +75,8 @@ export function ZoteroSettingsForm({ initial }: { initial: ZoteroCredentialSumma
         >
           zotero.org/settings/keys
         </a>
-        でAPIキーを発行し、下記に入力してください（読み取り権限があれば十分です）。
+        でAPIキーを発行し、下記に入力してください。検索して使うだけなら読み取り権限で十分ですが、
+        検索でヒットしなかった文献をその場でZoteroに新規登録したい場合は「Write Access」も有効にしてください。
       </p>
 
       <LabeledInput

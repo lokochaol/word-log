@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { HudFrame } from "@/components/HudFrame";
 import { setLiteratureMemoAction, zoteroSearchAction } from "@/app/scratch/actions";
@@ -8,9 +9,10 @@ import type { QuickNoteDetail } from "@/lib/quickNotes";
 
 /**
  * Optional 文献メモ block on a QuickNote's detail page. Zotero search is
- * best-effort: when ZOTERO_API_KEY/ZOTERO_LIBRARY_ID aren't set (as in this
- * environment) the UI falls back to a "Zotero未設定" notice and manual
- * citation entry keeps working as the primary path.
+ * best-effort: when this owner hasn't linked a Zotero library yet (via
+ * /settings — each owner links their own, this is a multi-tenant app) the
+ * UI falls back to a "Zotero未設定" notice and manual citation entry keeps
+ * working as the primary path.
  */
 export function LiteratureMemoEditor({ noteId, note }: { noteId: string; note: QuickNoteDetail }) {
   const [citation, setCitation] = useState(note.literatureCitation ?? "");
@@ -83,7 +85,11 @@ export function LiteratureMemoEditor({ noteId, note }: { noteId: string; note: Q
 
         {zoteroState === "unconfigured" && query.trim() && (
           <p className="font-mono text-[10.5px] text-ink-faint">
-            Zotero未設定 — 手動でcitationを入力してください（ZOTERO_API_KEY / ZOTERO_LIBRARY_ID 未設定）
+            Zotero未設定 — 手動でcitationを入力するか、
+            <Link href="/settings" className="text-accent underline">
+              設定画面
+            </Link>
+            でZoteroライブラリを連携してください
           </p>
         )}
         {zoteroState === "error" && <p className="font-mono text-[10.5px] text-accent">{errorMessage}</p>}

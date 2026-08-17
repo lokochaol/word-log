@@ -33,6 +33,12 @@ export default async function ScratchPage() {
               {session.user?.email ?? "unknown"}
             </span>
             <ZettelkastenNavButton />
+            <Link
+              href="/settings"
+              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+            >
+              設定
+            </Link>
             <SignOutButton />
           </div>
         </div>

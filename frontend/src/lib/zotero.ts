@@ -1,16 +1,23 @@
 /**
- * Zotero Web API integration (§8). Server-only env vars — no NEXT_PUBLIC_
- * prefix, never sent to the client:
- *   ZOTERO_API_KEY, ZOTERO_LIBRARY_ID, ZOTERO_LIBRARY_TYPE ("user"|"group", default "user")
+ * Zotero Web API integration (§8) — this is a multi-tenant app, so each
+ * owner's credentials live in the ZoteroCredential table (src/lib/
+ * zoteroCredentials.ts), never in a single app-wide env var. This module is
+ * a pure API client: it takes credentials explicitly and knows nothing about
+ * who the caller is.
  *
- * When the env vars are absent (as in this environment), searchItems throws
- * ZoteroConfigError. Callers (the scratch Server Action) catch that and
- * surface a "Zotero未設定" state in the UI — manual citation entry keeps
- * working regardless.
+ * When an owner hasn't linked a Zotero library, the caller (the scratch
+ * Server Action) never even calls searchItems — it surfaces an
+ * "unconfigured" state in the UI and manual citation entry keeps working
+ * regardless.
  */
 
-export class ZoteroConfigError extends Error {}
 export class ZoteroApiError extends Error {}
+
+export interface ZoteroCredential {
+  apiKey: string;
+  libraryId: string;
+  libraryType: string;
+}
 
 export interface ZoteroSearchResult {
   key: string;
@@ -20,10 +27,6 @@ export interface ZoteroSearchResult {
   itemType: string;
   citation: string;
   url: string | null;
-}
-
-export function isZoteroConfigured(): boolean {
-  return !!(process.env.ZOTERO_API_KEY && process.env.ZOTERO_LIBRARY_ID);
 }
 
 interface ZoteroCreator {
@@ -60,14 +63,12 @@ function extractYear(date: string | undefined): string | null {
   return match ? match[0] : null;
 }
 
-export async function searchItems(query: string, limit = 10): Promise<ZoteroSearchResult[]> {
-  const apiKey = process.env.ZOTERO_API_KEY;
-  const libraryId = process.env.ZOTERO_LIBRARY_ID;
-  const libraryType = process.env.ZOTERO_LIBRARY_TYPE || "user";
-
-  if (!apiKey || !libraryId) {
-    throw new ZoteroConfigError("Zotero未設定: ZOTERO_API_KEY / ZOTERO_LIBRARY_ID を設定してください");
-  }
+export async function searchItems(
+  credential: ZoteroCredential,
+  query: string,
+  limit = 10,
+): Promise<ZoteroSearchResult[]> {
+  const { apiKey, libraryId, libraryType } = credential;
 
   const q = query.trim();
   if (!q) return [];

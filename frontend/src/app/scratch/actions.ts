@@ -5,6 +5,7 @@ import * as quickNotes from "@/lib/quickNotes";
 import type { BlockInput, QuickNoteDetail } from "@/lib/quickNotes";
 import * as zotero from "@/lib/zotero";
 import type { ZoteroSearchResult } from "@/lib/zotero";
+import * as zoteroCredentials from "@/lib/zoteroCredentials";
 import { requireOwnerSub } from "@/lib/session";
 import { QuickNoteSource } from "@/generated/prisma/client";
 
@@ -38,16 +39,15 @@ export type ZoteroSearchResponse =
   | { status: "error"; message: string };
 
 export async function zoteroSearchAction(query: string): Promise<ZoteroSearchResponse> {
-  if (!zotero.isZoteroConfigured()) {
+  const ownerSub = await requireOwnerSub();
+  const credential = await zoteroCredentials.get(ownerSub);
+  if (!credential) {
     return { status: "unconfigured" };
   }
   try {
-    const results = await zotero.searchItems(query);
+    const results = await zotero.searchItems(credential, query);
     return { status: "ok", results };
   } catch (e) {
-    if (e instanceof zotero.ZoteroConfigError) {
-      return { status: "unconfigured" };
-    }
     if (e instanceof zotero.ZoteroApiError) {
       return { status: "error", message: e.message };
     }

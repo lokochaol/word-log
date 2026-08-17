@@ -1,0 +1,418 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import { PileDrill, type GapSelection } from "@/components/PileDrill";
+import { PromotionEditor, type EditableDraft } from "@/components/PromotionEditor";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { NoteTimeline } from "@/components/NoteTimeline";
+import { MermaidPreview } from "@/components/MermaidPreview";
+import { navigateWithViewTransition } from "@/lib/viewTransition";
+import type { GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
+import type { IndexEntrySummary } from "@/lib/indexEntries";
+import type { QuickNoteSummary, Block } from "@/lib/quickNotes";
+import {
+  computeInsertRankAction,
+  createIndexEntryAction,
+  removeIndexEntryAction,
+  getPermanentNoteDetailAction,
+  completePromotionAction,
+  getGlobalOrderAction,
+} from "@/app/zettelkasten/actions";
+import { getQuickNoteDetailAction, listActiveQuickNotesAction } from "@/app/scratch/actions";
+import type { CompletePromotionInput } from "@/lib/promotion";
+
+export function ZettelkastenScreen({
+  initialGlobalOrder,
+  initialActiveQuickNotes,
+  initialIndexEntries,
+  deepLinkOpenId,
+}: {
+  initialGlobalOrder: GlobalOrderEntry[];
+  initialActiveQuickNotes: QuickNoteSummary[];
+  initialIndexEntries: IndexEntrySummary[];
+  deepLinkOpenId?: string;
+}) {
+  const router = useRouter();
+  const [globalOrder, setGlobalOrder] = useState(initialGlobalOrder);
+  const [activeQuickNotes, setActiveQuickNotes] = useState(initialActiveQuickNotes);
+  const [indexEntries, setIndexEntries] = useState(initialIndexEntries);
+
+  const [selectedQuickNoteIds, setSelectedQuickNoteIds] = useState<Set<string>>(new Set());
+  const [drafts, setDrafts] = useState<EditableDraft[]>([]);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+
+  const [drillPath, setDrillPath] = useState<number[]>([]);
+  const [indexPanelOpen, setIndexPanelOpen] = useState(false);
+  const [openNoteId, setOpenNoteId] = useState<string | null>(deepLinkOpenId ?? null);
+
+  const editorOpen = drafts.length > 0 || selectedQuickNoteIds.size > 0;
+
+  const col1Ref = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(3);
+  useEffect(() => {
+    const el = col1Ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      setColumns(Math.max(1, Math.floor(width / 160)));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const mode: "browse" | "pick-position" = activeDraftId ? "pick-position" : "browse";
+  const activeDraft = drafts.find((d) => d.clientId === activeDraftId) ?? null;
+
+  async function handleSelectGap(gap: GapSelection) {
+    if (!activeDraft) return;
+    const orderKey = await computeInsertRankAction(gap.beforeId, gap.afterId);
+    setDrafts((prev) =>
+      prev.map((d) => (d.clientId === activeDraft.clientId ? { ...d, gap, orderKey } : d)),
+    );
+  }
+
+  const loadBlocks = useCallback(async (id: string): Promise<Block[]> => {
+    const detail = await getPermanentNoteDetailAction(id);
+    return detail.blocks;
+  }, []);
+
+  function toggleQuickNoteSelection(id: string) {
+    setSelectedQuickNoteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function buildDraftFromSelection() {
+    const ids = [...selectedQuickNoteIds];
+    if (ids.length === 0) return;
+    const details = await Promise.all(ids.map((id) => getQuickNoteDetailAction(id)));
+    const blocks = details.flatMap((d) => d.blocks.map((b) => ({ type: b.type, content: b.content, language: b.language, caption: b.caption })));
+    setDrafts((prev) => [
+      ...prev,
+      { clientId: crypto.randomUUID(), title: "", blocks, links: [], gap: null, orderKey: null },
+    ]);
+  }
+
+  async function handleComplete() {
+    setCompleting(true);
+    setCompleteError(null);
+    const input: CompletePromotionInput = {
+      quickNoteIds: [...selectedQuickNoteIds],
+      drafts: drafts.map((d) => ({
+        title: d.title,
+        blocks: d.blocks,
+        links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
+        orderKey: d.orderKey,
+      })),
+    };
+    const res = await completePromotionAction(input);
+    setCompleting(false);
+    if ("error" in res) {
+      setCompleteError(res.error);
+      return;
+    }
+    setSelectedQuickNoteIds(new Set());
+    setDrafts([]);
+    setActiveDraftId(null);
+    setDrillPath([]);
+    const [order, active] = await Promise.all([getGlobalOrderAction(), listActiveQuickNotesAction()]);
+    setGlobalOrder(order);
+    setActiveQuickNotes(active);
+  }
+
+  function handleNavigateToScratch() {
+    navigateWithViewTransition(router, "/scratch");
+  }
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-bg">
+      <div className="flex items-center gap-3 border-b border-line px-6 py-3.5">
+        <span className="text-sm font-extrabold tracking-tight text-ink">Word Log</span>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={handleNavigateToScratch}
+            className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
+          >
+            <span className="text-accent">←</span> 走り書き
+          </button>
+          <span className="rounded-full border border-accent bg-accent-soft px-3 py-1.5 font-mono text-[10.5px] text-ink">
+            ツェッテルカステン
+          </span>
+        </div>
+      </div>
+
+      <div
+        className="grid flex-1 transition-[grid-template-columns] duration-400 ease-out"
+        style={{ gridTemplateColumns: editorOpen ? "1.05fr 1fr 0.7fr" : "1.3fr 0px 0.85fr" }}
+      >
+        {/* ① */}
+        <div ref={col1Ref} className="relative min-w-0 overflow-hidden border-r border-line">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
+            <span className="text-accent">①</span> ツェッテルカステン — 全 {globalOrder.length} 件
+            <button
+              onClick={() => setIndexPanelOpen((v) => !v)}
+              className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
+            >
+              索引表示
+            </button>
+          </div>
+
+          {indexPanelOpen && (
+            <IndexPanel
+              entries={indexEntries}
+              onSelect={(noteId) => {
+                setOpenNoteId(noteId);
+                setIndexPanelOpen(false);
+              }}
+              onRemove={async (id) => {
+                await removeIndexEntryAction(id);
+                setIndexEntries((prev) => prev.filter((e) => e.id !== id));
+              }}
+            />
+          )}
+
+          <div className="overflow-auto p-4" style={{ maxHeight: "calc(100vh - 130px)" }}>
+            <PileDrill
+              items={globalOrder}
+              drillPath={drillPath}
+              onDrillPathChange={setDrillPath}
+              columns={columns}
+              mode={mode}
+              onOpenNote={(id) => setOpenNoteId(id)}
+              onSelectGap={handleSelectGap}
+              selectedGap={activeDraft?.gap ?? null}
+              loadBlocks={loadBlocks}
+            />
+          </div>
+        </div>
+
+        {/* ② */}
+        <div className="min-w-0 overflow-hidden border-r border-line">
+          {editorOpen && (
+            <PromotionEditor
+              drafts={drafts}
+              onChangeDrafts={setDrafts}
+              activeDraftId={activeDraftId}
+              onSetActiveDraftId={setActiveDraftId}
+              indexEntries={indexEntries}
+              globalOrder={globalOrder}
+              onComplete={handleComplete}
+              completing={completing}
+              completeError={completeError}
+            />
+          )}
+        </div>
+
+        {/* ③ — shares view-transition-name with /scratch's timeline container (§5) */}
+        <div className="min-w-0 overflow-auto" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
+          <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
+            <span className="text-accent">③</span> 走り書き
+            {selectedQuickNoteIds.size > 0 && (
+              <span className="ml-auto font-mono text-[10px] text-accent normal-case">
+                {selectedQuickNoteIds.size}件選択中
+              </span>
+            )}
+          </div>
+
+          <div className="p-3">
+            {selectedQuickNoteIds.size > 0 && drafts.length === 0 && (
+              <button
+                onClick={buildDraftFromSelection}
+                className="btn-sheen mb-3 w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
+              >
+                選択した{selectedQuickNoteIds.size}件からドラフトを作成
+              </button>
+            )}
+            <NoteTimeline
+              emptyLabel="走り書きはまだありません"
+              rows={activeQuickNotes.map((note) => ({
+                key: note.id,
+                meta: (
+                  <span className="font-mono text-[9.5px] text-ink-faint">
+                    {new Date(note.encounteredAt).toLocaleDateString("ja-JP")}
+                  </span>
+                ),
+                card: (
+                  <button
+                    onClick={() => toggleQuickNoteSelection(note.id)}
+                    className={`w-full max-w-[360px] rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
+                      selectedQuickNoteIds.has(note.id)
+                        ? "border-accent/70 bg-accent-soft"
+                        : "border-line bg-surface-alt hover:border-line-strong"
+                    }`}
+                  >
+                    {note.preview || "(内容未記入)"}
+                  </button>
+                ),
+                dotClassName: selectedQuickNoteIds.has(note.id) ? "bg-accent" : "",
+              }))}
+            />
+          </div>
+        </div>
+      </div>
+
+      {openNoteId && (
+        <NoteDetailOverlay
+          noteId={openNoteId}
+          onClose={() => setOpenNoteId(null)}
+          onIndexEntryAdded={(entry) => setIndexEntries((prev) => [...prev, entry].sort((a, b) => a.keyword.localeCompare(b.keyword)))}
+        />
+      )}
+    </div>
+  );
+}
+
+function IndexPanel({
+  entries,
+  onSelect,
+  onRemove,
+}: {
+  entries: IndexEntrySummary[];
+  onSelect: (noteId: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div className="absolute top-11 right-3 z-20 w-[250px] rounded-lg border border-line-strong bg-surface-alt shadow-[0_20px_40px_-18px_rgba(0,0,0,0.8)]">
+      <div className="border-b border-line px-3 py-2.5 font-mono text-[10px] tracking-wider text-ink-faint">
+        索引（{entries.length}件）
+      </div>
+      <div className="max-h-72 overflow-auto">
+        {entries.length === 0 && <p className="p-3 text-xs text-ink-soft">まだ索引がありません</p>}
+        {entries.map((entry) => (
+          <div
+            key={entry.id}
+            className="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5 text-[11.5px]"
+          >
+            <button onClick={() => onSelect(entry.noteId)} className="min-w-0 flex-1 truncate text-left text-ink hover:text-accent">
+              {entry.keyword}
+            </button>
+            <button onClick={() => onRemove(entry.id)} className="shrink-0 text-[10px] text-ink-faint hover:text-accent">
+              削除
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NoteDetailOverlay({
+  noteId,
+  onClose,
+  onIndexEntryAdded,
+}: {
+  noteId: string;
+  onClose: () => void;
+  onIndexEntryAdded: (entry: IndexEntrySummary) => void;
+}) {
+  const [detail, setDetail] = useState<PermanentNoteDetail | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPermanentNoteDetailAction(noteId).then((d) => {
+      if (!cancelled) setDetail(d);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [noteId]);
+
+  async function addToIndex() {
+    setError(null);
+    const res = await createIndexEntryAction(keyword, noteId);
+    if ("error" in res) {
+      setError(res.error);
+      return;
+    }
+    onIndexEntryAdded({ id: res.entry.id, keyword: res.entry.keyword, noteId: res.entry.noteId, noteTitle: res.entry.noteTitle });
+    setConfirmOpen(false);
+    setKeyword("");
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-6" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative max-h-[80vh] w-full max-w-[560px] overflow-auto rounded-xl border border-line bg-surface p-6 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)]"
+      >
+        {!detail ? (
+          <p className="py-10 text-center text-xs text-ink-soft">読み込み中…</p>
+        ) : (
+          <>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h2 className="text-xl font-extrabold text-ink">{detail.title}</h2>
+              <div className="flex shrink-0 gap-2">
+                <button onClick={() => setConfirmOpen(true)} className="font-mono text-[10px] text-ink-soft hover:text-accent">
+                  索引に追加
+                </button>
+                <button onClick={onClose} className="font-mono text-[10px] text-ink-soft hover:text-accent">
+                  閉じる ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {detail.blocks.map((b) => (
+                <div key={b.id} className="rounded-lg border border-line bg-surface-alt p-3">
+                  {b.type === "TEXT" && <p className="text-sm whitespace-pre-wrap text-ink">{b.content}</p>}
+                  {b.type === "CODE" && (
+                    <pre className="overflow-x-auto font-mono text-xs text-ink">{b.content}</pre>
+                  )}
+                  {b.type === "MERMAID" && <MermaidPreview source={b.content} />}
+                  {b.type === "IMAGE" && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={b.content} alt={b.caption ?? ""} className="h-20 w-20 rounded object-cover" />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {(detail.outboundLinks.length > 0 || detail.inboundLinks.length > 0) && (
+              <div className="mt-4 flex flex-col gap-1.5 border-t border-line pt-3">
+                {detail.outboundLinks.map((l) => (
+                  <div key={l.id} className="font-mono text-[10.5px] text-ink-soft">
+                    <b className="text-accent">{l.relationLabel}</b> ／ {l.targetLabel}
+                  </div>
+                ))}
+                {detail.inboundLinks.map((l) => (
+                  <div key={l.id} className="font-mono text-[10.5px] text-ink-faint">
+                    ← <b className="text-ink-soft">{l.relationLabel}</b> ／ {l.targetLabel}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        <ConfirmDialog
+          open={confirmOpen}
+          title="索引に追加しますか？"
+          warning="索引は少数に保つほど見通しが良くなります。本当によく参照するキーワードだけ追加してください。"
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={addToIndex}
+          confirmDisabled={!keyword.trim()}
+        >
+          <div>
+            <label className="mb-1 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">キーワード</label>
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              autoFocus
+              className="w-full rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-accent focus:outline-none"
+            />
+            {error && <p className="mt-1.5 text-[10.5px] text-accent">{error}</p>}
+          </div>
+        </ConfirmDialog>
+      </div>
+    </div>
+  );
+}

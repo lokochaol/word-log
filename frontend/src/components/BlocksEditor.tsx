@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { replaceMeaningBlocksAction } from "@/app/actions";
-import type { MeaningBlock, MeaningBlockInput, MeaningBlockType } from "@/lib/words";
+import { useState } from "react";
+import type { Block, BlockInput, BlockType } from "@/lib/quickNotes";
 import { MermaidPreview } from "@/components/MermaidPreview";
 import { HudFrame } from "@/components/HudFrame";
 
-type EditableBlock = MeaningBlockInput & { key: string };
+type EditableBlock = BlockInput & { key: string };
 
-const BLOCK_LABELS: Record<MeaningBlockType, string> = {
+const BLOCK_LABELS: Record<BlockType, string> = {
   TEXT: "TEXT",
   CODE: "CODE",
   MERMAID: "MERMAID",
   IMAGE: "IMAGE",
 };
 
-function toEditable(blocks: MeaningBlock[]): EditableBlock[] {
+function toEditable(blocks: Block[]): EditableBlock[] {
   return blocks.map((b) => ({
     key: b.id,
     type: b.type,
@@ -25,11 +24,11 @@ function toEditable(blocks: MeaningBlock[]): EditableBlock[] {
   }));
 }
 
-function emptyBlock(type: MeaningBlockType): EditableBlock {
+function emptyBlock(type: BlockType): EditableBlock {
   return { key: crypto.randomUUID(), type, content: "", language: type === "CODE" ? "" : null, caption: null };
 }
 
-function BlockTag({ type }: { type: MeaningBlockType }) {
+function BlockTag({ type }: { type: BlockType }) {
   return (
     <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-widest text-accent">
       <span aria-hidden="true">[</span>
@@ -39,10 +38,29 @@ function BlockTag({ type }: { type: MeaningBlockType }) {
   );
 }
 
-export function MeaningBlocksEditor({ wordId, blocks }: { wordId: string; blocks: MeaningBlock[] }) {
-  const [editing, setEditing] = useState(false);
+/**
+ * The generalized TEXT/CODE/MERMAID/IMAGE block editor, extracted from the
+ * original MeaningBlocksEditor so QuickNote (走り書き), PermanentNote drafts
+ * (昇格 editor), and PermanentNoteBlock editing can all share it. Persistence
+ * is entirely up to the caller via `onSave` — for QuickNote/PermanentNote
+ * detail pages that's a Server Action, for PromotionEditor drafts it's just
+ * local state (nothing is sent to the server until 完了).
+ */
+export function BlocksEditor({
+  blocks,
+  onSave,
+  saving = false,
+  emptyLabel = "＋ ブロックを追加",
+  startInEditMode = false,
+}: {
+  blocks: Block[];
+  onSave: (blocks: BlockInput[]) => void | Promise<void>;
+  saving?: boolean;
+  emptyLabel?: string;
+  startInEditMode?: boolean;
+}) {
+  const [editing, setEditing] = useState(startInEditMode);
   const [draft, setDraft] = useState<EditableBlock[]>(() => toEditable(blocks));
-  const [pending, startTransition] = useTransition();
   const [emptyHover, setEmptyHover] = useState(false);
 
   function startEditing() {
@@ -50,14 +68,12 @@ export function MeaningBlocksEditor({ wordId, blocks }: { wordId: string; blocks
     setEditing(true);
   }
 
-  function save() {
-    const payload: MeaningBlockInput[] = draft
+  async function save() {
+    const payload: BlockInput[] = draft
       .filter((b) => b.content.trim())
       .map((b) => ({ type: b.type, content: b.content.trim(), language: b.language || null, caption: b.caption || null }));
-    startTransition(async () => {
-      await replaceMeaningBlocksAction(wordId, payload);
-      setEditing(false);
-    });
+    await onSave(payload);
+    setEditing(false);
   }
 
   if (!editing) {
@@ -75,7 +91,7 @@ export function MeaningBlocksEditor({ wordId, blocks }: { wordId: string; blocks
             active={emptyHover}
             innerClassName="flex items-center justify-center rounded-xl py-6 font-mono text-sm font-semibold text-accent"
           >
-            ＋ 意味を入力
+            {emptyLabel}
           </HudFrame>
         </button>
       );
@@ -107,7 +123,7 @@ export function MeaningBlocksEditor({ wordId, blocks }: { wordId: string; blocks
       ))}
 
       <div className="flex flex-wrap gap-2">
-        {(["TEXT", "CODE", "MERMAID", "IMAGE"] as MeaningBlockType[]).map((type) => (
+        {(["TEXT", "CODE", "MERMAID", "IMAGE"] as BlockType[]).map((type) => (
           <button
             key={type}
             onClick={() => setDraft((prev) => [...prev, emptyBlock(type)])}
@@ -126,18 +142,18 @@ export function MeaningBlocksEditor({ wordId, blocks }: { wordId: string; blocks
           キャンセル
         </button>
         <button
-          disabled={pending}
+          disabled={saving}
           onClick={save}
           className="btn-sheen rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
         >
-          {pending ? "保存中…" : "保存"}
+          {saving ? "保存中…" : "保存"}
         </button>
       </div>
     </div>
   );
 }
 
-function BlockView({ block }: { block: MeaningBlock }) {
+function BlockView({ block }: { block: Block }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
@@ -191,7 +207,7 @@ function BlockEditRow({
             value={block.content}
             onChange={(e) => onChange({ ...block, content: e.target.value })}
             rows={3}
-            placeholder="自分の言葉での意味、出会った文脈のメモなど"
+            placeholder="自分の言葉での内容、出会った文脈のメモなど"
             style={{ caretColor: "var(--color-accent)" }}
             className="w-full resize-none rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
           />

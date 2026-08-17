@@ -7,64 +7,186 @@ datasource db {
   provider = "postgresql"
 }
 
-enum MeaningBlockType {
+enum BlockType {
   TEXT
   CODE
   MERMAID
   IMAGE
 }
 
-/// A word the owner encountered for the first time, recorded in chronological
-/// (encounter) order.
-model Word {
-  id            String   @id @default(uuid())
-  ownerSub      String   @map("owner_sub")
-  text          String
-  /// Plain-text excerpt derived from TEXT meaning blocks, used for the search index.
-  meaning       String?
+enum QuickNoteSource {
+  SCRATCH
+  VOICE
+}
+
+enum QuickNoteStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum LinkTargetType {
+  PERMANENT_NOTE
+  INDEX_ENTRY
+}
+
+/// A temporary, quickly-captured note ("走り書き"). Either typed on the spot
+/// (SCRATCH) or, in a future phase, transcribed from a voice memo (VOICE — the
+/// voice* columns are a schema hook only, not wired up in Phase 1). Active
+/// notes live on the /scratch timeline; once promoted into one or more
+/// PermanentNotes they flip to ARCHIVED and disappear from that timeline.
+model QuickNote {
+  id       String          @id @default(uuid())
+  ownerSub String          @map("owner_sub")
+  source   QuickNoteSource @default(SCRATCH)
+  status   QuickNoteStatus @default(ACTIVE)
+
+  literatureCitation  String? @map("literature_citation")
+  literatureUrl       String? @map("literature_url")
+  literatureZoteroKey String? @map("literature_zotero_key")
+  literatureSummary   String? @map("literature_summary")
+
+  // Phase 2 hooks — not populated by any Phase 1 code path.
+  voiceAudioUrl        String? @map("voice_audio_url")
+  voiceTranscript       String? @map("voice_transcript")
+  voiceDurationSeconds  Int?    @map("voice_duration_seconds")
+
   encounteredAt DateTime @default(now()) @map("encountered_at")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  relations     WordRelation[]
-  meaningBlocks WordMeaningBlock[]
+  blocks               QuickNoteBlock[]
+  promotionSourceLinks PromotionSourceQuickNote[]
 
-  @@unique([ownerSub, text])
-  @@index([ownerSub, encounteredAt])
-  @@map("word")
+  @@index([ownerSub, status, encounteredAt])
+  @@map("quick_note")
 }
 
-/// A related word entered as free text. Whether it points at an already-registered
-/// Word is resolved at read time (by matching text), not stored as a hard foreign
-/// key, so a relation set before the related word exists still links up once that
-/// word is registered later.
-model WordRelation {
-  id          String   @id @default(uuid())
-  wordId      String   @map("word_id")
-  word        Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
-  relatedText String   @map("related_text")
-  createdAt   DateTime @default(now()) @map("created_at")
+model QuickNoteBlock {
+  id          String    @id @default(uuid())
+  quickNoteId String    @map("quick_note_id")
+  quickNote   QuickNote @relation(fields: [quickNoteId], references: [id], onDelete: Cascade)
+  position    Int
+  type        BlockType @map("block_type")
+  content     String
+  language    String?
+  caption     String?
 
-  @@unique([wordId, relatedText])
-  @@map("word_relation")
+  @@index([quickNoteId, position])
+  @@map("quick_note_block")
 }
 
-/// One block of a word's meaning: free-form text, a code snippet, Mermaid diagram
-/// source, or an image reference. Ordered by position and rendered in sequence.
-model WordMeaningBlock {
-  id       String           @id @default(uuid())
-  wordId   String           @map("word_id")
-  word     Word             @relation(fields: [wordId], references: [id], onDelete: Cascade)
-  position Int
-  type     MeaningBlockType @map("block_type")
-  /// Free text for TEXT blocks, source code for CODE, Mermaid source for MERMAID,
-  /// image URL for IMAGE.
-  content  String
-  /// CODE blocks only, e.g. "javascript".
-  language String?
-  /// IMAGE blocks only.
-  caption  String?
+/// A permanent note ("ツェッテルカステン" card). Lives in one strict,
+/// owner-wide order (orderKey, fractional indexing — see src/lib/rank.ts) and
+/// is only ever created through the promotion workflow (src/lib/promotion.ts)
+/// — there is no direct `create`.
+model PermanentNote {
+  id       String @id @default(uuid())
+  ownerSub String @map("owner_sub")
+  title    String
+  orderKey String @map("order_key")
 
-  @@index([wordId, position])
-  @@map("word_meaning_block")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  blocks               PermanentNoteBlock[]
+  outboundLinks        PermanentNoteLink[]             @relation("LinkSource")
+  inboundLinks         PermanentNoteLink[]             @relation("LinkTargetNote")
+  indexEntries         IndexEntry[]
+  promotionOutputLinks PromotionOutputPermanentNote[]
+
+  @@unique([ownerSub, orderKey])
+  @@index([ownerSub, orderKey])
+  @@map("permanent_note")
+}
+
+model PermanentNoteBlock {
+  id              String        @id @default(uuid())
+  permanentNoteId String        @map("permanent_note_id")
+  permanentNote   PermanentNote @relation(fields: [permanentNoteId], references: [id], onDelete: Cascade)
+  position        Int
+  type            BlockType     @map("block_type")
+  content         String
+  language        String?
+  caption         String?
+
+  @@index([permanentNoteId, position])
+  @@map("permanent_note_block")
+}
+
+/// A link from a PermanentNote to either another PermanentNote or an
+/// IndexEntry. `relationLabel` (e.g. "応用元") is the primary display text —
+/// the target's title/keyword is a secondary annotation.
+model PermanentNoteLink {
+  id                 String         @id @default(uuid())
+  sourceNoteId       String         @map("source_note_id")
+  sourceNote         PermanentNote  @relation("LinkSource", fields: [sourceNoteId], references: [id], onDelete: Cascade)
+  targetType         LinkTargetType @map("target_type")
+  targetNoteId       String?        @map("target_note_id")
+  targetNote         PermanentNote? @relation("LinkTargetNote", fields: [targetNoteId], references: [id], onDelete: Cascade)
+  targetIndexEntryId String?        @map("target_index_entry_id")
+  targetIndexEntry   IndexEntry?    @relation(fields: [targetIndexEntryId], references: [id], onDelete: Cascade)
+  relationLabel      String         @map("relation_label")
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  @@index([sourceNoteId])
+  @@index([targetNoteId])
+  @@index([targetIndexEntryId])
+  @@map("permanent_note_link")
+}
+
+/// A curated, owner-unique keyword pointing at one PermanentNote — the
+/// entry point into the Zettelkasten's global order. Keeping the index small
+/// and deliberate is a UX goal, not just a schema constraint.
+model IndexEntry {
+  id        String        @id @default(uuid())
+  ownerSub  String        @map("owner_sub")
+  keyword   String
+  noteId    String        @map("note_id")
+  note      PermanentNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  links PermanentNoteLink[]
+
+  @@unique([ownerSub, keyword])
+  @@index([ownerSub])
+  @@map("index_entry")
+}
+
+/// One promotion transaction: a set of QuickNotes archived together to
+/// produce a set of new PermanentNotes. Kept purely for history/audit —
+/// Phase 1 only reads it via listBatchHistory.
+model PromotionBatch {
+  id        String   @id @default(uuid())
+  ownerSub  String   @map("owner_sub")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  sourceQuickNotes     PromotionSourceQuickNote[]
+  outputPermanentNotes PromotionOutputPermanentNote[]
+
+  @@index([ownerSub, createdAt])
+  @@map("promotion_batch")
+}
+
+model PromotionSourceQuickNote {
+  id          String         @id @default(uuid())
+  batchId     String         @map("batch_id")
+  batch       PromotionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  quickNoteId String         @map("quick_note_id")
+  quickNote   QuickNote      @relation(fields: [quickNoteId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, quickNoteId])
+  @@index([quickNoteId])
+  @@map("promotion_source_quick_note")
+}
+
+model PromotionOutputPermanentNote {
+  id              String         @id @default(uuid())
+  batchId         String         @map("batch_id")
+  batch           PromotionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  permanentNoteId String         @map("permanent_note_id")
+  permanentNote   PermanentNote  @relation(fields: [permanentNoteId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, permanentNoteId])
+  @@index([permanentNoteId])
+  @@map("promotion_output_permanent_note")
 }

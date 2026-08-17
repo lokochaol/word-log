@@ -190,3 +190,19 @@ model PromotionOutputPermanentNote {
   @@index([permanentNoteId])
   @@map("promotion_output_permanent_note")
 }
+
+/// Per-user Zotero Web API credentials (this is a multi-tenant app — each
+/// owner links their own Zotero library, never a single app-wide account).
+/// apiKeyEncrypted holds AES-256-GCM ciphertext (see src/lib/crypto.ts),
+/// never the plaintext key.
+model ZoteroCredential {
+  id              String   @id @default(uuid())
+  ownerSub        String   @unique @map("owner_sub")
+  apiKeyEncrypted String   @map("api_key_encrypted")
+  libraryId       String   @map("library_id")
+  libraryType     String   @default("user") @map("library_type")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("zotero_credential")
+}

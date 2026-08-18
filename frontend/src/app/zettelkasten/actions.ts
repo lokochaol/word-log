@@ -36,12 +36,22 @@ export async function removePermanentNoteLinkAction(sourceNoteId: string, linkId
   revalidatePath("/zettelkasten");
 }
 
-export async function setPermanentNoteLiteratureAction(
+export async function addPermanentNoteLiteratureAction(
   id: string,
   selection: LiteratureSelection,
 ): Promise<PermanentNoteDetail> {
   const ownerSub = await requireOwnerSub();
-  const note = await permanentNotes.setLiteratureMemo(ownerSub, id, selection);
+  const note = await permanentNotes.addLiteratureMemo(ownerSub, id, selection);
+  revalidatePath("/zettelkasten");
+  return note;
+}
+
+export async function removePermanentNoteLiteratureAction(
+  id: string,
+  literatureMemoId: string,
+): Promise<PermanentNoteDetail> {
+  const ownerSub = await requireOwnerSub();
+  const note = await permanentNotes.removeLiteratureMemo(ownerSub, id, literatureMemoId);
   revalidatePath("/zettelkasten");
   return note;
 }

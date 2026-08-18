@@ -26,12 +26,12 @@ export async function completePromotion(
     throw new ValidationError("走り書きを1件以上選択してください");
   }
   if (input.drafts.length === 0) {
-    throw new ValidationError("ドラフトを1件以上作成してください");
+    throw new ValidationError("永久保存版メモを1件以上作成してください");
   }
   for (const draft of input.drafts) {
     const problems = validateDraft(draft);
     if (problems.length > 0) {
-      throw new ValidationError(`ドラフト「${draft.title || "(無題)"}」: ${problems.join(" / ")}`);
+      throw new ValidationError(`永久保存版メモ「${draft.title || "(無題)"}」: ${problems.join(" / ")}`);
     }
   }
   try {
@@ -141,13 +141,13 @@ async function runPromotionTransaction(
     for (let i = 0; i < input.drafts.length; i++) {
       const draft = input.drafts[i];
       const filteredBlocks = draft.blocks.filter((b) => b.content.trim());
-      const literatureMemoId = await literatureMemos.resolveSelection(tx, ownerSub, draft.literature);
+      const literatureMemoIds = await literatureMemos.resolveSelections(tx, ownerSub, draft.literatureSelections);
       const created = await tx.permanentNote.create({
         data: {
           ownerSub,
           title: draft.title.trim(),
           orderKey: resolvedOrderKeys[i],
-          literatureMemoId,
+          literatureMemos: { create: literatureMemoIds.map((literatureMemoId) => ({ literatureMemoId })) },
           blocks: {
             create: filteredBlocks.map((b, i) => ({
               position: i,

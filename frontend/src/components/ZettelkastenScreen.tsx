@@ -9,6 +9,7 @@ import { NoteTimeline } from "@/components/NoteTimeline";
 import { MermaidPreview } from "@/components/MermaidPreview";
 import { PermanentNoteLiteratureSection } from "@/components/PermanentNoteLiteratureSection";
 import { LiteratureMemoPane } from "@/components/LiteratureMemoPane";
+import { AddQuickNoteButton } from "@/components/AddQuickNoteButton";
 import { navigateWithViewTransition } from "@/lib/viewTransition";
 import type { GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
@@ -95,10 +96,19 @@ export function ZettelkastenScreen({
     const ids = [...selectedQuickNoteIds];
     if (ids.length === 0) return;
     const details = await Promise.all(ids.map((id) => getQuickNoteDetailAction(id)));
-    const blocks = details.flatMap((d) => d.blocks.map((b) => ({ type: b.type, content: b.content, language: b.language, caption: b.caption })));
+    // One merged 永久保存版メモ draft from all selected 走り書き — content is
+    // intentionally NOT carried over (it gets rewritten from scratch), but
+    // each source note's own linked 文献メモ carries through, deduped, so a
+    // memo cited by two of the selected 走り書き doesn't show up twice.
+    const seenMemoIds = new Set<string>();
+    const literatureSelections = details
+      .map((d) => d.literatureMemo)
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .filter((m) => (seenMemoIds.has(m.id) ? false : (seenMemoIds.add(m.id), true)))
+      .map((m) => ({ type: "existing" as const, id: m.id, citation: m.citation }));
     setDrafts((prev) => [
       ...prev,
-      { clientId: crypto.randomUUID(), title: "", blocks, links: [], gap: null, orderKey: null, literature: undefined },
+      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null, literatureSelections },
     ]);
   }
 
@@ -112,7 +122,7 @@ export function ZettelkastenScreen({
         blocks: d.blocks,
         links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
         orderKey: d.orderKey,
-        literature: d.literature,
+        literatureSelections: d.literatureSelections,
       })),
     };
     const res = await completePromotionAction(input);
@@ -269,7 +279,7 @@ export function ZettelkastenScreen({
                 onClick={buildDraftFromSelection}
                 className="btn-sheen mb-3 w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
               >
-                選択した{selectedQuickNoteIds.size}件からドラフトを作成
+                選択した{selectedQuickNoteIds.size}件から永久保存版メモを作成
               </button>
             )}
             <NoteTimeline
@@ -302,6 +312,8 @@ export function ZettelkastenScreen({
                 dotClassName: selectedQuickNoteIds.has(note.id) ? "bg-accent" : "",
               }))}
             />
+
+            <AddQuickNoteButton />
           </div>
         </div>
       </div>
@@ -429,7 +441,7 @@ function NoteDetailOverlay({
               <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
                 <span className="text-accent">{"//"}</span> 文献メモ（任意）
               </h3>
-              <PermanentNoteLiteratureSection key={detail.id} noteId={detail.id} literatureMemo={detail.literatureMemo} />
+              <PermanentNoteLiteratureSection key={detail.id} noteId={detail.id} literatureMemos={detail.literatureMemos} />
             </div>
 
             {(detail.outboundLinks.length > 0 || detail.inboundLinks.length > 0) && (

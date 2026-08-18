@@ -44,7 +44,7 @@ export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id
             {note.status === "ARCHIVED" && <span className="ml-2 text-ink-soft">（昇格済み）</span>}
           </p>
           <p className="font-mono text-xs text-ink-soft">
-            出会った日 {formatDate(note.encounteredAt)}　/　最終更新 {formatDate(note.updatedAt)}
+            作成 {formatDate(note.encounteredAt)}　/　最終更新 {formatDate(note.updatedAt)}
           </p>
         </div>
 

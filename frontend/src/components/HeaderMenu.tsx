@@ -5,10 +5,10 @@ import { createPortal } from "react-dom";
 
 /**
  * Wraps a header's nav items (brand-adjacent links, locale toggle, sign-out,
- * etc.): shown as a normal horizontal row on wide (desktop-class) screens,
- * collapsed behind a single menu button below that — including phones in
- * landscape, where the row would otherwise overflow. The trigger button
- * keeps a continuous, gentle scale-pulse so it
+ * etc.) and always collapses them behind a single menu button, at every
+ * screen size — the header row itself gets other always-visible content
+ * (brand, primary nav actions) placed as siblings outside this component.
+ * The trigger button keeps a continuous, gentle scale-pulse so it
  * still reads as tappable even without hover — the same "this is a live
  * control" cue other tap-to-open menus in the app (e.g. QuickNoteActionMenu)
  * give on hover, just always-on since touch has no hover state.
@@ -47,9 +47,7 @@ export function HeaderMenu({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className="hidden flex-wrap items-center gap-x-2 gap-y-1.5 lg:flex">{children}</div>
-
-      <div ref={wrapRef} className="relative lg:hidden">
+      <div ref={wrapRef} className="relative">
         <button
           onClick={toggle}
           aria-label="Menu"

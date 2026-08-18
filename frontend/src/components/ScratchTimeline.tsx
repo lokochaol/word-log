@@ -51,7 +51,7 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4">
         <NoteTimeline
           emptyLabel={t.scratch.emptyTimeline}
           rows={notes.map((note) => ({

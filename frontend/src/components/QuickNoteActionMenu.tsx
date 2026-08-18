@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
- * Small corner button (overlapping the note card's top-right corner) that
- * expands into an 編集/削除 menu — used on both /scratch's timeline and
- * Zettelkasten's ③ column so every quick-note card has the same action entry
- * point. Anchored to the card's own corner (not offset further right) so it
- * never runs past the viewport edge on narrow/mobile widths, where the card
- * itself is already close to full width.
+ * Small corner button (outside the note card, top-right) that expands into
+ * an 編集/削除 menu — used on both /scratch's timeline and Zettelkasten's ③
+ * column so every quick-note card has the same action entry point. Deliberately
+ * overlaps outside the card rather than sitting inside it; the list
+ * containers that render these cards reserve horizontal padding on both
+ * sides specifically so this has room to spill over without overflowing the
+ * viewport (see ScratchTimeline / QuickNoteInlineTimeline).
  */
 export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const { t } = useI18n();

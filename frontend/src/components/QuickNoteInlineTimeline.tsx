@@ -117,7 +117,7 @@ export function QuickNoteInlineTimeline({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-2">
         <NoteTimeline
         emptyLabel={t.zettelkasten.emptyTimeline}
         rows={notes.map((note) => {

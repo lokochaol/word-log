@@ -20,11 +20,11 @@ export default async function ScratchPage() {
   return (
     <main className="flex h-screen flex-col items-center overflow-hidden bg-bg px-6 py-6">
       <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col gap-6">
-        <div className="flex shrink-0 items-center justify-between">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <span className="text-lg font-extrabold tracking-tight text-ink">
             <AppBrand locale={locale} screen="scratch" />
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
             <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
               {session.user?.email ?? dict.common.unknownEmail}
             </span>

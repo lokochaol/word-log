@@ -163,11 +163,11 @@ export function ZettelkastenScreen({
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-bg">
-      <div className="flex items-center gap-3 border-b border-line px-6 py-3.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-6 py-3.5">
         <span className="text-sm font-extrabold tracking-tight text-ink">
           <AppBrand locale={locale} screen="zettelkasten" />
         </span>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <button
             onClick={handleNavigateToScratch}
             className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"

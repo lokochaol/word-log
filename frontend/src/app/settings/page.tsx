@@ -14,14 +14,14 @@ export default async function SettingsPage() {
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
       <div className="flex w-full max-w-[560px] flex-col gap-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <Link
             href="/scratch"
             className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
           >
             <span className="text-accent">&lt;</span> {dict.nav.backToScratch}
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <Link
               href="/literature"
               className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"

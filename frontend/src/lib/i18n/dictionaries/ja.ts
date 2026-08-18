@@ -94,8 +94,8 @@ export const ja: Dictionary = {
     summaryPlaceholder: "文献に書いてあったこと（自分の言葉で）",
   },
   signin: {
-    title: "Word Log",
-    tagline: "出会った単語を、出会った順に記録する個人辞書。",
+    title: "ツェッテルカステン",
+    tagline: "書き留めた考えをリンクでつなぎ、育てていく個人的な知識システム。",
     googleButton: "Googleでログイン",
   },
   scratch: {

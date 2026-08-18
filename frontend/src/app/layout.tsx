@@ -16,9 +16,13 @@ const inter = Inter({
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const title = locale === "ja" ? "ツェッテルカステン" : "Zettelkasten";
+  const description =
+    locale === "ja"
+      ? "書き留めた考えをリンクでつなぎ、育てていく個人的な知識システム。"
+      : "A personal knowledge system where your notes grow by linking to one another.";
   return {
     title,
-    description: "出会った単語を記録する個人辞書 / A personal dictionary for the words you encounter",
+    description,
     appleWebApp: { title },
   };
 }

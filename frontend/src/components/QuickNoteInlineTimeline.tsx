@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { BlocksEditor } from "@/components/BlocksEditor";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
@@ -35,6 +35,13 @@ const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transp
  * Zettelkasten screen mid-flow is disruptive. Selection (for promotion) stays
  * owned by the parent; this component owns the notes list + inline editing.
  */
+export interface FocusNoteRequest {
+  id: string;
+  /** Bumped on every request so re-focusing the same note (e.g. clicking the
+   * same "referenced by" link twice) still re-triggers the scroll/highlight. */
+  token: number;
+}
+
 export function QuickNoteInlineTimeline({
   notes,
   onNotesChange,
@@ -42,6 +49,7 @@ export function QuickNoteInlineTimeline({
   onToggleSelect,
   onDeleted,
   header,
+  focusRequest,
 }: {
   notes: QuickNoteSummary[];
   onNotesChange: (notes: QuickNoteSummary[]) => void;
@@ -49,6 +57,11 @@ export function QuickNoteInlineTimeline({
   onToggleSelect: (id: string) => void;
   onDeleted: (id: string) => void;
   header: ReactNode;
+  /** When set, scrolls the given note into view and briefly highlights it —
+   * used so a "referenced by" link elsewhere (e.g. a literature memo's
+   * detail view) can point at a note already visible in this list instead of
+   * navigating to its own detail page. */
+  focusRequest?: FocusNoteRequest | null;
 }) {
   const { t, locale } = useI18n();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,7 +71,18 @@ export function QuickNoteInlineTimeline({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
   const [creating, setCreating] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const scrollRef = useAutoScrollToBottom<HTMLDivElement>(notes.length);
+
+  useEffect(() => {
+    if (!focusRequest) return;
+    const el = scrollRef.current?.querySelector<HTMLElement>(`[data-note-id="${focusRequest.id}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHighlightId(focusRequest.id);
+    const timer = setTimeout(() => setHighlightId(null), 2200);
+    return () => clearTimeout(timer);
+  }, [focusRequest?.id, focusRequest?.token]);
 
   async function startEdit(id: string) {
     setLoadingEditId(id);
@@ -138,7 +162,12 @@ export function QuickNoteInlineTimeline({
             key: note.id,
             meta: <span className="font-mono text-[9.5px] text-ink-faint">{formatDate(note.encounteredAt, locale)}</span>,
             card: (
-              <div className="relative w-full max-w-[360px]">
+              <div
+                data-note-id={note.id}
+                className={`relative w-full max-w-[360px] rounded-lg transition-shadow duration-500 ${
+                  highlightId === note.id ? "ring-2 ring-accent ring-offset-2 ring-offset-bg" : ""
+                }`}
+              >
                 {isEditing ? (
                   <div className="rounded-lg border border-accent/60 bg-surface-alt p-3">
                     <BlocksEditor

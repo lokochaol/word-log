@@ -54,12 +54,33 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
           placeholder={t.literature.citationPlaceholder}
           className="w-full rounded-lg border border-line bg-surface-alt px-3 py-2 text-2xl font-extrabold tracking-tight text-ink focus:border-accent focus:outline-none"
         />
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder={t.literature.urlPlaceholder}
-          className="w-full rounded-lg border border-line bg-surface-alt px-3 py-1.5 font-mono text-xs text-ink-soft focus:border-accent focus:outline-none"
-        />
+        <div className="flex items-center gap-1.5">
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder={t.literature.urlPlaceholder}
+            className="w-full rounded-lg border border-line bg-surface-alt px-3 py-1.5 font-mono text-xs text-ink-soft focus:border-accent focus:outline-none"
+          />
+          {url.trim() && (
+            <a
+              href={url.trim()}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={t.literature.openUrlAriaLabel}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors hover:border-accent/60 hover:text-accent"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path
+                  d="M6.5 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-3M9.5 2H14v4.5M14 2 7 9"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </a>
+          )}
+        </div>
       </div>
 
       <section className="flex flex-col gap-3">

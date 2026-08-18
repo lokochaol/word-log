@@ -214,6 +214,7 @@ export interface Dictionary {
     addButton: string;
     citationPlaceholder: string;
     urlPlaceholder: string;
+    openUrlAriaLabel: string;
     summaryHeading: string;
     summaryHint: string;
     permanentNotesHeading: (n: number) => string;

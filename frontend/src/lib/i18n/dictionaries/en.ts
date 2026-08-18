@@ -198,6 +198,7 @@ export const en: Dictionary = {
     addButton: "Literature memo",
     citationPlaceholder: "citation",
     urlPlaceholder: "URL (optional)",
+    openUrlAriaLabel: "Open URL in a new tab",
     summaryHeading: "What the source said (in your own words)",
     summaryHint: "This summary is shared by every Dash Off and permanent note that references this memo.",
     permanentNotesHeading: (n) => `Referenced by permanent notes (${n})`,

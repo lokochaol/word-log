@@ -1,20 +1,21 @@
 import { googleSignIn } from "@/app/actions";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const dict = getDictionary(await getLocale());
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-bg px-6">
       <div className="w-full max-w-sm rounded-xl border border-line bg-surface p-10 text-center shadow-sm">
-        <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-ink">Word Log</h1>
-        <p className="mb-8 text-sm leading-relaxed text-ink-soft">
-          出会った単語を、出会った順に記録する個人辞書。
-        </p>
+        <h1 className="mb-2 text-2xl font-extrabold tracking-tight text-ink">{dict.signin.title}</h1>
+        <p className="mb-8 text-sm leading-relaxed text-ink-soft">{dict.signin.tagline}</p>
         <form action={googleSignIn}>
           <button
             type="submit"
             className="btn-sheen inline-flex w-full items-center justify-center gap-3 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-on-accent transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
           >
             <GoogleIcon />
-            Googleでログイン
+            {dict.signin.googleButton}
           </button>
         </form>
       </div>

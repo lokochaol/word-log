@@ -4,6 +4,7 @@ import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { validateDraft, type PermanentNoteDraft } from "@/lib/promotionValidation";
 import { midpointRank } from "@/lib/rank";
 import * as literatureMemos from "@/lib/literatureMemos";
+import type { Locale } from "@/lib/i18n/types";
 
 export type { DraftLink, PermanentNoteDraft } from "@/lib/promotionValidation";
 export { validateDraft } from "@/lib/promotionValidation";
@@ -21,18 +22,24 @@ export interface CompletePromotionResult {
 export async function completePromotion(
   ownerSub: string,
   input: CompletePromotionInput,
+  locale: Locale = "ja",
 ): Promise<CompletePromotionResult> {
   if (input.quickNoteIds.length === 0) {
-    throw new ValidationError("走り書きを1件以上選択してください");
+    throw new ValidationError("quickNoteSelectionRequired", "Select at least one scratch note");
   }
   if (input.drafts.length === 0) {
-    throw new ValidationError("永久保存版メモを1件以上作成してください");
+    throw new ValidationError("permanentNoteDraftRequired", "Create at least one permanent note");
   }
   const existingNoteCount = await prisma.permanentNote.count({ where: { ownerSub } });
   for (const draft of input.drafts) {
-    const problems = validateDraft(draft, { hasExistingNotes: existingNoteCount > 0 });
+    const problems = validateDraft(draft, { hasExistingNotes: existingNoteCount > 0, locale });
     if (problems.length > 0) {
-      throw new ValidationError(`永久保存版メモ「${draft.title || "(無題)"}」: ${problems.join(" / ")}`);
+      throw new ValidationError(
+        "draftInvalid",
+        `Permanent note "${draft.title || "(untitled)"}": ${problems.join(" / ")}`,
+        draft.title,
+        problems.join(" / "),
+      );
     }
   }
   try {
@@ -41,7 +48,7 @@ export async function completePromotion(
     // Someone else (or another tab) inserted a permanent note at the exact
     // same order_key between when the position was picked and this commit.
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      throw new ConflictError("選択した保存位置は他のメモに使われました。位置を選び直してください。");
+      throw new ConflictError("orderKeyConflict", "The selected save position was taken by another note");
     }
     throw e;
   }
@@ -91,10 +98,10 @@ async function runPromotionTransaction(
       select: { id: true, status: true },
     });
     if (sourceNotes.length !== input.quickNoteIds.length) {
-      throw new NotFoundError("選択された走り書きの一部が見つかりません");
+      throw new NotFoundError("quickNotesNotFound", "Some of the selected scratch notes could not be found");
     }
     if (sourceNotes.some((n) => n.status !== "ACTIVE")) {
-      throw new ConflictError("選択された走り書きの一部はすでに昇格済みです");
+      throw new ConflictError("quickNotesAlreadyPromoted", "Some of the selected scratch notes are already promoted");
     }
 
     // Re-verify ownership of every link target referenced by any draft.
@@ -112,7 +119,7 @@ async function runPromotionTransaction(
         select: { id: true },
       });
       if (owned.length !== noteTargetIds.size) {
-        throw new NotFoundError("リンク先の永久保存版メモの一部が見つかりません");
+        throw new NotFoundError("linkedPermanentNoteNotFound", "Some of the linked permanent notes could not be found");
       }
     }
     if (indexEntryTargetIds.size > 0) {
@@ -121,7 +128,7 @@ async function runPromotionTransaction(
         select: { id: true },
       });
       if (owned.length !== indexEntryTargetIds.size) {
-        throw new NotFoundError("リンク先の索引エントリの一部が見つかりません");
+        throw new NotFoundError("linkedIndexEntryNotFound", "Some of the linked index entries could not be found");
       }
     }
 

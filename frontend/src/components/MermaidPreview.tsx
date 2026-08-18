@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 export function MermaidPreview({ source }: { source: string }) {
+  const { t } = useI18n();
   const id = useId().replace(/:/g, "-");
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,14 +37,14 @@ export function MermaidPreview({ source }: { source: string }) {
       } catch {
         if (!cancelled) {
           setSvg(null);
-          setError("Mermaid構文を確認してください");
+          setError(t.mermaid.syntaxError);
         }
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [source, id]);
+  }, [source, id, t]);
 
   if (!source.trim()) return null;
   if (error) return <p className="text-xs text-accent">{error}</p>;

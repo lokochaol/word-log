@@ -96,7 +96,7 @@ export async function requireOwnedPermanentNote(ownerSub: string, id: string): P
     where: { id, ownerSub },
     include: detailInclude,
   });
-  if (!note) throw new NotFoundError(`PermanentNote not found: ${id}`);
+  if (!note) throw new NotFoundError("permanentNoteNotFound", `PermanentNote not found: ${id}`);
   return note;
 }
 
@@ -120,8 +120,8 @@ export async function insertRank(ownerSub: string, beforeId: string | null, afte
     beforeId ? prisma.permanentNote.findFirst({ where: { id: beforeId, ownerSub }, select: { orderKey: true } }) : null,
     afterId ? prisma.permanentNote.findFirst({ where: { id: afterId, ownerSub }, select: { orderKey: true } }) : null,
   ]);
-  if (beforeId && !before) throw new NotFoundError(`PermanentNote not found: ${beforeId}`);
-  if (afterId && !after) throw new NotFoundError(`PermanentNote not found: ${afterId}`);
+  if (beforeId && !before) throw new NotFoundError("permanentNoteNotFound", `PermanentNote not found: ${beforeId}`);
+  if (afterId && !after) throw new NotFoundError("permanentNoteNotFound", `PermanentNote not found: ${afterId}`);
   return midpointRank(before?.orderKey ?? null, after?.orderKey ?? null);
 }
 
@@ -145,7 +145,7 @@ export async function addLink(
     });
   } else {
     const entry = await prisma.indexEntry.findFirst({ where: { id: target.indexEntryId, ownerSub } });
-    if (!entry) throw new NotFoundError(`IndexEntry not found: ${target.indexEntryId}`);
+    if (!entry) throw new NotFoundError("indexEntryNotFound", `IndexEntry not found: ${target.indexEntryId}`);
     await prisma.permanentNoteLink.create({
       data: {
         sourceNoteId,
@@ -162,7 +162,7 @@ export async function addLink(
 export async function removeLink(ownerSub: string, sourceNoteId: string, linkId: string): Promise<void> {
   const note = await requireOwnedPermanentNote(ownerSub, sourceNoteId);
   const link = note.outboundLinks.find((l) => l.id === linkId);
-  if (!link) throw new NotFoundError("Link not found");
+  if (!link) throw new NotFoundError("linkNotFound", "Link not found");
   await prisma.permanentNoteLink.delete({ where: { id: linkId } });
 }
 

@@ -79,7 +79,7 @@ export async function requireOwnedQuickNote(ownerSub: string, id: string): Promi
     where: { id, ownerSub },
     include: quickNoteInclude,
   });
-  if (!note) throw new NotFoundError(`QuickNote not found: ${id}`);
+  if (!note) throw new NotFoundError("quickNoteNotFound", `QuickNote not found: ${id}`);
   return note;
 }
 

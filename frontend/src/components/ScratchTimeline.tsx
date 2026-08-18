@@ -8,9 +8,12 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AddQuickNoteButton } from "@/components/AddQuickNoteButton";
 import { deleteQuickNoteAction } from "@/app/scratch/actions";
 import type { QuickNoteSummary } from "@/lib/quickNotes";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localeTag } from "@/lib/i18n/dictionary";
+import type { Locale } from "@/lib/i18n/types";
 
-function formatDate(date: Date) {
-  return date.toLocaleString("ja-JP", {
+function formatDate(date: Date, locale: Locale) {
+  return date.toLocaleString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -24,6 +27,7 @@ function formatDate(date: Date) {
  * 削除 removes it in place) alongside the existing "+" add button. */
 export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSummary[] }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [notes, setNotes] = useState(initialNotes);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
@@ -41,12 +45,12 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
   return (
     <div style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
       <NoteTimeline
-        emptyLabel="まだ走り書きがありません。最初の一件を記録しましょう。"
+        emptyLabel={t.scratch.emptyTimeline}
         rows={notes.map((note) => ({
           key: note.id,
           meta: (
             <span className="font-mono text-[10px] tracking-wider text-ink-soft">
-              {formatDate(note.encounteredAt)}
+              {formatDate(note.encounteredAt, locale)}
             </span>
           ),
           card: (
@@ -55,7 +59,7 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
                 onClick={() => router.push(`/scratch/${note.id}`)}
                 className="flex w-full flex-col gap-2 rounded-lg border border-line bg-surface-alt p-4 text-left text-sm text-ink transition-colors hover:border-line-strong"
               >
-                {note.preview || "(内容未記入)"}
+                {note.preview || t.common.noContent}
                 {note.literatureCitation && (
                   <span className="flex items-start gap-1.5 border-t border-line pt-2 font-mono text-[10.5px] text-ink-soft">
                     <span className="shrink-0 text-accent">📖</span>
@@ -69,9 +73,9 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
               />
               <ConfirmDialog
                 open={deleteTargetId === note.id}
-                title="この走り書きを削除しますか？"
-                warning="元に戻せません。"
-                confirmLabel="削除"
+                title={t.scratch.deleteConfirmTitle}
+                warning={t.scratch.deleteConfirmWarning}
+                confirmLabel={t.common.delete}
                 onCancel={() => setDeleteTargetId(null)}
                 onConfirm={confirmDelete}
                 confirmDisabled={deletePending}

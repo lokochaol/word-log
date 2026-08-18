@@ -51,7 +51,10 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
           ),
           card: (
             <div className="relative w-full max-w-[420px]">
-              <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-alt p-4 text-sm text-ink">
+              <button
+                onClick={() => router.push(`/scratch/${note.id}`)}
+                className="flex w-full flex-col gap-2 rounded-lg border border-line bg-surface-alt p-4 text-left text-sm text-ink transition-colors hover:border-line-strong"
+              >
                 {note.preview || "(内容未記入)"}
                 {note.literatureCitation && (
                   <span className="flex items-start gap-1.5 border-t border-line pt-2 font-mono text-[10.5px] text-ink-soft">
@@ -59,7 +62,7 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
                     <span className="line-clamp-1">{note.literatureCitation}</span>
                   </span>
                 )}
-              </div>
+              </button>
               <QuickNoteActionMenu
                 onEdit={() => router.push(`/scratch/${note.id}`)}
                 onDelete={() => setDeleteTargetId(note.id)}

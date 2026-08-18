@@ -126,6 +126,7 @@ export function QuickNoteInlineTimeline({
                     <BlocksEditor
                       blocks={editingBlocks}
                       onSave={(blocks) => saveEdit(note.id, blocks)}
+                      onCancel={() => setEditingId(null)}
                       saving={savePending}
                       startInEditMode
                       emptyLabel="＋ 内容を入力"

@@ -47,6 +47,7 @@ export interface Dictionary {
     scratchLabel: string;
     literatureLabel: string;
     settingsLabel: string;
+    guideLabel: string;
     backToScratch: string;
     backToLiterature: string;
     toZettelkasten: string;

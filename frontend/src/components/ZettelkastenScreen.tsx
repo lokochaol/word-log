@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { PileDrill, type GapSelection } from "@/components/PileDrill";
 import { PromotionEditor, type EditableDraft } from "@/components/PromotionEditor";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -187,6 +188,9 @@ export function ZettelkastenScreen({
             >
               {t.zettelkasten.literatureNav}
             </button>
+            <Link href="/guide" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+              {t.nav.guideLabel}
+            </Link>
             <LocaleToggle />
           </HeaderMenu>
         </div>

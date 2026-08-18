@@ -30,6 +30,7 @@ export const ja: Dictionary = {
     scratchLabel: "文献メモ",
     literatureLabel: "文献メモ",
     settingsLabel: "設定",
+    guideLabel: "使い方",
     backToScratch: "走り書きへ戻る",
     backToLiterature: "文献メモへ戻る",
     toZettelkasten: "ツェッテルカステンへ",

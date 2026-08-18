@@ -21,9 +21,10 @@ const ITEM_TYPE_LABEL: Record<CreatableItemType, string> = {
  * memo (summary included) if one was already linked before, otherwise a
  * fresh memo is created holding just the citation info. There is no manual
  * or "pick an existing memo by citation text" path here anymore — every
- * memo a note links to is tied to a real Zotero item. Shared by
- * QuickNote/PermanentNote editing (LiteratureMemoField) and the promotion
- * draft editor (LiteratureMemoDraftField) — this component only ever emits
+ * memo a note links to is tied to a real Zotero item. Shared by QuickNote
+ * editing (LiteratureMemoField), PermanentNote editing
+ * (PermanentNoteLiteratureSection), and the promotion draft editor
+ * (LiteratureMemoDraftField) — this component only ever emits
  * a LiteratureSelection via onPick; it holds no opinion about how that
  * selection gets persisted.
  */

@@ -21,7 +21,7 @@ export interface EditableDraft {
   links: EditableLink[];
   gap: { beforeId: string | null; afterId: string | null } | null;
   orderKey: string | null;
-  literature?: DraftLiteratureSelection;
+  literatureSelections: DraftLiteratureSelection[];
 }
 
 function toDraftForValidation(d: EditableDraft): PermanentNoteDraft {
@@ -30,7 +30,7 @@ function toDraftForValidation(d: EditableDraft): PermanentNoteDraft {
     blocks: d.blocks,
     links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
     orderKey: d.orderKey,
-    literature: d.literature,
+    literatureSelections: d.literatureSelections,
   };
 }
 
@@ -69,7 +69,7 @@ export function PromotionEditor({
   function addDraft() {
     onChangeDrafts([
       ...drafts,
-      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null, literature: undefined },
+      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null, literatureSelections: [] },
     ]);
   }
 
@@ -91,7 +91,7 @@ export function PromotionEditor({
       <div className="flex-1 overflow-auto p-4">
         {drafts.length === 0 && (
           <p className="py-8 text-center text-xs text-ink-soft">
-            右側の走り書きから選択したら、ここでドラフトを作成します。
+            右側の走り書きから選択したら、ここで永久保存版メモを作成します。
           </p>
         )}
 
@@ -121,14 +121,14 @@ export function PromotionEditor({
           onClick={addDraft}
           className="mt-3 w-full rounded-lg border border-dashed border-line px-3 py-2.5 text-center text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent"
         >
-          ＋ もう一件ドラフトを追加
+          ＋ もう一件永久保存版メモを追加
         </button>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-alt px-4 py-3">
         <span className="font-mono text-[10px] text-ink-faint">
           {drafts.length === 0
-            ? "ドラフトがありません"
+            ? "永久保存版メモがありません"
             : incompleteCount > 0
               ? `${drafts.length}件中 ${incompleteCount}件が未入力`
               : "すべて入力済み"}
@@ -213,10 +213,10 @@ function DraftCard({
       </div>
 
       <div className="mt-2.5">
-        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">文献メモ（任意）</label>
+        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">文献メモ（任意・複数可）</label>
         <LiteratureMemoDraftField
-          selection={draft.literature}
-          onChange={(literature) => onChange({ literature })}
+          selections={draft.literatureSelections}
+          onChange={(literatureSelections) => onChange({ literatureSelections })}
         />
       </div>
 

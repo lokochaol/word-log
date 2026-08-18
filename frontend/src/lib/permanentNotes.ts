@@ -35,7 +35,7 @@ export interface PermanentNoteDetail {
   outboundLinks: LinkView[];
   inboundLinks: LinkView[];
   indexEntries: IndexEntryRefView[];
-  literatureMemo: LiteratureMemoRef | null;
+  literatureMemos: LiteratureMemoRef[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,7 +45,7 @@ const detailInclude = {
   outboundLinks: { include: { targetNote: true, targetIndexEntry: true } },
   inboundLinks: { include: { sourceNote: true } },
   indexEntries: true,
-  literatureMemo: true,
+  literatureMemos: { include: { literatureMemo: true }, orderBy: { createdAt: "asc" } },
 } satisfies Prisma.PermanentNoteInclude;
 
 type PermanentNoteWithDetail = Prisma.PermanentNoteGetPayload<{ include: typeof detailInclude }>;
@@ -79,15 +79,13 @@ function toDetail(note: PermanentNoteWithDetail): PermanentNoteDetail {
       targetIndexEntryId: null,
     })),
     indexEntries: note.indexEntries.map((e) => ({ id: e.id, keyword: e.keyword })),
-    literatureMemo: note.literatureMemo
-      ? {
-          id: note.literatureMemo.id,
-          zoteroKey: note.literatureMemo.zoteroKey,
-          citation: note.literatureMemo.citation,
-          url: note.literatureMemo.url,
-          summary: note.literatureMemo.summary,
-        }
-      : null,
+    literatureMemos: note.literatureMemos.map((l) => ({
+      id: l.literatureMemo.id,
+      zoteroKey: l.literatureMemo.zoteroKey,
+      citation: l.literatureMemo.citation,
+      url: l.literatureMemo.url,
+      summary: l.literatureMemo.summary,
+    })),
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
   };
@@ -168,7 +166,10 @@ export async function removeLink(ownerSub: string, sourceNoteId: string, linkId:
   await prisma.permanentNoteLink.delete({ where: { id: linkId } });
 }
 
-export async function setLiteratureMemo(
+/** Adds one more 文献メモ link — a PermanentNote can carry several (unlike
+ * QuickNote, which stays single). Picking a memo already linked is a no-op
+ * (unique constraint on the join table). */
+export async function addLiteratureMemo(
   ownerSub: string,
   id: string,
   selection: LiteratureSelection,
@@ -176,11 +177,26 @@ export async function setLiteratureMemo(
   await requireOwnedPermanentNote(ownerSub, id);
 
   const literatureMemoId = await literatureMemos.resolveSelection(prisma, ownerSub, selection);
-  await prisma.permanentNote.update({
-    where: { id },
-    data: { literatureMemoId },
-  });
+  if (literatureMemoId) {
+    await prisma.permanentNoteLiteratureMemo.upsert({
+      where: { permanentNoteId_literatureMemoId: { permanentNoteId: id, literatureMemoId } },
+      create: { permanentNoteId: id, literatureMemoId },
+      update: {},
+    });
+  }
 
+  return toDetail(await requireOwnedPermanentNote(ownerSub, id));
+}
+
+export async function removeLiteratureMemo(
+  ownerSub: string,
+  id: string,
+  literatureMemoId: string,
+): Promise<PermanentNoteDetail> {
+  await requireOwnedPermanentNote(ownerSub, id);
+  await prisma.permanentNoteLiteratureMemo.deleteMany({
+    where: { permanentNoteId: id, literatureMemoId },
+  });
   return toDetail(await requireOwnedPermanentNote(ownerSub, id));
 }
 

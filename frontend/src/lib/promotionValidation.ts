@@ -19,9 +19,12 @@ export interface PermanentNoteDraft {
   links: DraftLink[];
   /** Resolved via computeInsertRankAction / insertRank before submission — null means "not yet chosen". */
   orderKey: string | null;
-  /** Optional 文献メモ link — resolved (dedup/create) inside the promotion transaction itself, since the
-   * PermanentNote doesn't exist in the DB until that transaction commits. Never required for a draft to be valid. */
-  literature?: LiteratureSelection;
+  /** Optional 文献メモ links (a PermanentNote can hold several — e.g. carried
+   * over from multiple merged 走り書き, each with their own citation) —
+   * resolved (dedup/create) inside the promotion transaction itself, since the
+   * PermanentNote doesn't exist in the DB until that transaction commits.
+   * Never required for a draft to be valid. */
+  literatureSelections?: LiteratureSelection[];
 }
 
 /**

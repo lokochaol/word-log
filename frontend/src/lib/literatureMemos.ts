@@ -17,10 +17,13 @@ import { NotFoundError } from "@/lib/errors";
  *  - "none": clear the note's literature link.
  */
 export type LiteratureSelection =
-  | { type: "existing"; id: string }
+  | { type: "existing"; id: string; citation?: string } // citation is display-only, ignored by resolveSelection
   | { type: "zotero"; zoteroKey: string; citation: string; url: string | null; summary?: string | null }
   | { type: "manual"; citation: string; url: string | null; summary?: string | null }
   | { type: "none" };
+
+/** A draft never holds the "none" selection variant — clearing one just drops it from the list. */
+export type DraftLiteratureSelection = Exclude<LiteratureSelection, { type: "none" }>;
 
 /** Structurally compatible with both the default `prisma` client and a
  * `Prisma.TransactionClient` from inside promotion.ts's transaction — see
@@ -129,6 +132,28 @@ export async function resolveSelection(
   return created.id;
 }
 
+/** PermanentNote-only: resolves a list of selections (e.g. carried over from
+ * several merged 走り書き, each with their own literature link) into a
+ * deduped list of LiteratureMemo ids — picking the same Zotero item twice,
+ * or the same "existing" memo twice, collapses to one entry. */
+export async function resolveSelections(
+  db: Db,
+  ownerSub: string,
+  selections: LiteratureSelection[] | null | undefined,
+): Promise<string[]> {
+  if (!selections || selections.length === 0) return [];
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const selection of selections) {
+    const id = await resolveSelection(db, ownerSub, selection);
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
 export async function requireOwnedLiteratureMemo(ownerSub: string, id: string) {
   const memo = await prisma.literatureMemo.findFirst({ where: { id, ownerSub } });
   if (!memo) throw new NotFoundError(`LiteratureMemo not found: ${id}`);
@@ -142,7 +167,7 @@ export async function list(ownerSub: string): Promise<LiteratureMemoSummary[]> {
     // order as 走り書き's timeline (encounteredAt asc), rather than jumping
     // around whenever a summary edit bumps updatedAt.
     orderBy: { createdAt: "asc" },
-    include: { _count: { select: { quickNotes: true, permanentNotes: true } } },
+    include: { _count: { select: { quickNotes: true, permanentNoteLinks: true } } },
   });
   return memos.map((m) => ({
     id: m.id,
@@ -151,7 +176,7 @@ export async function list(ownerSub: string): Promise<LiteratureMemoSummary[]> {
     url: m.url,
     summary: m.summary,
     quickNoteCount: m._count.quickNotes,
-    permanentNoteCount: m._count.permanentNotes,
+    permanentNoteCount: m._count.permanentNoteLinks,
     updatedAt: m.updatedAt,
   }));
 }
@@ -164,7 +189,7 @@ export async function search(ownerSub: string, query: string, limit = 20): Promi
     where: { ownerSub, citation: { contains: q, mode: "insensitive" } },
     orderBy: { updatedAt: "desc" },
     take: limit,
-    include: { _count: { select: { quickNotes: true, permanentNotes: true } } },
+    include: { _count: { select: { quickNotes: true, permanentNoteLinks: true } } },
   });
   return memos.map((m) => ({
     id: m.id,
@@ -173,7 +198,7 @@ export async function search(ownerSub: string, query: string, limit = 20): Promi
     url: m.url,
     summary: m.summary,
     quickNoteCount: m._count.quickNotes,
-    permanentNoteCount: m._count.permanentNotes,
+    permanentNoteCount: m._count.permanentNoteLinks,
     updatedAt: m.updatedAt,
   }));
 }
@@ -186,10 +211,15 @@ export async function getDetail(ownerSub: string, id: string): Promise<Literatur
         include: { blocks: { orderBy: { position: "asc" }, take: 1 } },
         orderBy: { encounteredAt: "desc" },
       },
-      permanentNotes: { orderBy: { orderKey: "asc" }, select: { id: true, title: true } },
+      permanentNoteLinks: {
+        include: { permanentNote: { select: { id: true, title: true, orderKey: true } } },
+      },
     },
   });
   if (!memo) throw new NotFoundError(`LiteratureMemo not found: ${id}`);
+  const permanentNotes = memo.permanentNoteLinks
+    .map((l) => l.permanentNote)
+    .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
   return {
     id: memo.id,
     zoteroKey: memo.zoteroKey,
@@ -202,7 +232,7 @@ export async function getDetail(ownerSub: string, id: string): Promise<Literatur
       id: n.id,
       preview: n.blocks[0]?.content.slice(0, 120) ?? "",
     })),
-    permanentNotes: memo.permanentNotes.map((n) => ({ id: n.id, title: n.title })),
+    permanentNotes: permanentNotes.map((n) => ({ id: n.id, title: n.title })),
   };
 }
 
@@ -243,8 +273,9 @@ export async function create(ownerSub: string): Promise<LiteratureMemoDetail> {
   return getDetail(ownerSub, created.id);
 }
 
-/** Deletes the memo. `onDelete: SetNull` on both relations cleanly unlinks
- * every QuickNote/PermanentNote that referenced it first. */
+/** Deletes the memo. QuickNote's `onDelete: SetNull` cleanly unlinks it there;
+ * PermanentNote's join rows `onDelete: Cascade` away (the permanent notes
+ * themselves are untouched — only their link to this memo disappears). */
 export async function remove(ownerSub: string, id: string): Promise<void> {
   await requireOwnedLiteratureMemo(ownerSub, id);
   await prisma.literatureMemo.delete({ where: { id } });

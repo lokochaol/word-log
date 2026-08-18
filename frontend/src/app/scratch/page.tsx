@@ -18,40 +18,36 @@ export default async function ScratchPage() {
   const locale = await getLocale();
   const dict = getDictionary(locale);
 
+  const header = (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-lg font-extrabold tracking-tight text-ink">
+          <AppBrand locale={locale} screen="scratch" />
+        </span>
+        <HeaderMenu>
+          <span className="font-mono text-[10px] text-ink-soft">
+            {session.user?.email ?? dict.common.unknownEmail}
+          </span>
+          <ZettelkastenNavButton />
+          <Link href="/literature" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+            {dict.nav.literatureLabel}
+          </Link>
+          <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+            {dict.nav.settingsLabel}
+          </Link>
+          <LocaleToggle />
+          <SignOutButton />
+        </HeaderMenu>
+      </div>
+
+      <HomeSearchBar />
+    </>
+  );
+
   return (
     <main className="flex h-screen flex-col items-center overflow-hidden bg-bg px-6 py-6">
-      <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col gap-6">
-        <div className="flex shrink-0 items-center justify-between gap-3">
-          <span className="text-lg font-extrabold tracking-tight text-ink">
-            <AppBrand locale={locale} screen="scratch" />
-          </span>
-          <HeaderMenu>
-            <span className="font-mono text-[10px] text-ink-soft">
-              {session.user?.email ?? dict.common.unknownEmail}
-            </span>
-            <ZettelkastenNavButton />
-            <Link
-              href="/literature"
-              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
-            >
-              {dict.nav.literatureLabel}
-            </Link>
-            <Link
-              href="/settings"
-              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
-            >
-              {dict.nav.settingsLabel}
-            </Link>
-            <LocaleToggle />
-            <SignOutButton />
-          </HeaderMenu>
-        </div>
-
-        <div className="shrink-0">
-          <HomeSearchBar />
-        </div>
-
-        <ScratchTimeline initialNotes={notes} />
+      <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col">
+        <ScratchTimeline initialNotes={notes} header={header} />
       </div>
     </main>
   );

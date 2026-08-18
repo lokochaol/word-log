@@ -131,7 +131,7 @@ export const en: Dictionary = {
     selectedCount: (n) => `${n} selected`,
     emptyDrill: "No permanent notes yet",
     emptyTimeline: "No Dash Off notes yet",
-    addNote: "+ Dash Off note",
+    addNote: "Dash Off note",
     detailLoading: "Loading…",
     detailClose: "Close ✕",
     addToIndex: "Add to index",

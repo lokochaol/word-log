@@ -137,10 +137,8 @@ export function LiteratureMemoPane({
           }))}
         />
       )}
-      </div>
 
-      <div className="shrink-0 px-4 pb-4">
-        <AddLiteratureMemoButton onCreated={handleCreated} />
+      <AddLiteratureMemoButton onCreated={handleCreated} />
       </div>
     </div>
   );

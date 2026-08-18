@@ -131,7 +131,7 @@ export const ja: Dictionary = {
     selectedCount: (n) => `${n}件選択中`,
     emptyDrill: "まだ永久保存版メモがありません",
     emptyTimeline: "走り書きはまだありません",
-    addNote: "＋ 走り書き",
+    addNote: "走り書き",
     detailLoading: "読み込み中…",
     detailClose: "閉じる ✕",
     addToIndex: "索引に追加",

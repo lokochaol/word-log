@@ -24,23 +24,25 @@ export default async function ScratchPage() {
         <span className="text-lg font-extrabold tracking-tight text-ink">
           <AppBrand locale={locale} screen="scratch" />
         </span>
-        <HeaderMenu>
-          <span className="font-mono text-[10px] text-ink-soft">
-            {session.user?.email ?? dict.common.unknownEmail}
-          </span>
+        <div className="flex items-center gap-2">
           <ZettelkastenNavButton />
-          <Link href="/literature" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
-            {dict.nav.literatureLabel}
-          </Link>
-          <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
-            {dict.nav.settingsLabel}
-          </Link>
-          <Link href="/guide" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
-            {dict.nav.guideLabel}
-          </Link>
-          <LocaleToggle />
-          <SignOutButton />
-        </HeaderMenu>
+          <HeaderMenu>
+            <span className="font-mono text-[10px] text-ink-soft">
+              {session.user?.email ?? dict.common.unknownEmail}
+            </span>
+            <Link href="/literature" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+              {dict.nav.literatureLabel}
+            </Link>
+            <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+              {dict.nav.settingsLabel}
+            </Link>
+            <Link href="/guide" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+              {dict.nav.guideLabel}
+            </Link>
+            <LocaleToggle />
+            <SignOutButton />
+          </HeaderMenu>
+        </div>
       </div>
 
       <HomeSearchBar />

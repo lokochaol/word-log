@@ -50,12 +50,18 @@ function BlockTag({ type }: { type: BlockType }) {
 export function BlocksEditor({
   blocks,
   onSave,
+  onCancel,
   saving = false,
   emptyLabel = "＋ ブロックを追加",
   startInEditMode = false,
 }: {
   blocks: Block[];
   onSave: (blocks: BlockInput[]) => void | Promise<void>;
+  /** Called (in addition to the internal view/edit toggle) when キャンセル is
+   * pressed — for a caller that mounts this already in edit mode based on its
+   * own external state (e.g. QuickNoteInlineTimeline), that state needs to be
+   * reset too or the surrounding UI never returns to its non-editing view. */
+  onCancel?: () => void;
   saving?: boolean;
   emptyLabel?: string;
   startInEditMode?: boolean;
@@ -137,7 +143,10 @@ export function BlocksEditor({
 
       <div className="flex justify-end gap-2">
         <button
-          onClick={() => setEditing(false)}
+          onClick={() => {
+            setEditing(false);
+            onCancel?.();
+          }}
           className="rounded-lg border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-alt"
         >
           キャンセル

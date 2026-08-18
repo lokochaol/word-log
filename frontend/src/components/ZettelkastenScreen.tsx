@@ -294,39 +294,40 @@ export function ZettelkastenScreen({
           className="flex min-h-0 min-w-0 flex-col"
           style={{ viewTransitionName: "note-timeline" } as CSSProperties}
         >
-          <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
-            <span className="text-accent">③</span> {t.zettelkasten.scratchColumnHeading}
-            {selectedQuickNoteIds.size > 0 && (
-              <span className="ml-auto font-mono text-[10px] text-accent normal-case">
-                {t.zettelkasten.selectedCount(selectedQuickNoteIds.size)}
-              </span>
-            )}
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col p-3">
-            {selectedQuickNoteIds.size > 0 && drafts.length === 0 && (
-              <button
-                onClick={buildDraftFromSelection}
-                className="btn-sheen mb-3 w-full shrink-0 rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
-              >
-                {t.zettelkasten.createFromSelection(selectedQuickNoteIds.size)}
-              </button>
-            )}
-            <QuickNoteInlineTimeline
-              notes={activeQuickNotes}
-              onNotesChange={setActiveQuickNotes}
-              selectedIds={selectedQuickNoteIds}
-              onToggleSelect={toggleQuickNoteSelection}
-              onDeleted={(id) =>
-                setSelectedQuickNoteIds((prev) => {
-                  if (!prev.has(id)) return prev;
-                  const next = new Set(prev);
-                  next.delete(id);
-                  return next;
-                })
-              }
-            />
-          </div>
+          <QuickNoteInlineTimeline
+            notes={activeQuickNotes}
+            onNotesChange={setActiveQuickNotes}
+            selectedIds={selectedQuickNoteIds}
+            onToggleSelect={toggleQuickNoteSelection}
+            onDeleted={(id) =>
+              setSelectedQuickNoteIds((prev) => {
+                if (!prev.has(id)) return prev;
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+              })
+            }
+            header={
+              <>
+                <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
+                  <span className="text-accent">③</span> {t.zettelkasten.scratchColumnHeading}
+                  {selectedQuickNoteIds.size > 0 && (
+                    <span className="ml-auto font-mono text-[10px] text-accent normal-case">
+                      {t.zettelkasten.selectedCount(selectedQuickNoteIds.size)}
+                    </span>
+                  )}
+                </div>
+                {selectedQuickNoteIds.size > 0 && drafts.length === 0 && (
+                  <button
+                    onClick={buildDraftFromSelection}
+                    className="btn-sheen w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
+                  >
+                    {t.zettelkasten.createFromSelection(selectedQuickNoteIds.size)}
+                  </button>
+                )}
+              </>
+            }
+          />
         </div>
       </div>
 

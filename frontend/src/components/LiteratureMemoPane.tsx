@@ -17,6 +17,8 @@ import type { LiteratureMemoDetail, LiteratureMemoSummary } from "@/lib/literatu
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 
+const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)";
+
 /**
  * Inline 文献メモ browser for ①'s pane — the main use case is a quick
  * lookup/confirmation while linking a note, not a destination in itself, so
@@ -84,15 +86,20 @@ export function LiteratureMemoPane({
   const filtered = (memos ?? []).filter((m) => m.citation.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-4">
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t.literature.filterPlaceholder}
-        className="shrink-0 w-full rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft focus:border-accent focus:outline-none"
-      />
+    <div className="flex h-full min-h-0 flex-col">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4">
+      <div
+        className="sticky top-0 z-20 -mx-4 bg-bg px-4 pt-4 pb-6"
+        style={{ maskImage: HEADER_FADE_MASK, WebkitMaskImage: HEADER_FADE_MASK }}
+      >
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t.literature.filterPlaceholder}
+          className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft focus:border-accent focus:outline-none"
+        />
+      </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
       {memos === null ? (
         <LoadingBlock label={t.common.loading} size="md" />
       ) : (
@@ -132,7 +139,7 @@ export function LiteratureMemoPane({
       )}
       </div>
 
-      <div className="shrink-0">
+      <div className="shrink-0 px-4 pb-4">
         <AddLiteratureMemoButton onCreated={handleCreated} />
       </div>
     </div>

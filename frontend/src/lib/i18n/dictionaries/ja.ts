@@ -119,7 +119,6 @@ export const ja: Dictionary = {
   zettelkasten: {
     loadingLabel: "ツェッテルカステンを読み込み中…",
     backToScratch: "走り書き",
-    navPill: "ツェッテルカステン",
     literatureNav: "文献メモ",
     columnTitle: "ツェッテルカステン",
     literatureTabLabel: "文献メモ",

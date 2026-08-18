@@ -30,6 +30,8 @@ import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
+import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
+import { SignOutButton } from "@/components/SignOutButton";
 import { RotateDeviceGate } from "@/components/RotateDeviceGate";
 
 export function ZettelkastenScreen({
@@ -37,11 +39,13 @@ export function ZettelkastenScreen({
   initialActiveQuickNotes,
   initialIndexEntries,
   deepLinkOpenId,
+  userEmail,
 }: {
   initialGlobalOrder: GlobalOrderEntry[];
   initialActiveQuickNotes: QuickNoteSummary[];
   initialIndexEntries: IndexEntrySummary[];
   deepLinkOpenId?: string;
+  userEmail: string;
 }) {
   const router = useRouter();
   const { t, locale } = useI18n();
@@ -176,17 +180,20 @@ export function ZettelkastenScreen({
         <span className="text-sm font-extrabold tracking-tight text-ink">
           <AppBrand locale={locale} screen="zettelkasten" />
         </span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={handleNavigateToScratch}
+            className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
+          >
+            <span className="text-accent">←</span> {t.zettelkasten.backToScratch}
+          </button>
           <HeaderMenu>
-            <button
-              onClick={handleNavigateToScratch}
-              className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
-            >
-              <span className="text-accent">←</span> {t.zettelkasten.backToScratch}
-            </button>
-            <span className="rounded-full border border-accent bg-accent-soft px-3 py-1.5 font-mono text-[10.5px] text-ink">
-              {t.zettelkasten.navPill}
-            </span>
+            <div className="flex w-full flex-col items-end gap-1.5 border-b border-line pb-2.5">
+              <HeaderAccountBadge email={userEmail} />
+              <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+                {t.nav.settingsLabel}
+              </Link>
+            </div>
             <button
               onClick={() => setCol1Mode("literature")}
               className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
@@ -197,6 +204,7 @@ export function ZettelkastenScreen({
               {t.nav.guideLabel}
             </Link>
             <LocaleToggle />
+            <SignOutButton />
           </HeaderMenu>
         </div>
       </div>

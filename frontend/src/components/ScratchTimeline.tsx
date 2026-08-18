@@ -59,7 +59,7 @@ export function ScratchTimeline({ initialNotes, header }: { initialNotes: QuickN
     <div className="min-h-0 flex-1" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
       <div ref={scrollRef} className="scrollbar-hidden h-full overflow-y-auto px-4">
         <div
-          className="sticky top-0 z-10 -mx-4 flex flex-col gap-6 bg-bg px-4 pt-6 pb-8"
+          className="sticky top-0 z-20 -mx-4 flex flex-col gap-6 bg-bg px-4 pt-6 pb-8"
           style={{ maskImage: HEADER_FADE_MASK, WebkitMaskImage: HEADER_FADE_MASK }}
         >
           {header}

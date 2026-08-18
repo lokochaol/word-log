@@ -18,9 +18,9 @@ export default async function ScratchPage() {
   const dict = getDictionary(locale);
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
-      <div className="flex w-full max-w-[720px] flex-col gap-8">
-        <div className="flex items-center justify-between">
+    <main className="flex h-screen flex-col items-center overflow-hidden bg-bg px-6 py-6">
+      <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col gap-6">
+        <div className="flex shrink-0 items-center justify-between">
           <span className="text-lg font-extrabold tracking-tight text-ink">
             <AppBrand locale={locale} screen="scratch" />
           </span>
@@ -46,7 +46,9 @@ export default async function ScratchPage() {
           </div>
         </div>
 
-        <HomeSearchBar />
+        <div className="shrink-0">
+          <HomeSearchBar />
+        </div>
 
         <ScratchTimeline initialNotes={notes} />
       </div>

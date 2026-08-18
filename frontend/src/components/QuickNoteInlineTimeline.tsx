@@ -16,6 +16,7 @@ import type { Block, BlockInput, QuickNoteSummary } from "@/lib/quickNotes";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
+import { useAutoScrollToBottom } from "@/lib/useAutoScrollToBottom";
 
 function previewFrom(blocks: Block[] | BlockInput[]): string {
   const first = blocks.find((b) => b.content.trim().length > 0);
@@ -53,6 +54,7 @@ export function QuickNoteInlineTimeline({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
   const [creating, setCreating] = useState(false);
+  const scrollRef = useAutoScrollToBottom<HTMLDivElement>(notes.length);
 
   async function startEdit(id: string) {
     setLoadingEditId(id);
@@ -114,8 +116,9 @@ export function QuickNoteInlineTimeline({
   }
 
   return (
-    <>
-      <NoteTimeline
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <NoteTimeline
         emptyLabel={t.zettelkasten.emptyTimeline}
         rows={notes.map((note) => {
           const isEditing = editingId === note.id;
@@ -176,16 +179,17 @@ export function QuickNoteInlineTimeline({
             dotClassName: selectedIds.has(note.id) ? "bg-accent" : "",
           };
         })}
-      />
+        />
+      </div>
 
       <button
         onClick={addNote}
         disabled={creating}
-        className="btn-sheen mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-accent/50 px-3 py-2.5 text-center font-mono text-xs font-semibold text-accent transition-colors hover:border-accent disabled:opacity-50"
+        className="btn-sheen mt-3 flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-dashed border-accent/50 px-3 py-2.5 text-center font-mono text-xs font-semibold text-accent transition-colors hover:border-accent disabled:opacity-50"
       >
         {creating && <Spinner size="xs" />}
         {creating ? t.common.creating : t.zettelkasten.addNote}
       </button>
-    </>
+    </div>
   );
 }

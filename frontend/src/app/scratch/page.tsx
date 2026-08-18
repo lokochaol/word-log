@@ -8,6 +8,7 @@ import { ZettelkastenNavButton } from "@/components/ZettelkastenNavButton";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
+import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 
@@ -27,14 +28,14 @@ export default async function ScratchPage() {
         <div className="flex items-center gap-2">
           <ZettelkastenNavButton />
           <HeaderMenu>
-            <span className="font-mono text-[10px] text-ink-soft">
-              {session.user?.email ?? dict.common.unknownEmail}
-            </span>
+            <div className="flex w-full flex-col items-end gap-1.5 border-b border-line pb-2.5">
+              <HeaderAccountBadge email={session.user?.email ?? dict.common.unknownEmail} />
+              <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+                {dict.nav.settingsLabel}
+              </Link>
+            </div>
             <Link href="/literature" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
               {dict.nav.literatureLabel}
-            </Link>
-            <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
-              {dict.nav.settingsLabel}
             </Link>
             <Link href="/guide" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
               {dict.nav.guideLabel}

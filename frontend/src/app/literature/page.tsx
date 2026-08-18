@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/session";
 import { LiteratureMemoList } from "@/components/LiteratureMemoList";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
+import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 
@@ -28,9 +29,7 @@ export default async function LiteraturePage() {
               {dict.nav.guideLabel}
             </Link>
             <LocaleToggle />
-            <span className="font-mono text-[10px] text-ink-soft">
-              {session.user?.email ?? dict.common.unknownEmail}
-            </span>
+            <HeaderAccountBadge email={session.user?.email ?? dict.common.unknownEmail} />
           </HeaderMenu>
         </div>
 

@@ -150,6 +150,8 @@ export const ja: Dictionary = {
     drillGroupLabel: (index, count) => `山${index + 1}（${count}件）`,
     deleteConfirmTitle: "この走り書きを削除しますか？",
     deleteConfirmWarning: "元に戻せません。",
+    rotateTitle: "画面を横向きにしてください",
+    rotateBody: "ツェッテルカステンは3カラムのレイアウトのため、横向きでの利用が必要です。",
   },
   promotionEditor: {
     heading: (n) => `永久保存版メモ作成 — ${n}件`,

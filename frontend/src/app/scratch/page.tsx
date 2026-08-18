@@ -7,6 +7,7 @@ import { ScratchTimeline } from "@/components/ScratchTimeline";
 import { ZettelkastenNavButton } from "@/components/ZettelkastenNavButton";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
+import { HeaderMenu } from "@/components/HeaderMenu";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 
@@ -20,12 +21,12 @@ export default async function ScratchPage() {
   return (
     <main className="flex h-screen flex-col items-center overflow-hidden bg-bg px-6 py-6">
       <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col gap-6">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex shrink-0 items-center justify-between gap-3">
           <span className="text-lg font-extrabold tracking-tight text-ink">
             <AppBrand locale={locale} screen="scratch" />
           </span>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-            <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
+          <HeaderMenu>
+            <span className="font-mono text-[10px] text-ink-soft">
               {session.user?.email ?? dict.common.unknownEmail}
             </span>
             <ZettelkastenNavButton />
@@ -43,7 +44,7 @@ export default async function ScratchPage() {
             </Link>
             <LocaleToggle />
             <SignOutButton />
-          </div>
+          </HeaderMenu>
         </div>
 
         <div className="shrink-0">

@@ -28,6 +28,8 @@ import { midpointRank } from "@/lib/rank";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
+import { HeaderMenu } from "@/components/HeaderMenu";
+import { RotateDeviceGate } from "@/components/RotateDeviceGate";
 
 export function ZettelkastenScreen({
   initialGlobalOrder,
@@ -163,27 +165,30 @@ export function ZettelkastenScreen({
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-bg">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-6 py-3.5">
+      <RotateDeviceGate />
+      <div className="flex items-center gap-3 border-b border-line px-6 py-3.5">
         <span className="text-sm font-extrabold tracking-tight text-ink">
           <AppBrand locale={locale} screen="zettelkasten" />
         </span>
-        <div className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-1.5">
-          <button
-            onClick={handleNavigateToScratch}
-            className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
-          >
-            <span className="text-accent">←</span> {t.zettelkasten.backToScratch}
-          </button>
-          <span className="rounded-full border border-accent bg-accent-soft px-3 py-1.5 font-mono text-[10.5px] text-ink">
-            {t.zettelkasten.navPill}
-          </span>
-          <button
-            onClick={() => setCol1Mode("literature")}
-            className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
-          >
-            {t.zettelkasten.literatureNav}
-          </button>
-          <LocaleToggle />
+        <div className="ml-auto">
+          <HeaderMenu>
+            <button
+              onClick={handleNavigateToScratch}
+              className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
+            >
+              <span className="text-accent">←</span> {t.zettelkasten.backToScratch}
+            </button>
+            <span className="rounded-full border border-accent bg-accent-soft px-3 py-1.5 font-mono text-[10.5px] text-ink">
+              {t.zettelkasten.navPill}
+            </span>
+            <button
+              onClick={() => setCol1Mode("literature")}
+              className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+            >
+              {t.zettelkasten.literatureNav}
+            </button>
+            <LocaleToggle />
+          </HeaderMenu>
         </div>
       </div>
 

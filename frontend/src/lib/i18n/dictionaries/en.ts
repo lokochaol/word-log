@@ -151,6 +151,8 @@ export const en: Dictionary = {
     drillGroupLabel: (index, count) => `Pile ${index + 1} (${count})`,
     deleteConfirmTitle: "Delete this Dash Off note?",
     deleteConfirmWarning: "This can't be undone.",
+    rotateTitle: "Please rotate your device",
+    rotateBody: "Zettelkasten uses a 3-column layout and needs landscape orientation.",
   },
   promotionEditor: {
     heading: (n) => `Create permanent notes — ${n}`,

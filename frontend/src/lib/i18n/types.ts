@@ -167,6 +167,8 @@ export interface Dictionary {
     drillGroupLabel: (index: number, count: number) => string;
     deleteConfirmTitle: string;
     deleteConfirmWarning: string;
+    rotateTitle: string;
+    rotateBody: string;
   };
   promotionEditor: {
     heading: (n: number) => string;

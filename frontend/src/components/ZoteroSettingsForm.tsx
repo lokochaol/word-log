@@ -5,9 +5,12 @@ import { HudFrame } from "@/components/HudFrame";
 import { Spinner } from "@/components/LoadingSpinner";
 import { removeZoteroSettingsAction, saveZoteroSettingsAction } from "@/app/settings/actions";
 import type { ZoteroCredentialSummary } from "@/lib/zoteroCredentials";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localeTag } from "@/lib/i18n/dictionary";
+import type { Locale } from "@/lib/i18n/types";
 
-function formatDate(date: Date) {
-  return date.toLocaleString("ja-JP", {
+function formatDate(date: Date, locale: Locale) {
+  return date.toLocaleString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -17,6 +20,7 @@ function formatDate(date: Date) {
 }
 
 export function ZoteroSettingsForm({ initial }: { initial: ZoteroCredentialSummary | null }) {
+  const { t, locale } = useI18n();
   const [summary, setSummary] = useState(initial);
   const [apiKey, setApiKey] = useState("");
   const [libraryId, setLibraryId] = useState(initial?.libraryId ?? "");
@@ -54,15 +58,15 @@ export function ZoteroSettingsForm({ initial }: { initial: ZoteroCredentialSumma
       {summary && (
         <div className="flex items-center justify-between rounded-lg border border-line bg-surface-alt px-3 py-2">
           <span className="font-mono text-[11px] text-ink">
-            連携済み — ライブラリID {summary.libraryId}（{summary.libraryType === "group" ? "グループ" : "個人"}）
-            <span className="ml-2 text-ink-faint">最終更新 {formatDate(summary.updatedAt)}</span>
+            {t.settings.connectedSummary(summary.libraryId)}（{summary.libraryType === "group" ? t.settings.libraryTypeGroup : t.settings.libraryTypeUser}）
+            <span className="ml-2 text-ink-faint">{t.settings.lastUpdated(formatDate(summary.updatedAt, locale))}</span>
           </span>
           <button
             onClick={disconnect}
             disabled={pending}
             className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent disabled:opacity-50"
           >
-            連携解除
+            {t.settings.disconnect}
           </button>
         </div>
       )}
@@ -74,35 +78,34 @@ export function ZoteroSettingsForm({ initial }: { initial: ZoteroCredentialSumma
           rel="noreferrer"
           className="text-accent underline"
         >
-          zotero.org/settings/keys
+          {t.settings.apiKeyHelp1}
         </a>
-        でAPIキーを発行し、下記に入力してください。検索して使うだけなら読み取り権限で十分ですが、
-        検索でヒットしなかった文献をその場でZoteroに新規登録したい場合は「Write Access」も有効にしてください。
+        {t.settings.apiKeyHelp2}
       </p>
 
       <LabeledInput
-        label="APIキー"
+        label={t.settings.apiKeyLabel}
         value={apiKey}
         onChange={setApiKey}
-        placeholder={summary ? "変更する場合のみ入力" : "Zoteroで発行したAPIキー"}
+        placeholder={summary ? t.settings.apiKeyPlaceholderExisting : t.settings.apiKeyPlaceholderNew}
         type="password"
       />
-      <LabeledInput label="ライブラリID（userID）" value={libraryId} onChange={setLibraryId} placeholder="例: 1234567" />
+      <LabeledInput label={t.settings.libraryIdLabel} value={libraryId} onChange={setLibraryId} placeholder={t.settings.libraryIdPlaceholder} />
 
       <div className="flex flex-col gap-1.5">
-        <label className="font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">ライブラリ種別</label>
+        <label className="font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">{t.settings.libraryTypeLabel}</label>
         <div className="flex gap-2">
-          {(["user", "group"] as const).map((t) => (
+          {(["user", "group"] as const).map((lt) => (
             <button
-              key={t}
-              onClick={() => setLibraryType(t)}
+              key={lt}
+              onClick={() => setLibraryType(lt)}
               className={`rounded-full border px-3 py-1 font-mono text-[10.5px] transition-colors ${
-                libraryType === t
+                libraryType === lt
                   ? "border-accent bg-accent-soft text-accent"
                   : "border-line text-ink-soft hover:border-line-strong"
               }`}
             >
-              {t === "user" ? "個人" : "グループ"}
+              {lt === "user" ? t.settings.libraryTypeUser : t.settings.libraryTypeGroup}
             </button>
           ))}
         </div>
@@ -117,7 +120,7 @@ export function ZoteroSettingsForm({ initial }: { initial: ZoteroCredentialSumma
           className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
         >
           {pending && <Spinner size="xs" />}
-          {pending ? "保存中…" : saved ? "保存しました" : "保存"}
+          {pending ? t.common.saving : saved ? t.common.saved : t.common.save}
         </button>
       </div>
     </div>

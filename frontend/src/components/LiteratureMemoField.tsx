@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { LiteratureMemoPicker } from "@/components/LiteratureMemoPicker";
 import { LoadingBlock, Spinner } from "@/components/LoadingSpinner";
 import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
  * 文献メモ section on an existing QuickNote's or PermanentNote's detail view.
@@ -22,6 +23,7 @@ export function LiteratureMemoField({
   onPick: (selection: LiteratureSelection) => Promise<{ literatureMemo: LiteratureMemoRef | null }>;
   onSaveSummary: (memoId: string, summary: string) => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [memo, setMemo] = useState(linked);
   const [pickerOpen, setPickerOpen] = useState(!linked);
   const [summary, setSummary] = useState(linked?.summary ?? "");
@@ -67,27 +69,27 @@ export function LiteratureMemoField({
               )}
               <div className="mt-1 flex gap-3">
                 <Link href={`/literature/${memo.id}`} className="font-mono text-[10px] text-ink-soft underline hover:text-accent">
-                  文献メモを開く →
+                  {t.literatureField.openMemo}
                 </Link>
               </div>
             </div>
             <div className="flex shrink-0 gap-2">
               <button onClick={() => setPickerOpen(true)} className="font-mono text-[10px] text-ink-soft hover:text-accent">
-                変更
+                {t.common.change}
               </button>
               <button
                 disabled={pickPending}
                 onClick={() => handlePick({ type: "none" })}
                 className="font-mono text-[10px] text-ink-soft hover:text-accent disabled:opacity-50"
               >
-                解除
+                {t.literatureField.remove}
               </button>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
-              文献に書いてあったこと（自分の言葉で） — この文献メモを参照する全ノートで共有されます
+              {t.literatureField.summaryLabel}
             </label>
             <textarea
               value={summary}
@@ -102,7 +104,7 @@ export function LiteratureMemoField({
                 className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
               >
                 {savePending && <Spinner size="xs" />}
-                {savePending ? "保存中…" : saved ? "保存しました" : "保存"}
+                {savePending ? t.common.saving : saved ? t.common.saved : t.common.save}
               </button>
             </div>
           </div>
@@ -114,7 +116,7 @@ export function LiteratureMemoField({
           onClick={() => setPickerOpen(true)}
           className="w-fit rounded-lg border border-dashed border-line px-3 py-2 text-left font-mono text-[10.5px] text-ink-soft transition-colors hover:border-accent hover:text-accent"
         >
-          ＋ 文献メモをリンク
+          {t.literatureField.linkButton}
         </button>
       )}
 
@@ -122,11 +124,11 @@ export function LiteratureMemoField({
         <div className="flex flex-col gap-2">
           {memo && (
             <button onClick={() => setPickerOpen(false)} className="w-fit font-mono text-[10px] text-ink-soft hover:text-accent">
-              ✕ キャンセル
+              ✕ {t.common.cancel}
             </button>
           )}
           {pickPending ? (
-            <LoadingBlock label="リンク中…" className="justify-start py-1" />
+            <LoadingBlock label={t.common.linking} className="justify-start py-1" />
           ) : (
             <LiteratureMemoPicker onPick={handlePick} />
           )}

@@ -7,12 +7,7 @@ import { Spinner } from "@/components/LoadingSpinner";
 import { zoteroCreateItemAction, zoteroSearchAction } from "@/app/scratch/actions";
 import { CREATABLE_ITEM_TYPES, type CreatableItemType, type ZoteroSearchResult } from "@/lib/zotero";
 import type { LiteratureSelection } from "@/lib/literatureMemos";
-
-const ITEM_TYPE_LABEL: Record<CreatableItemType, string> = {
-  book: "本",
-  journalArticle: "論文",
-  webpage: "Webページ",
-};
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
  * The "choose which 文献メモ to link" interaction — Zotero search only
@@ -30,6 +25,8 @@ const ITEM_TYPE_LABEL: Record<CreatableItemType, string> = {
  * selection gets persisted.
  */
 export function LiteratureMemoPicker({ onPick }: { onPick: (selection: LiteratureSelection) => void }) {
+  const { t } = useI18n();
+  const ITEM_TYPE_LABEL = t.literaturePicker.itemTypeLabel;
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ZoteroSearchResult[] | null>(null);
   const [state, setState] = useState<"idle" | "searching" | "unconfigured" | "error">("idle");
@@ -64,10 +61,11 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
       } catch {
         setResults(null);
         setState("error");
-        setErrorMessage("検索に失敗しました。もう一度お試しください。");
+        setErrorMessage(t.literaturePicker.searchFallbackError);
       }
     }, 300);
     return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   function pickResult(r: ZoteroSearchResult) {
@@ -86,7 +84,7 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
             setCreating(false);
             setCreateError(null);
           }}
-          placeholder="タイトル・著者・年で検索…"
+          placeholder={t.literaturePicker.searchPlaceholder}
           className="w-full bg-transparent text-xs text-ink placeholder:text-ink-soft focus:outline-none"
         />
         {state === "searching" && <Spinner size="xs" />}
@@ -94,11 +92,11 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
 
       {state === "unconfigured" && query.trim() && (
         <p className="font-mono text-[10.5px] text-ink-faint">
-          Zotero未設定 — 手動でcitationを入力するか、
+          {t.literaturePicker.unconfiguredMessage}
           <Link href="/settings" className="text-accent underline">
-            設定画面
+            {t.literaturePicker.settingsLink}
           </Link>
-          でZoteroライブラリを連携してください
+          {t.literaturePicker.unconfiguredMessageSuffix}
         </p>
       )}
       {state === "error" && <p className="font-mono text-[10.5px] text-accent">{errorMessage}</p>}
@@ -122,7 +120,7 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
 
       {query.trim() && state === "idle" && results !== null && results.length === 0 && (
         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-line-strong p-2.5">
-          <p className="font-mono text-[10.5px] text-ink-faint">見つかりませんでした。</p>
+          <p className="font-mono text-[10.5px] text-ink-faint">{t.literaturePicker.notFound}</p>
           {!creating ? (
             <button
               onClick={() => {
@@ -131,36 +129,36 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
               }}
               className="w-fit font-mono text-[10.5px] text-accent underline"
             >
-              Zoteroに新規登録する
+              {t.literaturePicker.registerNew}
             </button>
           ) : (
             <div className="flex flex-col gap-2">
               <div className="flex gap-1.5">
-                {CREATABLE_ITEM_TYPES.map((t) => (
+                {CREATABLE_ITEM_TYPES.map((it) => (
                   <button
-                    key={t}
-                    onClick={() => setCreateItemType(t)}
+                    key={it}
+                    onClick={() => setCreateItemType(it)}
                     className={`rounded-full border px-2.5 py-1 font-mono text-[10px] transition-colors ${
-                      createItemType === t
+                      createItemType === it
                         ? "border-accent bg-accent-soft text-accent"
                         : "border-line text-ink-soft hover:border-line-strong"
                     }`}
                   >
-                    {ITEM_TYPE_LABEL[t]}
+                    {ITEM_TYPE_LABEL[it]}
                   </button>
                 ))}
               </div>
-              <LabeledInput label="タイトル" value={createTitle} onChange={setCreateTitle} />
-              <LabeledInput label="著者（任意）" value={createCreator} onChange={setCreateCreator} />
-              <LabeledInput label="発行年（任意）" value={createDate} onChange={setCreateDate} placeholder="2024" />
-              <LabeledInput label="URL（任意）" value={createUrl} onChange={setCreateUrl} placeholder="https://…" />
+              <LabeledInput label={t.literaturePicker.titleLabel} value={createTitle} onChange={setCreateTitle} />
+              <LabeledInput label={t.literaturePicker.creatorLabel} value={createCreator} onChange={setCreateCreator} />
+              <LabeledInput label={t.literaturePicker.dateLabel} value={createDate} onChange={setCreateDate} placeholder="2024" />
+              <LabeledInput label={t.literaturePicker.urlLabel} value={createUrl} onChange={setCreateUrl} placeholder="https://…" />
               {createError && <p className="font-mono text-[10.5px] text-accent">{createError}</p>}
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setCreating(false)}
                   className="font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
                 >
-                  キャンセル
+                  {t.common.cancel}
                 </button>
                 <button
                   disabled={createPending || !createTitle.trim()}
@@ -179,19 +177,19 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
                           pickResult(res.result);
                           setCreating(false);
                         } else if (res.status === "unconfigured") {
-                          setCreateError("Zotero未設定です");
+                          setCreateError(t.literaturePicker.unconfiguredCreateError);
                         } else {
                           setCreateError(res.message);
                         }
                       } catch {
-                        setCreateError("登録に失敗しました。もう一度お試しください。");
+                        setCreateError(t.literaturePicker.registerFallbackError);
                       }
                     });
                   }}
                   className="btn-sheen flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
                 >
                   {createPending && <Spinner size="xs" />}
-                  {createPending ? "登録中…" : "Zoteroに登録して使う"}
+                  {createPending ? t.common.registering : t.literaturePicker.registerButton}
                 </button>
               </div>
             </div>

@@ -6,6 +6,8 @@ import { NoteTimeline } from "@/components/NoteTimeline";
 import { MermaidPreview } from "@/components/MermaidPreview";
 import { Spinner } from "@/components/LoadingSpinner";
 import type { Block } from "@/lib/quickNotes";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import type { Dictionary } from "@/lib/i18n/types";
 
 export interface PileDrillItem {
   id: string;
@@ -34,7 +36,7 @@ export function PileDrill({
   onSelectGap,
   selectedGap = null,
   loadBlocks,
-  emptyLabel = "まだ永久保存版メモがありません",
+  emptyLabel,
 }: {
   items: PileDrillItem[];
   drillPath: number[];
@@ -47,8 +49,17 @@ export function PileDrill({
   loadBlocks: (id: string) => Promise<Block[]>;
   emptyLabel?: string;
 }) {
+  const { t } = useI18n();
+  const resolvedEmptyLabel = emptyLabel ?? t.zettelkasten.emptyDrill;
   const groupSize = Math.max(columns * 3, columns); // enough rows per screenful, at least one row
-  const result = useMemo(() => resolveDrillPath(items, drillPath, groupSize), [items, drillPath, groupSize]);
+  const drillLabels = useMemo(
+    () => ({ all: t.zettelkasten.drillAllLabel, group: t.zettelkasten.drillGroupLabel }),
+    [t],
+  );
+  const result = useMemo(
+    () => resolveDrillPath(items, drillPath, groupSize, drillLabels),
+    [items, drillPath, groupSize, drillLabels],
+  );
 
   const [blockCache, setBlockCache] = useState<Map<string, Block[]>>(new Map());
 
@@ -72,7 +83,7 @@ export function PileDrill({
   }, [result.isFlat, result.flatItems, loadBlocks]);
 
   if (items.length === 0) {
-    return <p className="py-16 text-center text-sm text-ink-soft">{emptyLabel}</p>;
+    return <p className="py-16 text-center text-sm text-ink-soft">{resolvedEmptyLabel}</p>;
   }
 
   return (
@@ -88,6 +99,7 @@ export function PileDrill({
           onSelectGap={onSelectGap}
           selectedGap={selectedGap}
           blockCache={blockCache}
+          t={t}
         />
       ) : (
         result.groups && (
@@ -95,6 +107,7 @@ export function PileDrill({
             groups={result.groups}
             columns={columns}
             onDrillIn={(idx) => onDrillPathChange([...drillPath, idx])}
+            t={t}
           />
         )
       )}
@@ -131,10 +144,12 @@ function GridView({
   groups,
   columns,
   onDrillIn,
+  t,
 }: {
   groups: PileDrillItem[][];
   columns: number;
   onDrillIn: (idx: number) => void;
+  t: Dictionary;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [points, setPoints] = useState<{ x: number; y: number }[]>([]);
@@ -178,7 +193,7 @@ function GridView({
             />
             <span className="line-clamp-3 text-xs text-ink">{group[0]?.title}</span>
             <span className="mt-2 self-end rounded-full bg-accent-soft px-2 py-0.5 font-mono text-[9px] text-accent">
-              山 · {group.length}件
+              {t.zettelkasten.pileGroupLabel(group.length)}
             </span>
           </button>
         ))}
@@ -192,17 +207,19 @@ function GapSlot({
   after,
   chosen,
   onClick,
+  t,
 }: {
   before: PileDrillItem | null;
   after: PileDrillItem | null;
   chosen: boolean;
   onClick: () => void;
+  t: Dictionary;
 }) {
   return (
     <button
       onClick={onClick}
       className="group relative flex h-6 w-full items-center justify-center"
-      aria-label={`${before?.title ?? "先頭"} と ${after?.title ?? "末尾"} の間に保存`}
+      aria-label={t.zettelkasten.gapSlotAriaLabel(before?.title ?? t.zettelkasten.gapStart, after?.title ?? t.zettelkasten.gapEnd)}
     >
       <span
         className={`w-full border-t ${chosen ? "border-t-2 border-accent" : "border-dashed border-line-strong group-hover:border-accent"}`}
@@ -212,7 +229,7 @@ function GapSlot({
           chosen ? "text-accent opacity-100" : "text-ink-faint opacity-0 group-hover:opacity-100"
         }`}
       >
-        {chosen ? "ここに保存 ▸ 選択中" : "ここに保存"}
+        {chosen ? t.zettelkasten.gapSlotChosen : t.zettelkasten.gapSlotSave}
       </span>
     </button>
   );
@@ -226,6 +243,7 @@ function FlatView({
   onSelectGap,
   selectedGap,
   blockCache,
+  t,
 }: {
   flatItems: PileDrillItem[];
   fullOrder: PileDrillItem[];
@@ -234,6 +252,7 @@ function FlatView({
   onSelectGap?: (gap: GapSelection) => void;
   selectedGap: GapSelection | null;
   blockCache: Map<string, Block[]>;
+  t: Dictionary;
 }) {
   const globalStart = fullOrder.findIndex((it) => it.id === flatItems[0]?.id);
   const before: PileDrillItem | null = globalStart > 0 ? fullOrder[globalStart - 1] : null;
@@ -278,6 +297,7 @@ function FlatView({
         after={flatItems[0] ?? null}
         chosen={isChosen(before, flatItems[0] ?? null)}
         onClick={() => onSelectGap?.({ beforeId: before?.id ?? null, afterId: flatItems[0]?.id ?? null })}
+        t={t}
       />
       {flatItems.map((item, i) => {
         const nextItem = flatItems[i + 1] ?? null;
@@ -292,6 +312,7 @@ function FlatView({
               after={nextItem}
               chosen={isChosen(item, nextItem ?? after)}
               onClick={() => onSelectGap?.({ beforeId: item.id, afterId: nextItem?.id ?? after?.id ?? null })}
+              t={t}
             />
           </div>
         );

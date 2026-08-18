@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { createLiteratureMemoAction } from "@/app/literature/actions";
 import type { LiteratureMemoDetail } from "@/lib/literatureMemos";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
  * Same ring/glow HUD "+" treatment as AddQuickNoteButton — creates a blank
@@ -12,6 +13,7 @@ import type { LiteratureMemoDetail } from "@/lib/literatureMemos";
  * later" path, mirroring how 走り書き gets added.
  */
 export function AddLiteratureMemoButton({ onCreated }: { onCreated: (memo: LiteratureMemoDetail) => void }) {
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
 
   function create() {
@@ -42,7 +44,7 @@ export function AddLiteratureMemoButton({ onCreated }: { onCreated: (memo: Liter
           </span>
         </div>
         <span className="font-mono text-xs font-bold tracking-[0.2em] text-accent uppercase">
-          <span className="text-ink-soft">&gt;</span> 文献メモ
+          <span className="text-ink-soft">&gt;</span> {t.literature.addButton}
         </span>
       </button>
     </div>

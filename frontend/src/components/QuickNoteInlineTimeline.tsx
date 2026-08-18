@@ -13,14 +13,17 @@ import {
   replaceQuickNoteBlocksAction,
 } from "@/app/scratch/actions";
 import type { Block, BlockInput, QuickNoteSummary } from "@/lib/quickNotes";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localeTag } from "@/lib/i18n/dictionary";
+import type { Locale } from "@/lib/i18n/types";
 
 function previewFrom(blocks: Block[] | BlockInput[]): string {
   const first = blocks.find((b) => b.content.trim().length > 0);
   return first?.content.slice(0, 200) ?? "";
 }
 
-function formatDate(date: Date) {
-  return new Date(date).toLocaleDateString("ja-JP");
+function formatDate(date: Date, locale: Locale) {
+  return new Date(date).toLocaleDateString(localeTag(locale));
 }
 
 /**
@@ -42,6 +45,7 @@ export function QuickNoteInlineTimeline({
   onToggleSelect: (id: string) => void;
   onDeleted: (id: string) => void;
 }) {
+  const { t, locale } = useI18n();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [editingBlocks, setEditingBlocks] = useState<Block[]>([]);
@@ -112,13 +116,13 @@ export function QuickNoteInlineTimeline({
   return (
     <>
       <NoteTimeline
-        emptyLabel="走り書きはまだありません"
+        emptyLabel={t.zettelkasten.emptyTimeline}
         rows={notes.map((note) => {
           const isEditing = editingId === note.id;
           const isLoadingEdit = loadingEditId === note.id;
           return {
             key: note.id,
-            meta: <span className="font-mono text-[9.5px] text-ink-faint">{formatDate(note.encounteredAt)}</span>,
+            meta: <span className="font-mono text-[9.5px] text-ink-faint">{formatDate(note.encounteredAt, locale)}</span>,
             card: (
               <div className="relative w-full max-w-[360px]">
                 {isEditing ? (
@@ -128,12 +132,12 @@ export function QuickNoteInlineTimeline({
                       onSave={(blocks) => saveEdit(note.id, blocks)}
                       saving={savePending}
                       startInEditMode
-                      emptyLabel="＋ 内容を入力"
+                      emptyLabel={t.promotionEditor.contentEmptyLabel}
                     />
                   </div>
                 ) : isLoadingEdit ? (
                   <div className="rounded-lg border border-line bg-surface-alt p-3">
-                    <LoadingBlock label="読み込み中…" className="py-1" />
+                    <LoadingBlock label={t.common.loading} className="py-1" />
                   </div>
                 ) : (
                   <>
@@ -145,7 +149,7 @@ export function QuickNoteInlineTimeline({
                           : "border-line bg-surface-alt hover:border-line-strong"
                       }`}
                     >
-                      {note.preview || "(内容未記入)"}
+                      {note.preview || t.common.noContent}
                       {note.literatureCitation && (
                         <span className="flex items-start gap-1.5 border-t border-line/60 pt-1.5 font-mono text-[9.5px] text-ink-soft">
                           <span className="shrink-0 text-accent">📖</span>
@@ -156,9 +160,9 @@ export function QuickNoteInlineTimeline({
                     <QuickNoteActionMenu onEdit={() => startEdit(note.id)} onDelete={() => setDeleteTargetId(note.id)} />
                     <ConfirmDialog
                       open={deleteTargetId === note.id}
-                      title="この走り書きを削除しますか？"
-                      warning="元に戻せません。"
-                      confirmLabel="削除"
+                      title={t.zettelkasten.deleteConfirmTitle}
+                      warning={t.zettelkasten.deleteConfirmWarning}
+                      confirmLabel={t.common.delete}
                       onCancel={() => setDeleteTargetId(null)}
                       onConfirm={confirmDelete}
                       confirmDisabled={deletePending}
@@ -179,7 +183,7 @@ export function QuickNoteInlineTimeline({
         className="btn-sheen mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-accent/50 px-3 py-2.5 text-center font-mono text-xs font-semibold text-accent transition-colors hover:border-accent disabled:opacity-50"
       >
         {creating && <Spinner size="xs" />}
-        {creating ? "作成中…" : "＋ 走り書き"}
+        {creating ? t.common.creating : t.zettelkasten.addNote}
       </button>
     </>
   );

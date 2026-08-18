@@ -1,5 +1,8 @@
 import { PageLoading } from "@/components/LoadingSpinner";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
 
-export default function Loading() {
-  return <PageLoading label="走り書きを読み込み中…" />;
+export default async function Loading() {
+  const dict = getDictionary(await getLocale());
+  return <PageLoading label={dict.scratch.loadingLabel} />;
 }

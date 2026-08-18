@@ -6,11 +6,7 @@ import { searchAllAction, type UnifiedSearchResult } from "@/app/search/actions"
 import { SearchIcon } from "@/components/SearchIcon";
 import { HudFrame } from "@/components/HudFrame";
 import { Spinner } from "@/components/LoadingSpinner";
-
-const KIND_LABEL: Record<UnifiedSearchResult["kind"], string> = {
-  QUICK_NOTE: "走り書き",
-  PERMANENT_NOTE: "永久保存版",
-};
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 const KIND_HREF: Record<UnifiedSearchResult["kind"], (id: string) => string> = {
   QUICK_NOTE: (id) => `/scratch/${id}`,
@@ -18,6 +14,11 @@ const KIND_HREF: Record<UnifiedSearchResult["kind"], (id: string) => string> = {
 };
 
 export function SearchClient({ initialQuery }: { initialQuery: string }) {
+  const { t } = useI18n();
+  const KIND_LABEL: Record<UnifiedSearchResult["kind"], string> = {
+    QUICK_NOTE: t.search.kindQuickNote,
+    PERMANENT_NOTE: t.search.kindPermanentNote,
+  };
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<UnifiedSearchResult[] | null>(null);
   const [pending, startTransition] = useTransition();
@@ -50,7 +51,7 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="走り書き・永久保存版メモを検索…"
+          placeholder={t.search.placeholder}
           style={{ caretColor: "var(--color-accent)" }}
           className="w-full bg-transparent font-mono text-ink placeholder:font-sans placeholder:text-ink-soft focus:outline-none"
         />
@@ -76,7 +77,7 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
 
       {trimmed && results && results.length === 0 && !pending && (
         <div className="flex flex-col items-center gap-2 py-16 text-center">
-          <span className="text-sm text-ink-soft">「{trimmed}」に一致するメモはありません</span>
+          <span className="text-sm text-ink-soft">{t.search.noResults(trimmed)}</span>
         </div>
       )}
     </div>

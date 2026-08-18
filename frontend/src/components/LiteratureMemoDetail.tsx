@@ -7,9 +7,11 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Spinner } from "@/components/LoadingSpinner";
 import { removeLiteratureMemoAction, updateLiteratureMemoDetailsAction } from "@/app/literature/actions";
 import type { LiteratureMemoDetail as LiteratureMemoDetailType } from "@/lib/literatureMemos";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 export function LiteratureMemoDetail({ initialDetail }: { initialDetail: LiteratureMemoDetailType }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [detail, setDetail] = useState(initialDetail);
   const [citation, setCitation] = useState(initialDetail.citation);
   const [url, setUrl] = useState(initialDetail.url ?? "");
@@ -44,29 +46,27 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
     <div className="relative flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <p className="font-mono text-[10px] tracking-[0.2em] text-accent uppercase">
-          文献メモ{detail.zoteroKey && <span className="ml-2 text-ink-soft">（Zotero連携）</span>}
+          {t.literature.heading}{detail.zoteroKey && <span className="ml-2 text-ink-soft">{t.literature.zoteroLinkedSuffix}</span>}
         </p>
         <input
           value={citation}
           onChange={(e) => setCitation(e.target.value)}
-          placeholder="citation"
+          placeholder={t.literature.citationPlaceholder}
           className="w-full rounded-lg border border-line bg-surface-alt px-3 py-2 text-2xl font-extrabold tracking-tight text-ink focus:border-accent focus:outline-none"
         />
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="URL（任意）"
+          placeholder={t.literature.urlPlaceholder}
           className="w-full rounded-lg border border-line bg-surface-alt px-3 py-1.5 font-mono text-xs text-ink-soft focus:border-accent focus:outline-none"
         />
       </div>
 
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-          <span className="text-accent">{"//"}</span> 文献に書いてあったこと（自分の言葉で）
+          <span className="text-accent">{"//"}</span> {t.literature.summaryHeading}
         </h2>
-        <p className="font-mono text-[10px] text-ink-faint">
-          この要約は、このメモを参照する全ての走り書き・永久保存版メモで共有されます。
-        </p>
+        <p className="font-mono text-[10px] text-ink-faint">{t.literature.summaryHint}</p>
         <textarea
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
@@ -80,17 +80,17 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
             className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
           >
             {savePending && <Spinner size="xs" />}
-            {savePending ? "保存中…" : saved ? "保存しました" : "保存"}
+            {savePending ? t.common.saving : saved ? t.common.saved : t.common.save}
           </button>
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-          <span className="text-accent">{"//"}</span> 参照している永久保存版メモ（{detail.permanentNotes.length}件）
+          <span className="text-accent">{"//"}</span> {t.literature.permanentNotesHeading(detail.permanentNotes.length)}
         </h2>
         {detail.permanentNotes.length === 0 ? (
-          <p className="font-mono text-xs text-ink-soft">まだありません。</p>
+          <p className="font-mono text-xs text-ink-soft">{t.literature.noneYet}</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             {detail.permanentNotes.map((n) => (
@@ -108,10 +108,10 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
 
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-          <span className="text-accent">{"//"}</span> 参照している走り書き（{detail.quickNotes.length}件）
+          <span className="text-accent">{"//"}</span> {t.literature.quickNotesHeading(detail.quickNotes.length)}
         </h2>
         {detail.quickNotes.length === 0 ? (
-          <p className="font-mono text-xs text-ink-soft">まだありません。</p>
+          <p className="font-mono text-xs text-ink-soft">{t.literature.noneYet}</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             {detail.quickNotes.map((n) => (
@@ -120,7 +120,7 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
                 href={`/scratch/${n.id}`}
                 className="rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-ink transition-colors hover:border-accent/60"
               >
-                {n.preview || "(内容未記入)"}
+                {n.preview || t.common.noContent}
               </Link>
             ))}
           </div>
@@ -132,15 +132,15 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
           onClick={() => setConfirmOpen(true)}
           className="font-mono text-[10.5px] text-ink-soft transition-colors hover:text-accent"
         >
-          この文献メモを削除
+          {t.literature.deleteButton}
         </button>
       </section>
 
       <ConfirmDialog
         open={confirmOpen}
-        title="文献メモを削除しますか？"
-        warning={`参照している走り書き${detail.quickNotes.length}件・永久保存版メモ${detail.permanentNotes.length}件からのリンクも解除されます（各ノート自体は削除されません）。`}
-        confirmLabel="削除"
+        title={t.literature.deleteConfirmTitle}
+        warning={t.literature.deleteConfirmWarning(detail.quickNotes.length, detail.permanentNotes.length)}
+        confirmLabel={t.common.delete}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={remove}
         confirmDisabled={deletePending}

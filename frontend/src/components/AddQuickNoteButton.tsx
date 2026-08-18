@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createQuickNoteAction } from "@/app/scratch/actions";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
  * Generalized from the original AddWordButton — same ring/glow HUD
@@ -12,6 +13,7 @@ import { createQuickNoteAction } from "@/app/scratch/actions";
  */
 export function AddQuickNoteButton() {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
 
   function create() {
@@ -47,11 +49,11 @@ export function AddQuickNoteButton() {
             </span>
           </div>
           <span className="font-mono text-xs font-bold tracking-[0.2em] text-accent uppercase">
-            <span className="text-ink-soft">&gt;</span> 走り書き
+            <span className="text-ink-soft">&gt;</span> {t.scratch.addButton}
           </span>
         </button>
 
-        <div className="flex flex-col items-center gap-2 opacity-40" title="ボイスメモ（Phase 2 で対応予定）">
+        <div className="flex flex-col items-center gap-2 opacity-40" title={t.scratch.voiceMemoTooltip}>
           <div className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-line-strong text-ink-soft">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <rect x="6" y="1.5" width="4" height="8" rx="2" stroke="currentColor" strokeWidth="1.3" />
@@ -59,7 +61,7 @@ export function AddQuickNoteButton() {
             </svg>
           </div>
           <span className="font-mono text-[9.5px] font-semibold tracking-[0.15em] text-ink-soft uppercase">
-            ボイスメモ
+            {t.scratch.voiceMemoLabel}
           </span>
         </div>
       </div>

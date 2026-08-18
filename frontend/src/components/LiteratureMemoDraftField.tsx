@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LiteratureMemoPicker } from "@/components/LiteratureMemoPicker";
 import type { DraftLiteratureSelection, LiteratureSelection } from "@/lib/literatureMemos";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 export type { DraftLiteratureSelection } from "@/lib/literatureMemos";
 
@@ -30,6 +31,7 @@ export function LiteratureMemoDraftField({
   selections: DraftLiteratureSelection[];
   onChange: (selections: DraftLiteratureSelection[]) => void;
 }) {
+  const { t } = useI18n();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   function handlePick(sel: LiteratureSelection) {
@@ -59,10 +61,10 @@ export function LiteratureMemoDraftField({
           <div key={i} className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-2.5">
             <div className="flex items-start justify-between gap-3">
               <p className="min-w-0 text-[11.5px] font-semibold break-words text-ink">
-                {selection.type === "existing" ? (selection.citation ?? "選択済み文献メモ") : selection.citation}
+                {selection.type === "existing" ? (selection.citation ?? t.literatureDraftField.existingLabel) : selection.citation}
               </p>
               <button onClick={() => removeAt(i)} className="shrink-0 font-mono text-[10px] text-ink-soft hover:text-accent">
-                解除
+                {t.common.unlink}
               </button>
             </div>
 
@@ -70,14 +72,12 @@ export function LiteratureMemoDraftField({
               <textarea
                 value={selection.summary ?? ""}
                 onChange={(e) => updateAt(i, { summary: e.target.value })}
-                placeholder="文献に書いてあったこと（自分の言葉で）"
+                placeholder={t.literatureDraftField.summaryPlaceholder}
                 rows={2}
                 className="w-full resize-none rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-xs text-ink focus:border-accent focus:outline-none"
               />
             ) : (
-              <p className="font-mono text-[9.5px] text-ink-faint">
-                既存の文献メモを再利用します。概要はメモ作成後、文献メモの詳細ページから編集できます。
-              </p>
+              <p className="font-mono text-[9.5px] text-ink-faint">{t.literatureDraftField.reuseNote}</p>
             )}
           </div>
         );
@@ -88,14 +88,14 @@ export function LiteratureMemoDraftField({
           onClick={() => setPickerOpen(true)}
           className="w-fit rounded-lg border border-dashed border-line px-2.5 py-1.5 text-left font-mono text-[10px] text-ink-soft transition-colors hover:border-accent hover:text-accent"
         >
-          ＋ 文献メモをリンク
+          {t.literatureDraftField.linkButton}
         </button>
       )}
 
       {pickerOpen && (
         <div className="flex flex-col gap-2">
           <button onClick={() => setPickerOpen(false)} className="w-fit font-mono text-[10px] text-ink-soft hover:text-accent">
-            ✕ キャンセル
+            {t.literatureDraftField.cancel}
           </button>
           <LiteratureMemoPicker onPick={handlePick} />
         </div>

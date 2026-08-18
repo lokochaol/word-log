@@ -9,6 +9,8 @@ import type { CompletePromotionInput, CompletePromotionResult } from "@/lib/prom
 import type { LiteratureSelection } from "@/lib/literatureMemos";
 import { requireOwnerSub } from "@/lib/session";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { getLocale } from "@/lib/i18n/locale";
+import { translateDomainError } from "@/lib/i18n/errors";
 
 export async function getGlobalOrderAction() {
   const ownerSub = await requireOwnerSub();
@@ -71,7 +73,9 @@ export async function createIndexEntryAction(
     revalidatePath("/zettelkasten");
     return { entry };
   } catch (e) {
-    if (e instanceof ConflictError || e instanceof NotFoundError) return { error: e.message };
+    if (e instanceof ConflictError || e instanceof NotFoundError) {
+      return { error: translateDomainError(await getLocale(), e) };
+    }
     throw e;
   }
 }
@@ -91,14 +95,15 @@ export async function completePromotionAction(
   input: CompletePromotionInput,
 ): Promise<{ result: CompletePromotionResult } | { error: string }> {
   const ownerSub = await requireOwnerSub();
+  const locale = await getLocale();
   try {
-    const result = await promotion.completePromotion(ownerSub, input);
+    const result = await promotion.completePromotion(ownerSub, input, locale);
     revalidatePath("/scratch");
     revalidatePath("/zettelkasten");
     return { result };
   } catch (e) {
     if (e instanceof ConflictError || e instanceof NotFoundError || e instanceof ValidationError) {
-      return { error: e.message };
+      return { error: translateDomainError(locale, e) };
     }
     throw e;
   }

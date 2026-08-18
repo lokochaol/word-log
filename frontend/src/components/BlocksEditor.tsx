@@ -5,15 +5,10 @@ import type { Block, BlockInput, BlockType } from "@/lib/quickNotes";
 import { MermaidPreview } from "@/components/MermaidPreview";
 import { HudFrame } from "@/components/HudFrame";
 import { Spinner } from "@/components/LoadingSpinner";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import type { Dictionary } from "@/lib/i18n/types";
 
 type EditableBlock = BlockInput & { key: string };
-
-const BLOCK_LABELS: Record<BlockType, string> = {
-  TEXT: "TEXT",
-  CODE: "CODE",
-  MERMAID: "MERMAID",
-  IMAGE: "IMAGE",
-};
 
 function toEditable(blocks: Block[]): EditableBlock[] {
   return blocks.map((b) => ({
@@ -29,11 +24,11 @@ function emptyBlock(type: BlockType): EditableBlock {
   return { key: crypto.randomUUID(), type, content: "", language: type === "CODE" ? "" : null, caption: null };
 }
 
-function BlockTag({ type }: { type: BlockType }) {
+function BlockTag({ type, t }: { type: BlockType; t: Dictionary }) {
   return (
     <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-widest text-accent">
       <span aria-hidden="true">[</span>
-      {BLOCK_LABELS[type]}
+      {t.blocksEditor.typeLabels[type]}
       <span aria-hidden="true">]</span>
     </span>
   );
@@ -51,7 +46,7 @@ export function BlocksEditor({
   blocks,
   onSave,
   saving = false,
-  emptyLabel = "＋ ブロックを追加",
+  emptyLabel,
   startInEditMode = false,
 }: {
   blocks: Block[];
@@ -60,6 +55,8 @@ export function BlocksEditor({
   emptyLabel?: string;
   startInEditMode?: boolean;
 }) {
+  const { t } = useI18n();
+  const resolvedEmptyLabel = emptyLabel ?? t.blocksEditor.addBlock;
   const [editing, setEditing] = useState(startInEditMode);
   const [draft, setDraft] = useState<EditableBlock[]>(() => toEditable(blocks));
   const [emptyHover, setEmptyHover] = useState(false);
@@ -92,7 +89,7 @@ export function BlocksEditor({
             active={emptyHover}
             innerClassName="flex items-center justify-center rounded-xl py-6 font-mono text-sm font-semibold text-accent"
           >
-            {emptyLabel}
+            {resolvedEmptyLabel}
           </HudFrame>
         </button>
       );
@@ -100,13 +97,13 @@ export function BlocksEditor({
     return (
       <div className="flex flex-col gap-3">
         {blocks.map((block) => (
-          <BlockView key={block.id} block={block} />
+          <BlockView key={block.id} block={block} t={t} />
         ))}
         <button
           onClick={startEditing}
           className="self-start font-mono text-xs font-medium text-ink-soft transition-colors hover:text-accent"
         >
-          <span className="text-accent">&gt;</span> 編集する
+          <span className="text-accent">&gt;</span> {t.blocksEditor.editButton}
         </button>
       </div>
     );
@@ -118,6 +115,7 @@ export function BlocksEditor({
         <BlockEditRow
           key={block.key}
           block={block}
+          t={t}
           onChange={(next) => setDraft((prev) => prev.map((b, idx) => (idx === i ? next : b)))}
           onRemove={() => setDraft((prev) => prev.filter((_, idx) => idx !== i))}
         />
@@ -130,7 +128,7 @@ export function BlocksEditor({
             onClick={() => setDraft((prev) => [...prev, emptyBlock(type)])}
             className="rounded-lg border border-line bg-surface px-3 py-1.5 font-mono text-xs font-semibold tracking-wide text-ink-soft transition-all duration-200 hover:border-accent hover:text-accent hover:shadow-[0_0_16px_-6px_var(--color-accent)]"
           >
-            + {{ TEXT: "テキスト", CODE: "コード", MERMAID: "Mermaid図", IMAGE: "画像" }[type]}
+            + {t.blocksEditor.addTypeButton[type]}
           </button>
         ))}
       </div>
@@ -140,7 +138,7 @@ export function BlocksEditor({
           onClick={() => setEditing(false)}
           className="rounded-lg border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-alt"
         >
-          キャンセル
+          {t.common.cancel}
         </button>
         <button
           disabled={saving}
@@ -148,19 +146,19 @@ export function BlocksEditor({
           className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
         >
           {saving && <Spinner size="xs" />}
-          {saving ? "保存中…" : "保存"}
+          {saving ? t.common.saving : t.common.save}
         </button>
       </div>
     </div>
   );
 }
 
-function BlockView({ block }: { block: Block }) {
+function BlockView({ block, t }: { block: Block; t: Dictionary }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <HudFrame active={hovered} innerClassName="flex flex-col gap-2 rounded-xl px-4 py-4">
-        <BlockTag type={block.type} />
+        <BlockTag type={block.type} t={t} />
         {block.type === "TEXT" && (
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{block.content}</p>
         )}
@@ -187,19 +185,21 @@ function BlockEditRow({
   block,
   onChange,
   onRemove,
+  t,
 }: {
   block: EditableBlock;
   onChange: (b: EditableBlock) => void;
   onRemove: () => void;
+  t: Dictionary;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <div onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}>
       <HudFrame active={focused} innerClassName="flex flex-col gap-3 rounded-xl px-4 py-4">
         <div className="flex items-center justify-between">
-          <BlockTag type={block.type} />
+          <BlockTag type={block.type} t={t} />
           <button onClick={onRemove} className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
-            削除
+            {t.common.delete}
           </button>
         </div>
 
@@ -209,7 +209,7 @@ function BlockEditRow({
             value={block.content}
             onChange={(e) => onChange({ ...block, content: e.target.value })}
             rows={3}
-            placeholder="自分の言葉での内容、出会った文脈のメモなど"
+            placeholder={t.blocksEditor.textPlaceholder}
             style={{ caretColor: "var(--color-accent)" }}
             className="w-full resize-none rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
           />
@@ -220,14 +220,14 @@ function BlockEditRow({
             <input
               value={block.language ?? ""}
               onChange={(e) => onChange({ ...block, language: e.target.value })}
-              placeholder="言語（例: javascript）"
+              placeholder={t.blocksEditor.codeLanguagePlaceholder}
               className="w-40 rounded-md border border-line bg-surface px-3 py-1.5 font-mono text-xs text-ink focus:border-accent focus:outline-none"
             />
             <textarea
               value={block.content}
               onChange={(e) => onChange({ ...block, content: e.target.value })}
               rows={4}
-              placeholder="出会った文脈のコード片"
+              placeholder={t.blocksEditor.codeContentPlaceholder}
               style={{ caretColor: "var(--color-accent)" }}
               className="w-full resize-none rounded-md border border-line bg-surface-alt px-3 py-2 font-mono text-xs text-ink focus:border-accent focus:outline-none"
             />
@@ -240,7 +240,7 @@ function BlockEditRow({
               value={block.content}
               onChange={(e) => onChange({ ...block, content: e.target.value })}
               rows={4}
-              placeholder={"graph LR\n  ephemeral --> transient"}
+              placeholder={t.blocksEditor.mermaidPlaceholder}
               style={{ caretColor: "var(--color-accent)" }}
               className="w-full resize-none rounded-md border border-line bg-surface-alt px-3 py-2 font-mono text-xs text-ink focus:border-accent focus:outline-none"
             />
@@ -253,13 +253,13 @@ function BlockEditRow({
             <input
               value={block.content}
               onChange={(e) => onChange({ ...block, content: e.target.value })}
-              placeholder="画像URL"
+              placeholder={t.blocksEditor.imageUrlPlaceholder}
               className="w-full rounded-md border border-line bg-surface px-3 py-1.5 text-xs text-ink focus:border-accent focus:outline-none"
             />
             <input
               value={block.caption ?? ""}
               onChange={(e) => onChange({ ...block, caption: e.target.value })}
-              placeholder="キャプション（任意）"
+              placeholder={t.blocksEditor.imageCaptionPlaceholder}
               className="w-full rounded-md border border-line bg-surface px-3 py-1.5 text-xs text-ink focus:border-accent focus:outline-none"
             />
           </div>

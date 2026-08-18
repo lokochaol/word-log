@@ -10,6 +10,9 @@ import * as literatureMemos from "@/lib/literatureMemos";
 import type { LiteratureMemoSummary, LiteratureSelection } from "@/lib/literatureMemos";
 import { requireOwnerSub } from "@/lib/session";
 import { QuickNoteSource } from "@/generated/prisma/client";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { translateZoteroError } from "@/lib/i18n/errors";
 
 export async function createQuickNoteAction(source: QuickNoteSource = "SCRATCH"): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
@@ -57,23 +60,24 @@ export type ZoteroSearchResponse =
 
 export async function zoteroSearchAction(query: string): Promise<ZoteroSearchResponse> {
   const ownerSub = await requireOwnerSub();
+  const locale = await getLocale();
   try {
     const credential = await zoteroCredentials.get(ownerSub);
     if (!credential) {
       return { status: "unconfigured" };
     }
-    const results = await zotero.searchItems(credential, query);
+    const results = await zotero.searchItems(credential, query, 10, getDictionary(locale).literaturePicker.untitled);
     return { status: "ok", results };
   } catch (e) {
     if (e instanceof zotero.ZoteroApiError) {
-      return { status: "error", message: e.message };
+      return { status: "error", message: translateZoteroError(locale, e) };
     }
     // Anything else (e.g. decryption failing because CREDENTIAL_ENCRYPTION_KEY
     // was rotated after the credential was saved) must still resolve to a
     // visible state — never let this reject and leave the UI stuck "searching".
     return {
       status: "error",
-      message: "Zotero連携の読み込みに失敗しました。設定画面でAPIキーを保存し直してください。",
+      message: getDictionary(locale).errors.zoteroLoadFailed,
     };
   }
 }
@@ -87,6 +91,7 @@ export async function zoteroCreateItemAction(
   input: zotero.CreateItemInput,
 ): Promise<ZoteroCreateResponse> {
   const ownerSub = await requireOwnerSub();
+  const locale = await getLocale();
   try {
     const credential = await zoteroCredentials.get(ownerSub);
     if (!credential) {
@@ -96,11 +101,11 @@ export async function zoteroCreateItemAction(
     return { status: "ok", result };
   } catch (e) {
     if (e instanceof zotero.ZoteroApiError) {
-      return { status: "error", message: e.message };
+      return { status: "error", message: translateZoteroError(locale, e) };
     }
     return {
       status: "error",
-      message: "Zotero連携の読み込みに失敗しました。設定画面でAPIキーを保存し直してください。",
+      message: getDictionary(locale).errors.zoteroLoadFailed,
     };
   }
 }

@@ -136,7 +136,6 @@ export interface Dictionary {
   zettelkasten: {
     loadingLabel: string;
     backToScratch: string;
-    navPill: string;
     literatureNav: string;
     columnTitle: string;
     literatureTabLabel: string;

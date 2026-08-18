@@ -119,7 +119,6 @@ export const en: Dictionary = {
   zettelkasten: {
     loadingLabel: "Loading Zettelkasten…",
     backToScratch: "Dash Off",
-    navPill: "Zettelkasten",
     literatureNav: "Literature",
     columnTitle: "Zettelkasten",
     literatureTabLabel: "Literature",

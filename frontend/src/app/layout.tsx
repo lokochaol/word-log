@@ -10,10 +10,18 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Word Log",
-  description: "出会った単語を記録する個人辞書 / A personal dictionary for the words you encounter",
-};
+/** The home-screen/browser-tab title is fixed to the Zettelkasten name
+ * (not the per-screen "Dash Off"/"走り書き" brand used inside the app) since
+ * it's captured once, independent of whichever screen is open at the time. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const title = locale === "ja" ? "ツェッテルカステン" : "Zettelkasten";
+  return {
+    title,
+    description: "出会った単語を記録する個人辞書 / A personal dictionary for the words you encounter",
+    appleWebApp: { title },
+  };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();

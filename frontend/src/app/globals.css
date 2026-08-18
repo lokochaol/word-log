@@ -231,3 +231,13 @@ body {
 .animate-rotate-device {
   animation: rotate-device 2.4s ease-in-out infinite;
 }
+
+/* Hides the scrollbar on a specific scroll container (unlike the global thin
+   scrollbar styling above) while keeping it scrollable. */
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}

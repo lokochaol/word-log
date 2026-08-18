@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type CSSProperties } from "react";
+import { useState, useTransition, type CSSProperties, type ReactNode } from "react";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -23,6 +23,8 @@ function formatDate(date: Date, locale: Locale) {
   });
 }
 
+const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)";
+
 /** /scratch's timeline — extracted to a client component so each card can
  * carry a corner 編集/削除 menu (編集 navigates to the full detail page,
  * 削除 removes it in place) alongside the existing "+" add button. The
@@ -30,8 +32,12 @@ function formatDate(date: Date, locale: Locale) {
  * (latest note) by default, matching a chat-style history view. The add
  * button lives inside the scrollable area, after the last note, so it
  * scrolls out of view when scrolling up into history — it isn't a pinned
- * footer here (unlike QuickNoteInlineTimeline's ③ pane). */
-export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSummary[] }) {
+ * footer here (unlike QuickNoteInlineTimeline's ③ pane).
+ *
+ * `header` (brand/nav/search) is rendered inside the same scroll container,
+ * pinned via `sticky` with a bottom gradient mask — so notes scrolling up
+ * don't get clipped by a hard edge, they fade out under the header instead. */
+export function ScratchTimeline({ initialNotes, header }: { initialNotes: QuickNoteSummary[]; header: ReactNode }) {
   const router = useRouter();
   const { t, locale } = useI18n();
   const [notes, setNotes] = useState(initialNotes);
@@ -50,8 +56,15 @@ export function ScratchTimeline({ initialNotes }: { initialNotes: QuickNoteSumma
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4">
+    <div className="min-h-0 flex-1" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
+      <div ref={scrollRef} className="scrollbar-hidden h-full overflow-y-auto px-4">
+        <div
+          className="sticky top-0 z-10 -mx-4 flex flex-col gap-6 bg-bg px-4 pt-6 pb-8"
+          style={{ maskImage: HEADER_FADE_MASK, WebkitMaskImage: HEADER_FADE_MASK }}
+        >
+          {header}
+        </div>
+
         <NoteTimeline
           emptyLabel={t.scratch.emptyTimeline}
           rows={notes.map((note) => ({

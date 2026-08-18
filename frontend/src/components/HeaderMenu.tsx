@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Wraps a header's nav items (brand-adjacent links, locale toggle, sign-out,
@@ -10,27 +11,46 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  * still reads as tappable even without hover — the same "this is a live
  * control" cue other tap-to-open menus in the app (e.g. QuickNoteActionMenu)
  * give on hover, just always-on since touch has no hover state.
+ *
+ * The open dropdown is rendered through a portal into `document.body` rather
+ * than as a normal descendant — headers using this component are often
+ * `sticky` with a `mask-image` fade (see ScratchTimeline/QuickNoteInlineTimeline),
+ * and a mask fades everything painted inside that element, portal contents
+ * included if left as a child. Portaling keeps the open menu fully opaque
+ * regardless of what fading header it's triggered from.
  */
 export function HeaderMenu({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; right: number } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (wrapRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
+  function toggle() {
+    if (!open && wrapRef.current) {
+      const rect = wrapRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+    }
+    setOpen((v) => !v);
+  }
+
   return (
     <>
       <div className="hidden flex-wrap items-center gap-x-2 gap-y-1.5 sm:flex">{children}</div>
 
-      <div ref={ref} className="relative sm:hidden">
+      <div ref={wrapRef} className="relative sm:hidden">
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggle}
           aria-label="Menu"
           aria-expanded={open}
           className={`relative flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
@@ -47,16 +67,21 @@ export function HeaderMenu({ children }: { children: ReactNode }) {
             />
           </svg>
         </button>
+      </div>
 
-        {open && (
+      {open &&
+        coords &&
+        createPortal(
           <div
+            ref={menuRef}
             onClick={() => setOpen(false)}
-            className="absolute top-10 right-0 z-30 flex min-w-[190px] flex-col items-end gap-2.5 rounded-lg border border-line-strong bg-surface p-3.5 shadow-[0_20px_40px_-20px_rgba(0,0,0,0.85)]"
+            style={{ top: coords.top, right: coords.right }}
+            className="fixed z-50 flex min-w-[190px] flex-col items-end gap-2.5 rounded-lg border border-line-strong bg-surface p-3.5 shadow-[0_20px_40px_-20px_rgba(0,0,0,0.85)]"
           >
             {children}
-          </div>
+          </div>,
+          document.body,
         )}
-      </div>
     </>
   );
 }

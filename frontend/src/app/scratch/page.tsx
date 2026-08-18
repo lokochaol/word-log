@@ -45,7 +45,7 @@ export default async function ScratchPage() {
   );
 
   return (
-    <main className="flex h-screen flex-col items-center overflow-hidden bg-bg px-6 py-6">
+    <main className="flex h-dvh flex-col items-center overflow-hidden bg-bg px-6 py-6">
       <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col">
         <ScratchTimeline initialNotes={notes} header={header} />
       </div>

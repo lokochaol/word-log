@@ -164,7 +164,7 @@ export function ZettelkastenScreen({
   }
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-bg">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-bg">
       <RotateDeviceGate />
       <div className="flex items-center gap-3 border-b border-line px-6 py-3.5">
         <span className="text-sm font-extrabold tracking-tight text-ink">
@@ -249,7 +249,7 @@ export function ZettelkastenScreen({
             />
           )}
 
-          <div className="flex min-h-0 flex-col" style={{ height: "calc(100vh - 130px)" }}>
+          <div className="flex min-h-0 flex-col" style={{ height: "calc(100dvh - 130px)" }}>
             {col1Mode === "notes" ? (
               <div className="overflow-auto p-4">
                 <PileDrill

@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Small corner button (outside the note card, top-right) that expands into
- * an 編集/削除 menu — used on both /scratch's timeline and Zettelkasten's ③
- * column so every quick-note card has the same action entry point.
+ * Small corner button (overlapping the note card's top-right corner) that
+ * expands into an 編集/削除 menu — used on both /scratch's timeline and
+ * Zettelkasten's ③ column so every quick-note card has the same action entry
+ * point. Anchored to the card's own corner (not offset further right) so it
+ * never runs past the viewport edge on narrow/mobile widths, where the card
+ * itself is already close to full width.
  */
 export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
@@ -21,7 +24,7 @@ export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; 
   }, [open]);
 
   return (
-    <div ref={ref} className="absolute top-0 -right-11 z-10">
+    <div ref={ref} className="absolute -top-2.5 -right-2.5 z-10">
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="操作"

@@ -162,7 +162,7 @@ export function ZettelkastenScreen({
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-bg">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-bg">
       <div className="flex items-center gap-3 border-b border-line px-6 py-3.5">
         <span className="text-sm font-extrabold tracking-tight text-ink">
           <AppBrand locale={locale} screen="zettelkasten" />
@@ -188,7 +188,7 @@ export function ZettelkastenScreen({
       </div>
 
       <div
-        className="grid flex-1 transition-[grid-template-columns] duration-400 ease-out"
+        className="grid min-h-0 flex-1 transition-[grid-template-columns] duration-400 ease-out"
         style={{ gridTemplateColumns: editorOpen ? "1.05fr 1fr 0.7fr" : "1.3fr 0px 0.85fr" }}
       >
         {/* ① */}
@@ -244,9 +244,9 @@ export function ZettelkastenScreen({
             />
           )}
 
-          <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 130px)" }}>
+          <div className="flex min-h-0 flex-col" style={{ height: "calc(100vh - 130px)" }}>
             {col1Mode === "notes" ? (
-              <div className="p-4">
+              <div className="overflow-auto p-4">
                 <PileDrill
                   items={globalOrder}
                   drillPath={drillPath}
@@ -282,9 +282,14 @@ export function ZettelkastenScreen({
           )}
         </div>
 
-        {/* ③ — shares view-transition-name with /scratch's timeline container (§5) */}
-        <div className="min-w-0 overflow-auto" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
-          <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
+        {/* ③ — shares view-transition-name with /scratch's timeline container (§5).
+            The column itself doesn't scroll; only the note list inside
+            QuickNoteInlineTimeline does, anchored to the bottom by default. */}
+        <div
+          className="flex min-h-0 min-w-0 flex-col"
+          style={{ viewTransitionName: "note-timeline" } as CSSProperties}
+        >
+          <div className="flex shrink-0 items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
             <span className="text-accent">③</span> {t.zettelkasten.scratchColumnHeading}
             {selectedQuickNoteIds.size > 0 && (
               <span className="ml-auto font-mono text-[10px] text-accent normal-case">
@@ -293,11 +298,11 @@ export function ZettelkastenScreen({
             )}
           </div>
 
-          <div className="p-3">
+          <div className="flex min-h-0 flex-1 flex-col p-3">
             {selectedQuickNoteIds.size > 0 && drafts.length === 0 && (
               <button
                 onClick={buildDraftFromSelection}
-                className="btn-sheen mb-3 w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
+                className="btn-sheen mb-3 w-full shrink-0 rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
               >
                 {t.zettelkasten.createFromSelection(selectedQuickNoteIds.size)}
               </button>

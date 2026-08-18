@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
+import { useAutoScrollToBottom } from "@/lib/useAutoScrollToBottom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { AddLiteratureMemoButton } from "@/components/AddLiteratureMemoButton";
@@ -32,6 +33,7 @@ export function LiteratureMemoPane({
   const [memos, setMemos] = useState<LiteratureMemoSummary[] | null>(null);
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const scrollRef = useAutoScrollToBottom<HTMLDivElement>(memos?.length ?? 0);
 
   useEffect(() => {
     listLiteratureMemosAction().then(setMemos);
@@ -82,14 +84,15 @@ export function LiteratureMemoPane({
   const filtered = (memos ?? []).filter((m) => m.citation.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-4">
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t.literature.filterPlaceholder}
-        className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft focus:border-accent focus:outline-none"
+        className="shrink-0 w-full rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft focus:border-accent focus:outline-none"
       />
 
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
       {memos === null ? (
         <LoadingBlock label={t.common.loading} size="md" />
       ) : (
@@ -127,8 +130,11 @@ export function LiteratureMemoPane({
           }))}
         />
       )}
+      </div>
 
-      <AddLiteratureMemoButton onCreated={handleCreated} />
+      <div className="shrink-0">
+        <AddLiteratureMemoButton onCreated={handleCreated} />
+      </div>
     </div>
   );
 }
@@ -195,8 +201,8 @@ function LiteratureMemoPaneDetail({
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <button onClick={onBack} className="w-fit font-mono text-[10.5px] text-ink-soft transition-colors hover:text-accent">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4">
+      <button onClick={onBack} className="w-fit shrink-0 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-accent">
         <span className="text-accent">&lt;</span> {t.literature.backToList}
       </button>
 

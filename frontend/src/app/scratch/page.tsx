@@ -35,6 +35,9 @@ export default async function ScratchPage() {
           <Link href="/settings" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
             {dict.nav.settingsLabel}
           </Link>
+          <Link href="/guide" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+            {dict.nav.guideLabel}
+          </Link>
           <LocaleToggle />
           <SignOutButton />
         </HeaderMenu>

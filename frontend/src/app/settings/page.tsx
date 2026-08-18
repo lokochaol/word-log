@@ -29,6 +29,9 @@ export default async function SettingsPage() {
             >
               {dict.nav.literatureLabel}
             </Link>
+            <Link href="/guide" className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent">
+              {dict.nav.guideLabel}
+            </Link>
             <LocaleToggle />
             <span className="font-mono text-[10px] text-ink-soft">
               {session.user?.email ?? dict.common.unknownEmail}

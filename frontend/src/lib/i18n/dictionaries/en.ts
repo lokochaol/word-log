@@ -30,6 +30,7 @@ export const en: Dictionary = {
     scratchLabel: "Dash Off",
     literatureLabel: "Literature",
     settingsLabel: "Settings",
+    guideLabel: "Guide",
     backToScratch: "Back to Dash Off",
     backToLiterature: "Back to Literature",
     toZettelkasten: "To Zettelkasten",

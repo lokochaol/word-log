@@ -28,8 +28,9 @@ export async function completePromotion(
   if (input.drafts.length === 0) {
     throw new ValidationError("永久保存版メモを1件以上作成してください");
   }
+  const existingNoteCount = await prisma.permanentNote.count({ where: { ownerSub } });
   for (const draft of input.drafts) {
-    const problems = validateDraft(draft);
+    const problems = validateDraft(draft, { hasExistingNotes: existingNoteCount > 0 });
     if (problems.length > 0) {
       throw new ValidationError(`永久保存版メモ「${draft.title || "(無題)"}」: ${problems.join(" / ")}`);
     }

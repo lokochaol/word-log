@@ -27,16 +27,25 @@ export interface PermanentNoteDraft {
   literatureSelections?: LiteratureSelection[];
 }
 
+export interface ValidateDraftOptions {
+  /** True once the owner has at least one PermanentNote already — a link
+   * target (another note or an index entry, both of which require an
+   * existing note to exist first) is only possible then. The very first
+   * PermanentNote ever has nothing to link to, so the requirement is waived
+   * for it specifically. */
+  hasExistingNotes: boolean;
+}
+
 /**
  * Shared by the client (inline draft-gating in PromotionEditor) and the
  * server (re-validated before touching the DB, in completePromotion).
  * Returns a list of human-readable problems; empty means valid.
  */
-export function validateDraft(draft: PermanentNoteDraft): string[] {
+export function validateDraft(draft: PermanentNoteDraft, opts: ValidateDraftOptions): string[] {
   const problems: string[] = [];
   if (!draft.title.trim()) problems.push("タイトルを入力してください");
   if (draft.blocks.filter((b) => b.content.trim()).length === 0) problems.push("内容を1件以上入力してください");
-  if (draft.links.length === 0) problems.push("リンクを1件以上設定してください");
+  if (opts.hasExistingNotes && draft.links.length === 0) problems.push("リンクを1件以上設定してください");
   if (draft.links.some((l) => !l.relationLabel.trim())) problems.push("すべてのリンクに関係性の一言を入力してください");
   if (draft.orderKey === null) problems.push("保存位置を選択してください");
   return problems;

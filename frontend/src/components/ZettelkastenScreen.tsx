@@ -24,6 +24,7 @@ import {
 } from "@/app/zettelkasten/actions";
 import { getQuickNoteDetailAction, listActiveQuickNotesAction } from "@/app/scratch/actions";
 import type { CompletePromotionInput } from "@/lib/promotion";
+import { midpointRank } from "@/lib/rank";
 
 export function ZettelkastenScreen({
   initialGlobalOrder,
@@ -106,9 +107,21 @@ export function ZettelkastenScreen({
       .filter((m): m is NonNullable<typeof m> => !!m)
       .filter((m) => (seenMemoIds.has(m.id) ? false : (seenMemoIds.add(m.id), true)))
       .map((m) => ({ type: "existing" as const, id: m.id, citation: m.citation }));
+    // With zero existing PermanentNotes there's only one possible position —
+    // fill it in automatically rather than sending the owner into an empty
+    // pile picker (see PromotionEditor's matching addDraft logic).
+    const hasExistingNotes = globalOrder.length > 0;
     setDrafts((prev) => [
       ...prev,
-      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null, literatureSelections },
+      {
+        clientId: crypto.randomUUID(),
+        title: "",
+        blocks: [],
+        links: [],
+        gap: hasExistingNotes ? null : { beforeId: null, afterId: null },
+        orderKey: hasExistingNotes ? null : midpointRank(null, null),
+        literatureSelections,
+      },
     ]);
   }
 

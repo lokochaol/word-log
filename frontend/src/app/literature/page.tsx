@@ -3,6 +3,7 @@ import * as literatureMemos from "@/lib/literatureMemos";
 import { requireSession } from "@/lib/session";
 import { LiteratureMemoList } from "@/components/LiteratureMemoList";
 import { LocaleToggle } from "@/components/LocaleToggle";
+import { HeaderMenu } from "@/components/HeaderMenu";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 
@@ -15,19 +16,19 @@ export default async function LiteraturePage() {
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
       <div className="flex w-full max-w-[720px] flex-col gap-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Link
             href="/scratch"
             className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
           >
             <span className="text-accent">&lt;</span> {dict.nav.backToScratch}
           </Link>
-          <div className="flex items-center gap-3">
+          <HeaderMenu>
             <LocaleToggle />
-            <span className="hidden font-mono text-[10px] text-ink-soft sm:inline">
+            <span className="font-mono text-[10px] text-ink-soft">
               {session.user?.email ?? dict.common.unknownEmail}
             </span>
-          </div>
+          </HeaderMenu>
         </div>
 
         <div className="flex flex-col gap-1.5">

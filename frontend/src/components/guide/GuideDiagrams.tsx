@@ -23,10 +23,10 @@ function Label({ x, y, anchor = "middle", children }: { x: number; y: number; an
  * is where the value actually comes from. */
 export function LinkedNotesDiagram({ leftLabel, rightLabel }: { leftLabel: string; rightLabel: string }) {
   const isolated = [
-    [40, 40],
-    [85, 75],
-    [30, 90],
-    [75, 30],
+    [70, 40],
+    [115, 75],
+    [60, 90],
+    [105, 30],
   ];
   const linked = [
     [270, 40],
@@ -48,8 +48,8 @@ export function LinkedNotesDiagram({ leftLabel, rightLabel }: { leftLabel: strin
       {linked.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r="5.5" fill={ACCENT} />
       ))}
-      <Label x={65} y={118}>{leftLabel}</Label>
-      <Label x={295} y={118}>{rightLabel}</Label>
+      <Label x={90} y={118}>{leftLabel}</Label>
+      <Label x={290} y={118}>{rightLabel}</Label>
     </svg>
   );
 }

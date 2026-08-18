@@ -197,6 +197,7 @@ export const ja: Dictionary = {
     addButton: "文献メモ",
     citationPlaceholder: "citation",
     urlPlaceholder: "URL（任意）",
+    openUrlAriaLabel: "新しいタブでURLを開く",
     summaryHeading: "文献に書いてあったこと（自分の言葉で）",
     summaryHint: "この要約は、このメモを参照する全ての走り書き・永久保存版メモで共有されます。",
     permanentNotesHeading: (n) => `参照している永久保存版メモ（${n}件）`,

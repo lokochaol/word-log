@@ -59,6 +59,11 @@ export function ZettelkastenScreen({
   const [indexPanelOpen, setIndexPanelOpen] = useState(false);
   const [openNoteId, setOpenNoteId] = useState<string | null>(deepLinkOpenId ?? null);
   const [col1Mode, setCol1Mode] = useState<"notes" | "literature">("notes");
+  const [focusQuickNoteRequest, setFocusQuickNoteRequest] = useState<{ id: string; token: number } | null>(null);
+
+  function focusQuickNote(id: string) {
+    setFocusQuickNoteRequest((prev) => ({ id, token: (prev?.token ?? 0) + 1 }));
+  }
 
   const editorOpen = drafts.length > 0 || selectedQuickNoteIds.size > 0;
 
@@ -269,7 +274,7 @@ export function ZettelkastenScreen({
                 />
               </div>
             ) : (
-              <LiteratureMemoPane onOpenPermanentNote={(id) => setOpenNoteId(id)} />
+              <LiteratureMemoPane onOpenPermanentNote={(id) => setOpenNoteId(id)} onOpenQuickNote={focusQuickNote} />
             )}
           </div>
         </div>
@@ -303,6 +308,7 @@ export function ZettelkastenScreen({
             onNotesChange={setActiveQuickNotes}
             selectedIds={selectedQuickNoteIds}
             onToggleSelect={toggleQuickNoteSelection}
+            focusRequest={focusQuickNoteRequest}
             onDeleted={(id) =>
               setSelectedQuickNoteIds((prev) => {
                 if (!prev.has(id)) return prev;

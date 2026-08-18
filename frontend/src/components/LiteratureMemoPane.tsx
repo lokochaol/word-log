@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useAutoScrollToBottom } from "@/lib/useAutoScrollToBottom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -28,8 +27,13 @@ const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transp
  */
 export function LiteratureMemoPane({
   onOpenPermanentNote,
+  onOpenQuickNote,
 }: {
   onOpenPermanentNote: (id: string) => void;
+  /** Focuses the given note in the ③ Dash Off pane's list (scroll + brief
+   * highlight) instead of navigating to its own detail page — the ③ pane is
+   * already visible alongside this one, so there's nothing to navigate to. */
+  onOpenQuickNote: (id: string) => void;
 }) {
   const { t, locale } = useI18n();
   const [memos, setMemos] = useState<LiteratureMemoSummary[] | null>(null);
@@ -79,6 +83,7 @@ export function LiteratureMemoPane({
         onRemoved={handleRemoved}
         onUpdated={handleUpdated}
         onOpenPermanentNote={onOpenPermanentNote}
+        onOpenQuickNote={onOpenQuickNote}
       />
     );
   }
@@ -150,12 +155,14 @@ function LiteratureMemoPaneDetail({
   onRemoved,
   onUpdated,
   onOpenPermanentNote,
+  onOpenQuickNote,
 }: {
   id: string;
   onBack: () => void;
   onRemoved: (id: string) => void;
   onUpdated: (detail: LiteratureMemoDetail) => void;
   onOpenPermanentNote: (id: string) => void;
+  onOpenQuickNote: (id: string) => void;
 }) {
   const { t } = useI18n();
   const [detail, setDetail] = useState<LiteratureMemoDetail | null>(null);
@@ -225,12 +232,33 @@ function LiteratureMemoPaneDetail({
               placeholder={t.literature.citationPlaceholder}
               className="w-full rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-sm font-bold text-ink focus:border-accent focus:outline-none"
             />
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder={t.literature.urlPlaceholder}
-              className="w-full rounded-md border border-line bg-surface-alt px-2.5 py-1.5 font-mono text-[10.5px] text-ink-soft focus:border-accent focus:outline-none"
-            />
+            <div className="flex items-center gap-1.5">
+              <input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder={t.literature.urlPlaceholder}
+                className="w-full rounded-md border border-line bg-surface-alt px-2.5 py-1.5 font-mono text-[10.5px] text-ink-soft focus:border-accent focus:outline-none"
+              />
+              {url.trim() && (
+                <a
+                  href={url.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={t.literature.openUrlAriaLabel}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line text-ink-soft transition-colors hover:border-accent/60 hover:text-accent"
+                >
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path
+                      d="M6.5 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-3M9.5 2H14v4.5M14 2 7 9"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -282,13 +310,13 @@ function LiteratureMemoPaneDetail({
               <p className="font-mono text-[10.5px] text-ink-faint">{t.literature.noneYet}</p>
             ) : (
               detail.quickNotes.map((n) => (
-                <Link
+                <button
                   key={n.id}
-                  href={`/scratch/${n.id}`}
-                  className="rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-[11.5px] text-ink transition-colors hover:border-accent/60"
+                  onClick={() => onOpenQuickNote(n.id)}
+                  className="rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-left text-[11.5px] text-ink transition-colors hover:border-accent/60"
                 >
                   {n.preview || t.common.noContent}
-                </Link>
+                </button>
               ))
             )}
           </div>

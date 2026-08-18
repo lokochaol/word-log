@@ -35,16 +35,35 @@ export type DrillResult<T> =
   | { isFlat: true; flatItems: T[]; groups: null; breadcrumbs: Breadcrumb[] }
   | { isFlat: false; flatItems: null; groups: T[][]; breadcrumbs: Breadcrumb[] };
 
+export interface DrillLabels {
+  /** Root breadcrumb ("All" / "全体"). */
+  all: string;
+  /** A drilled-in pile's breadcrumb, e.g. "Pile 2 (5)" / "山2（5件）". */
+  group: (index: number, count: number) => string;
+}
+
+const DEFAULT_LABELS: DrillLabels = {
+  all: "全体",
+  group: (index, count) => `山${index + 1}（${count}件）`,
+};
+
 /**
  * Resolves what should be visible for a given `drillPath` into `items`,
  * re-chunking recursively with `groupSize` at each level until either the
  * path runs out or the current slice is small enough to go flat
  * (<= FLAT_THRESHOLD members). Stale trailing drillPath entries (e.g. items
  * changed underneath, or the level went flat before the path was consumed)
- * are silently ignored rather than throwing.
+ * are silently ignored rather than throwing. `labels` lets the caller phrase
+ * breadcrumbs in the current UI locale — this file has no i18n dependency of
+ * its own, staying a pure/bundle-agnostic utility.
  */
-export function resolveDrillPath<T>(items: T[], drillPath: number[], groupSize: number): DrillResult<T> {
-  const breadcrumbs: Breadcrumb[] = [{ label: "全体", path: [] }];
+export function resolveDrillPath<T>(
+  items: T[],
+  drillPath: number[],
+  groupSize: number,
+  labels: DrillLabels = DEFAULT_LABELS,
+): DrillResult<T> {
+  const breadcrumbs: Breadcrumb[] = [{ label: labels.all, path: [] }];
 
   let current = items;
   for (let depth = 0; depth < drillPath.length; depth++) {
@@ -55,7 +74,7 @@ export function resolveDrillPath<T>(items: T[], drillPath: number[], groupSize: 
     if (!group) break;
     current = group;
     breadcrumbs.push({
-      label: `山${idx + 1}（${group.length}件）`,
+      label: labels.group(idx, group.length),
       path: drillPath.slice(0, depth + 1),
     });
   }

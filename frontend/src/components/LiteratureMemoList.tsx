@@ -6,9 +6,12 @@ import { useMemo, useState } from "react";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { AddLiteratureMemoButton } from "@/components/AddLiteratureMemoButton";
 import type { LiteratureMemoSummary } from "@/lib/literatureMemos";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localeTag } from "@/lib/i18n/dictionary";
 
 export function LiteratureMemoList({ initialMemos }: { initialMemos: LiteratureMemoSummary[] }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -22,19 +25,17 @@ export function LiteratureMemoList({ initialMemos }: { initialMemos: LiteratureM
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="citationで絞り込み…"
+        placeholder={t.literature.filterPlaceholder}
         className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-soft focus:border-accent focus:outline-none"
       />
 
       <NoteTimeline
-        emptyLabel={
-          initialMemos.length === 0 ? "まだ文献メモがありません。" : "一致する文献メモが見つかりません。"
-        }
+        emptyLabel={initialMemos.length === 0 ? t.literature.emptyAll : t.literature.emptyFiltered}
         rows={filtered.map((m) => ({
           key: m.id,
           meta: (
             <span className="font-mono text-[9.5px] text-ink-faint">
-              {new Date(m.updatedAt).toLocaleDateString("ja-JP")}
+              {new Date(m.updatedAt).toLocaleDateString(localeTag(locale))}
               {m.zoteroKey && <span className="ml-1.5 text-accent">Zotero</span>}
             </span>
           ),
@@ -47,14 +48,14 @@ export function LiteratureMemoList({ initialMemos }: { initialMemos: LiteratureM
               {m.summary && <p className="line-clamp-2 text-xs text-ink-soft">{m.summary}</p>}
               <div className="flex flex-wrap gap-1.5">
                 <span className="rounded-full border border-line-strong px-2 py-0.5 font-mono text-[9.5px] text-ink-soft">
-                  走り書き {m.quickNoteCount}件
+                  {t.literature.quickNoteCount(m.quickNoteCount)}
                 </span>
                 <span
                   className={`rounded-full border border-line-strong px-2 py-0.5 font-mono text-[9.5px] text-ink-soft ${
                     m.permanentNoteCount === 0 ? "opacity-40" : ""
                   }`}
                 >
-                  永久保存版 {m.permanentNoteCount}件
+                  {t.literature.permanentNoteCount(m.permanentNoteCount)}
                 </span>
               </div>
             </Link>

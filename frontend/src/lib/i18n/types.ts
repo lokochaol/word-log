@@ -1,0 +1,284 @@
+export type Locale = "ja" | "en";
+
+export const LOCALE_COOKIE = "locale";
+export const DEFAULT_LOCALE: Locale = "ja";
+export const LOCALES: Locale[] = ["ja", "en"];
+
+export function isLocale(value: string | undefined | null): value is Locale {
+  return value === "ja" || value === "en";
+}
+
+/**
+ * The full app dictionary shape, shared by both dictionary files so
+ * TypeScript catches any key that's missing (or present with the wrong
+ * shape) in either language. Plain strings for fixed text; functions for
+ * anything that needs to interpolate a runtime value (counts, titles, etc.)
+ * so both languages can order/word the sentence however they need to.
+ */
+export interface Dictionary {
+  brand: {
+    /** The app-name slot in the top-left of a page header — depends on
+     * which of the two main screens it's shown on (see AppBrand). */
+    scratch: string;
+    zettelkasten: string;
+  };
+  common: {
+    save: string;
+    saving: string;
+    saved: string;
+    cancel: string;
+    delete: string;
+    edit: string;
+    add: string;
+    close: string;
+    loading: string;
+    unlink: string;
+    unconfigured: string;
+    optional: string;
+    signOut: string;
+    unknownEmail: string;
+    noContent: string;
+    change: string;
+    creating: string;
+    linking: string;
+    registering: string;
+  };
+  nav: {
+    scratchLabel: string;
+    literatureLabel: string;
+    settingsLabel: string;
+    backToScratch: string;
+    backToLiterature: string;
+    toZettelkasten: string;
+  };
+  confirmDialog: {
+    confirmLabel: string;
+    cancelLabel: string;
+  };
+  blocksEditor: {
+    addBlock: string;
+    editButton: string;
+    typeLabels: { TEXT: string; CODE: string; MERMAID: string; IMAGE: string };
+    addTypeButton: { TEXT: string; CODE: string; MERMAID: string; IMAGE: string };
+    textPlaceholder: string;
+    codeLanguagePlaceholder: string;
+    codeContentPlaceholder: string;
+    mermaidPlaceholder: string;
+    imageUrlPlaceholder: string;
+    imageCaptionPlaceholder: string;
+  };
+  quickNoteActionMenu: {
+    actionsAriaLabel: string;
+  };
+  mermaid: {
+    syntaxError: string;
+  };
+  loadingSpinner: {
+    statusAriaLabel: string;
+  };
+  literaturePicker: {
+    itemTypeLabel: { book: string; journalArticle: string; webpage: string };
+    searchPlaceholder: string;
+    unconfiguredMessage: string;
+    settingsLink: string;
+    unconfiguredMessageSuffix: string;
+    notFound: string;
+    registerNew: string;
+    titleLabel: string;
+    creatorLabel: string;
+    dateLabel: string;
+    urlLabel: string;
+    registerButton: string;
+    registerFallbackError: string;
+    searchFallbackError: string;
+    unconfiguredCreateError: string;
+    untitled: string;
+  };
+  literatureField: {
+    linkButton: string;
+    openMemo: string;
+    summaryLabel: string;
+    remove: string;
+  };
+  literaturePermanentSection: {
+    linkButton: string;
+  };
+  literatureDraftField: {
+    existingLabel: string;
+    reuseNote: string;
+    linkButton: string;
+    cancel: string;
+    summaryPlaceholder: string;
+  };
+  signin: {
+    title: string;
+    tagline: string;
+    googleButton: string;
+  };
+  scratch: {
+    addButton: string;
+    voiceMemoLabel: string;
+    voiceMemoTooltip: string;
+    emptyTimeline: string;
+    deleteConfirmTitle: string;
+    deleteConfirmWarning: string;
+    loadingLabel: string;
+    sourceVoice: string;
+    sourceScratch: string;
+    archivedSuffix: string;
+    createdLabel: (date: string) => string;
+    updatedLabel: (date: string) => string;
+    contentHeading: string;
+    literatureHeading: string;
+    homeSearchPlaceholder: string;
+  };
+  zettelkasten: {
+    loadingLabel: string;
+    backToScratch: string;
+    navPill: string;
+    literatureNav: string;
+    columnTitle: string;
+    literatureTabLabel: string;
+    countAll: (n: number) => string;
+    indexToggle: string;
+    indexHeading: (n: number) => string;
+    indexEmpty: string;
+    createFromSelection: (n: number) => string;
+    scratchColumnHeading: string;
+    selectedCount: (n: number) => string;
+    emptyDrill: string;
+    emptyTimeline: string;
+    addNote: string;
+    detailLoading: string;
+    detailClose: string;
+    addToIndex: string;
+    addToIndexTitle: string;
+    addToIndexWarning: string;
+    keywordLabel: string;
+    contentHeading: string;
+    literatureHeading: string;
+    gapSlotSave: string;
+    gapSlotChosen: string;
+    gapSlotAriaLabel: (before: string, after: string) => string;
+    gapStart: string;
+    gapEnd: string;
+    pileGroupLabel: (n: number) => string;
+    drillAllLabel: string;
+    drillGroupLabel: (index: number, count: number) => string;
+    deleteConfirmTitle: string;
+    deleteConfirmWarning: string;
+  };
+  promotionEditor: {
+    heading: (n: number) => string;
+    empty: string;
+    addDraft: string;
+    summaryEmpty: string;
+    summaryIncomplete: (total: number, incomplete: number) => string;
+    summaryComplete: string;
+    completeButton: string;
+    completing: string;
+    titleField: string;
+    titlePlaceholder: string;
+    contentField: string;
+    contentEmptyLabel: string;
+    literatureField: string;
+    positionField: string;
+    positionAutoLabel: string;
+    positionChangeLabel: string;
+    positionPickingLabel: string;
+    gapBetween: (before: string, after: string) => string;
+    gapUnset: string;
+    linkField: (required: boolean) => string;
+    linkKindIndex: string;
+    linkKindNote: string;
+    linkTargetPlaceholder: string;
+    linkRelationPlaceholder: string;
+    linkAddButton: string;
+    linkTargetIndexPrefix: string;
+    linkTargetNotePrefix: string;
+    deleteDraft: string;
+    firstNoteHint: string;
+  };
+  literature: {
+    heading: string;
+    description: (n: number) => string;
+    loadingLabel: string;
+    filterPlaceholder: string;
+    emptyAll: string;
+    emptyFiltered: string;
+    quickNoteCount: (n: number) => string;
+    permanentNoteCount: (n: number) => string;
+    addButton: string;
+    citationPlaceholder: string;
+    urlPlaceholder: string;
+    summaryHeading: string;
+    summaryHint: string;
+    permanentNotesHeading: (n: number) => string;
+    quickNotesHeading: (n: number) => string;
+    noneYet: string;
+    deleteButton: string;
+    deleteConfirmTitle: string;
+    deleteConfirmWarning: (quickCount: number, permanentCount: number) => string;
+    backToList: string;
+    zoteroLinkedSuffix: string;
+  };
+  search: {
+    backToScratch: string;
+    placeholder: string;
+    loadingLabel: string;
+    kindQuickNote: string;
+    kindPermanentNote: string;
+    noResults: (query: string) => string;
+  };
+  settings: {
+    heading: string;
+    description: string;
+    zoteroHeading: string;
+    loadingLabel: string;
+    connectedSummary: (libraryId: string) => string;
+    libraryTypeUser: string;
+    libraryTypeGroup: string;
+    lastUpdated: (date: string) => string;
+    disconnect: string;
+    apiKeyHelp1: string;
+    apiKeyHelp2: string;
+    apiKeyLabel: string;
+    apiKeyPlaceholderExisting: string;
+    apiKeyPlaceholderNew: string;
+    libraryIdLabel: string;
+    libraryIdPlaceholder: string;
+    libraryTypeLabel: string;
+    missingFieldsError: string;
+  };
+  errors: {
+    keywordRequired: string;
+    permanentNoteNotFound: string;
+    indexKeywordTaken: (keyword: string) => string;
+    indexEntryNotFound: string;
+    quickNoteSelectionRequired: string;
+    permanentNoteDraftRequired: string;
+    draftInvalid: (title: string, problems: string) => string;
+    orderKeyConflict: string;
+    quickNotesNotFound: string;
+    quickNotesAlreadyPromoted: string;
+    linkedPermanentNoteNotFound: string;
+    linkedIndexEntryNotFound: string;
+    literatureMemoNotFound: string;
+    quickNoteNotFound: string;
+    linkNotFound: string;
+    encryptionNotConfigured: string;
+    zoteroTitleRequired: string;
+    zoteroApiError: (status: number, statusText: string) => string;
+    zoteroWriteForbidden: string;
+    zoteroCreateFailed: string;
+    zoteroLoadFailed: string;
+    genericSearchFailed: string;
+  };
+  validation: {
+    titleRequired: string;
+    contentRequired: string;
+    linkRequired: string;
+    linkRelationRequired: string;
+    positionRequired: string;
+  };
+}

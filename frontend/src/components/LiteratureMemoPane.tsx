@@ -13,6 +13,8 @@ import {
   updateLiteratureMemoDetailsAction,
 } from "@/app/literature/actions";
 import type { LiteratureMemoDetail, LiteratureMemoSummary } from "@/lib/literatureMemos";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { localeTag } from "@/lib/i18n/dictionary";
 
 /**
  * Inline 文献メモ browser for ①'s pane — the main use case is a quick
@@ -26,6 +28,7 @@ export function LiteratureMemoPane({
 }: {
   onOpenPermanentNote: (id: string) => void;
 }) {
+  const { t, locale } = useI18n();
   const [memos, setMemos] = useState<LiteratureMemoSummary[] | null>(null);
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -83,20 +86,20 @@ export function LiteratureMemoPane({
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="citationで絞り込み…"
+        placeholder={t.literature.filterPlaceholder}
         className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-soft focus:border-accent focus:outline-none"
       />
 
       {memos === null ? (
-        <LoadingBlock label="読み込み中…" size="md" />
+        <LoadingBlock label={t.common.loading} size="md" />
       ) : (
         <NoteTimeline
-          emptyLabel={memos.length === 0 ? "まだ文献メモがありません。" : "一致する文献メモが見つかりません。"}
+          emptyLabel={memos.length === 0 ? t.literature.emptyAll : t.literature.emptyFiltered}
           rows={filtered.map((m) => ({
             key: m.id,
             meta: (
               <span className="font-mono text-[9px] text-ink-faint">
-                {new Date(m.updatedAt).toLocaleDateString("ja-JP")}
+                {new Date(m.updatedAt).toLocaleDateString(localeTag(locale))}
                 {m.zoteroKey && <span className="ml-1.5 text-accent">Zotero</span>}
               </span>
             ),
@@ -109,14 +112,14 @@ export function LiteratureMemoPane({
                 {m.summary && <p className="line-clamp-1 text-[11px] text-ink-soft">{m.summary}</p>}
                 <div className="flex flex-wrap gap-1.5">
                   <span className="rounded-full border border-line-strong px-1.5 py-0.5 font-mono text-[9px] text-ink-soft">
-                    走り書き {m.quickNoteCount}
+                    {t.literature.quickNoteCount(m.quickNoteCount)}
                   </span>
                   <span
                     className={`rounded-full border border-line-strong px-1.5 py-0.5 font-mono text-[9px] text-ink-soft ${
                       m.permanentNoteCount === 0 ? "opacity-40" : ""
                     }`}
                   >
-                    永久保存版 {m.permanentNoteCount}
+                    {t.literature.permanentNoteCount(m.permanentNoteCount)}
                   </span>
                 </div>
               </button>
@@ -143,6 +146,7 @@ function LiteratureMemoPaneDetail({
   onUpdated: (detail: LiteratureMemoDetail) => void;
   onOpenPermanentNote: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const [detail, setDetail] = useState<LiteratureMemoDetail | null>(null);
   const [citation, setCitation] = useState("");
   const [url, setUrl] = useState("");
@@ -193,34 +197,34 @@ function LiteratureMemoPaneDetail({
   return (
     <div className="flex flex-col gap-4 p-4">
       <button onClick={onBack} className="w-fit font-mono text-[10.5px] text-ink-soft transition-colors hover:text-accent">
-        <span className="text-accent">&lt;</span> 一覧へ戻る
+        <span className="text-accent">&lt;</span> {t.literature.backToList}
       </button>
 
       {!detail ? (
-        <LoadingBlock label="読み込み中…" size="md" />
+        <LoadingBlock label={t.common.loading} size="md" />
       ) : (
         <>
           <div className="flex flex-col gap-2">
             <p className="font-mono text-[9.5px] tracking-[0.15em] text-accent uppercase">
-              文献メモ{detail.zoteroKey && <span className="ml-1.5 text-ink-soft">（Zotero連携）</span>}
+              {t.literature.heading}{detail.zoteroKey && <span className="ml-1.5 text-ink-soft">{t.literature.zoteroLinkedSuffix}</span>}
             </p>
             <input
               value={citation}
               onChange={(e) => setCitation(e.target.value)}
-              placeholder="citation"
+              placeholder={t.literature.citationPlaceholder}
               className="w-full rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-sm font-bold text-ink focus:border-accent focus:outline-none"
             />
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="URL（任意）"
+              placeholder={t.literature.urlPlaceholder}
               className="w-full rounded-md border border-line bg-surface-alt px-2.5 py-1.5 font-mono text-[10.5px] text-ink-soft focus:border-accent focus:outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[9px] tracking-wider text-ink-faint uppercase">
-              自分の言葉で（共有・全参照元に反映）
+              {t.literature.summaryHeading}
             </label>
             <textarea
               value={summary}
@@ -235,17 +239,17 @@ function LiteratureMemoPaneDetail({
                 className="btn-sheen flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
               >
                 {savePending && <Spinner size="xs" />}
-                {savePending ? "保存中…" : saved ? "保存しました" : "保存"}
+                {savePending ? t.common.saving : saved ? t.common.saved : t.common.save}
               </button>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[9px] tracking-wider text-ink-faint uppercase">
-              永久保存版メモ（{detail.permanentNotes.length}件）
+              {t.literature.permanentNotesHeading(detail.permanentNotes.length)}
             </label>
             {detail.permanentNotes.length === 0 ? (
-              <p className="font-mono text-[10.5px] text-ink-faint">まだありません。</p>
+              <p className="font-mono text-[10.5px] text-ink-faint">{t.literature.noneYet}</p>
             ) : (
               detail.permanentNotes.map((n) => (
                 <button
@@ -261,10 +265,10 @@ function LiteratureMemoPaneDetail({
 
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[9px] tracking-wider text-ink-faint uppercase">
-              走り書き（{detail.quickNotes.length}件）
+              {t.literature.quickNotesHeading(detail.quickNotes.length)}
             </label>
             {detail.quickNotes.length === 0 ? (
-              <p className="font-mono text-[10.5px] text-ink-faint">まだありません。</p>
+              <p className="font-mono text-[10.5px] text-ink-faint">{t.literature.noneYet}</p>
             ) : (
               detail.quickNotes.map((n) => (
                 <Link
@@ -272,7 +276,7 @@ function LiteratureMemoPaneDetail({
                   href={`/scratch/${n.id}`}
                   className="rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-[11.5px] text-ink transition-colors hover:border-accent/60"
                 >
-                  {n.preview || "(内容未記入)"}
+                  {n.preview || t.common.noContent}
                 </Link>
               ))
             )}
@@ -283,15 +287,15 @@ function LiteratureMemoPaneDetail({
               onClick={() => setConfirmOpen(true)}
               className="font-mono text-[10.5px] text-ink-soft transition-colors hover:text-accent"
             >
-              この文献メモを削除
+              {t.literature.deleteButton}
             </button>
           </div>
 
           <ConfirmDialog
             open={confirmOpen}
-            title="文献メモを削除しますか？"
-            warning={`参照している走り書き${detail.quickNotes.length}件・永久保存版メモ${detail.permanentNotes.length}件からのリンクも解除されます（各ノート自体は削除されません）。`}
-            confirmLabel="削除"
+            title={t.literature.deleteConfirmTitle}
+            warning={t.literature.deleteConfirmWarning(detail.quickNotes.length, detail.permanentNotes.length)}
+            confirmLabel={t.common.delete}
             onCancel={() => setConfirmOpen(false)}
             onConfirm={remove}
             confirmDisabled={deletePending}

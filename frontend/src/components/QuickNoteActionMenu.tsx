@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
  * Small corner button (overlapping the note card's top-right corner) that
@@ -11,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
  * itself is already close to full width.
  */
 export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -27,7 +29,7 @@ export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; 
     <div ref={ref} className="absolute -top-2.5 -right-2.5 z-10">
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label="操作"
+        aria-label={t.quickNoteActionMenu.actionsAriaLabel}
         className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/60 bg-surface text-accent shadow-[0_0_10px_-3px_var(--color-accent)] transition-transform hover:scale-110"
       >
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -42,7 +44,7 @@ export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; 
             }}
             className="whitespace-nowrap px-3.5 py-2 text-left font-mono text-[10.5px] text-ink-soft transition-colors hover:bg-surface-alt hover:text-ink"
           >
-            編集
+            {t.common.edit}
           </button>
           <button
             onClick={() => {
@@ -51,7 +53,7 @@ export function QuickNoteActionMenu({ onEdit, onDelete }: { onEdit: () => void; 
             }}
             className="whitespace-nowrap border-t border-line px-3.5 py-2 text-left font-mono text-[10.5px] text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
           >
-            削除
+            {t.common.delete}
           </button>
         </div>
       )}

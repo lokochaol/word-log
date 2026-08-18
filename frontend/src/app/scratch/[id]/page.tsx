@@ -5,9 +5,12 @@ import { requireOwnerSub } from "@/lib/session";
 import { NotFoundError } from "@/lib/errors";
 import { QuickNoteBlocksSection } from "@/components/QuickNoteBlocksSection";
 import { QuickNoteLiteratureSection } from "@/components/QuickNoteLiteratureSection";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary, localeTag } from "@/lib/i18n/dictionary";
+import type { Locale } from "@/lib/i18n/types";
 
-function formatDate(date: Date) {
-  return date.toLocaleString("ja-JP", {
+function formatDate(date: Date, locale: Locale) {
+  return date.toLocaleString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -19,6 +22,8 @@ function formatDate(date: Date) {
 export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id]">) {
   const { id } = await props.params;
   const ownerSub = await requireOwnerSub();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
 
   let note;
   try {
@@ -35,29 +40,31 @@ export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id
           href="/scratch"
           className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
         >
-          <span className="text-accent">&lt;</span> 走り書きへ戻る
+          <span className="text-accent">&lt;</span> {dict.nav.backToScratch}
         </Link>
 
         <div className="flex flex-col gap-1.5">
           <p className="font-mono text-[10px] tracking-[0.2em] text-accent uppercase">
-            {note.source === "VOICE" ? "ボイスメモ" : "走り書き"}
-            {note.status === "ARCHIVED" && <span className="ml-2 text-ink-soft">（昇格済み）</span>}
+            {note.source === "VOICE" ? dict.scratch.sourceVoice : dict.scratch.sourceScratch}
+            {note.status === "ARCHIVED" && <span className="ml-2 text-ink-soft">{dict.scratch.archivedSuffix}</span>}
           </p>
           <p className="font-mono text-xs text-ink-soft">
-            作成 {formatDate(note.encounteredAt)}　/　最終更新 {formatDate(note.updatedAt)}
+            {dict.scratch.createdLabel(formatDate(note.encounteredAt, locale))}
+            {"　/　"}
+            {dict.scratch.updatedLabel(formatDate(note.updatedAt, locale))}
           </p>
         </div>
 
         <section className="flex flex-col gap-3">
           <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-            <span className="text-accent">{"//"}</span> 内容
+            <span className="text-accent">{"//"}</span> {dict.scratch.contentHeading}
           </h2>
           <QuickNoteBlocksSection noteId={note.id} blocks={note.blocks} />
         </section>
 
         <section className="flex flex-col gap-3">
           <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-            <span className="text-accent">{"//"}</span> 文献メモ（任意）
+            <span className="text-accent">{"//"}</span> {dict.scratch.literatureHeading}
           </h2>
           <QuickNoteLiteratureSection noteId={note.id} literatureMemo={note.literatureMemo} />
         </section>

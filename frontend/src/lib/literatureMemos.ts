@@ -90,7 +90,7 @@ export async function resolveSelection(
 
   if (selection.type === "existing") {
     const memo = await db.literatureMemo.findFirst({ where: { id: selection.id, ownerSub } });
-    if (!memo) throw new NotFoundError(`LiteratureMemo not found: ${selection.id}`);
+    if (!memo) throw new NotFoundError("literatureMemoNotFound", `LiteratureMemo not found: ${selection.id}`);
     return memo.id;
   }
 
@@ -156,7 +156,7 @@ export async function resolveSelections(
 
 export async function requireOwnedLiteratureMemo(ownerSub: string, id: string) {
   const memo = await prisma.literatureMemo.findFirst({ where: { id, ownerSub } });
-  if (!memo) throw new NotFoundError(`LiteratureMemo not found: ${id}`);
+  if (!memo) throw new NotFoundError("literatureMemoNotFound", `LiteratureMemo not found: ${id}`);
   return memo;
 }
 
@@ -216,7 +216,7 @@ export async function getDetail(ownerSub: string, id: string): Promise<Literatur
       },
     },
   });
-  if (!memo) throw new NotFoundError(`LiteratureMemo not found: ${id}`);
+  if (!memo) throw new NotFoundError("literatureMemoNotFound", `LiteratureMemo not found: ${id}`);
   const permanentNotes = memo.permanentNoteLinks
     .map((l) => l.permanentNote)
     .sort((a, b) => a.orderKey.localeCompare(b.orderKey));

@@ -9,14 +9,19 @@ import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:
  * other (session secret, DB password, etc).
  */
 
-export class EncryptionConfigError extends Error {}
+/** `code` is always "encryptionNotConfigured" — kept as a field (rather than
+ * a bare Error) purely for parity with DomainError so callers can translate
+ * it the same way (see translateDomainError's default branch / settings
+ * actions.ts, which maps this one code by hand since it lives outside the
+ * ConflictError/NotFoundError/ValidationError hierarchy). */
+export class EncryptionConfigError extends Error {
+  code = "encryptionNotConfigured" as const;
+}
 
 function getKey(): Buffer {
   const secret = process.env.CREDENTIAL_ENCRYPTION_KEY;
   if (!secret) {
-    throw new EncryptionConfigError(
-      "CREDENTIAL_ENCRYPTION_KEY が未設定です。資格情報を暗号化して保存できません。",
-    );
+    throw new EncryptionConfigError("CREDENTIAL_ENCRYPTION_KEY is not set. Credentials cannot be encrypted.");
   }
   // Accept any passphrase length/format — derive a fixed 32-byte AES-256 key.
   return createHash("sha256").update(secret).digest();

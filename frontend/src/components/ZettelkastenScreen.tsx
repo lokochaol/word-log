@@ -25,6 +25,9 @@ import {
 import { getQuickNoteDetailAction, listActiveQuickNotesAction } from "@/app/scratch/actions";
 import type { CompletePromotionInput } from "@/lib/promotion";
 import { midpointRank } from "@/lib/rank";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { AppBrand } from "@/components/AppBrand";
+import { LocaleToggle } from "@/components/LocaleToggle";
 
 export function ZettelkastenScreen({
   initialGlobalOrder,
@@ -38,6 +41,7 @@ export function ZettelkastenScreen({
   deepLinkOpenId?: string;
 }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [globalOrder, setGlobalOrder] = useState(initialGlobalOrder);
   const [activeQuickNotes, setActiveQuickNotes] = useState(initialActiveQuickNotes);
   const [indexEntries, setIndexEntries] = useState(initialIndexEntries);
@@ -160,23 +164,26 @@ export function ZettelkastenScreen({
   return (
     <div className="relative flex min-h-screen flex-col bg-bg">
       <div className="flex items-center gap-3 border-b border-line px-6 py-3.5">
-        <span className="text-sm font-extrabold tracking-tight text-ink">Word Log</span>
+        <span className="text-sm font-extrabold tracking-tight text-ink">
+          <AppBrand locale={locale} screen="zettelkasten" />
+        </span>
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={handleNavigateToScratch}
             className="rounded-full border border-line-strong px-3 py-1.5 font-mono text-[10.5px] text-ink-soft transition-colors hover:text-ink"
           >
-            <span className="text-accent">←</span> 走り書き
+            <span className="text-accent">←</span> {t.zettelkasten.backToScratch}
           </button>
           <span className="rounded-full border border-accent bg-accent-soft px-3 py-1.5 font-mono text-[10.5px] text-ink">
-            ツェッテルカステン
+            {t.zettelkasten.navPill}
           </span>
           <button
             onClick={() => setCol1Mode("literature")}
             className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
           >
-            文献メモ
+            {t.zettelkasten.literatureNav}
           </button>
+          <LocaleToggle />
         </div>
       </div>
 
@@ -197,7 +204,7 @@ export function ZettelkastenScreen({
                     : "border-line-strong text-ink-soft hover:text-ink"
                 }`}
               >
-                ツェッテルカステン
+                {t.zettelkasten.columnTitle}
               </button>
               <button
                 onClick={() => setCol1Mode("literature")}
@@ -207,17 +214,17 @@ export function ZettelkastenScreen({
                     : "border-line-strong text-ink-soft hover:text-ink"
                 }`}
               >
-                文献メモ
+                {t.zettelkasten.literatureTabLabel}
               </button>
             </div>
             {col1Mode === "notes" && (
               <>
-                <span className="normal-case">全 {globalOrder.length} 件</span>
+                <span className="normal-case">{t.zettelkasten.countAll(globalOrder.length)}</span>
                 <button
                   onClick={() => setIndexPanelOpen((v) => !v)}
                   className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
                 >
-                  索引表示
+                  {t.zettelkasten.indexToggle}
                 </button>
               </>
             )}
@@ -278,10 +285,10 @@ export function ZettelkastenScreen({
         {/* ③ — shares view-transition-name with /scratch's timeline container (§5) */}
         <div className="min-w-0 overflow-auto" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
           <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
-            <span className="text-accent">③</span> 走り書き
+            <span className="text-accent">③</span> {t.zettelkasten.scratchColumnHeading}
             {selectedQuickNoteIds.size > 0 && (
               <span className="ml-auto font-mono text-[10px] text-accent normal-case">
-                {selectedQuickNoteIds.size}件選択中
+                {t.zettelkasten.selectedCount(selectedQuickNoteIds.size)}
               </span>
             )}
           </div>
@@ -292,7 +299,7 @@ export function ZettelkastenScreen({
                 onClick={buildDraftFromSelection}
                 className="btn-sheen mb-3 w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
               >
-                選択した{selectedQuickNoteIds.size}件から永久保存版メモを作成
+                {t.zettelkasten.createFromSelection(selectedQuickNoteIds.size)}
               </button>
             )}
             <QuickNoteInlineTimeline
@@ -333,13 +340,14 @@ function IndexPanel({
   onSelect: (noteId: string) => void;
   onRemove: (id: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="absolute top-11 right-3 z-20 w-[250px] rounded-lg border border-line-strong bg-surface-alt shadow-[0_20px_40px_-18px_rgba(0,0,0,0.8)]">
       <div className="border-b border-line px-3 py-2.5 font-mono text-[10px] tracking-wider text-ink-faint">
-        索引（{entries.length}件）
+        {t.zettelkasten.indexHeading(entries.length)}
       </div>
       <div className="max-h-72 overflow-auto">
-        {entries.length === 0 && <p className="p-3 text-xs text-ink-soft">まだ索引がありません</p>}
+        {entries.length === 0 && <p className="p-3 text-xs text-ink-soft">{t.zettelkasten.indexEmpty}</p>}
         {entries.map((entry) => (
           <div
             key={entry.id}
@@ -349,7 +357,7 @@ function IndexPanel({
               {entry.keyword}
             </button>
             <button onClick={() => onRemove(entry.id)} className="shrink-0 text-[10px] text-ink-faint hover:text-accent">
-              削除
+              {t.common.delete}
             </button>
           </div>
         ))}
@@ -367,6 +375,7 @@ function NoteDetailOverlay({
   onClose: () => void;
   onIndexEntryAdded: (entry: IndexEntrySummary) => void;
 }) {
+  const { t } = useI18n();
   const [detail, setDetail] = useState<PermanentNoteDetail | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
@@ -401,17 +410,17 @@ function NoteDetailOverlay({
         className="relative max-h-[80vh] w-full max-w-[560px] overflow-auto rounded-xl border border-line bg-surface p-6 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)]"
       >
         {!detail ? (
-          <LoadingBlock label="読み込み中…" size="md" />
+          <LoadingBlock label={t.zettelkasten.detailLoading} size="md" />
         ) : (
           <>
             <div className="mb-4 flex items-start justify-between gap-3">
               <h2 className="text-xl font-extrabold text-ink">{detail.title}</h2>
               <div className="flex shrink-0 gap-2">
                 <button onClick={() => setConfirmOpen(true)} className="font-mono text-[10px] text-ink-soft hover:text-accent">
-                  索引に追加
+                  {t.zettelkasten.addToIndex}
                 </button>
                 <button onClick={onClose} className="font-mono text-[10px] text-ink-soft hover:text-accent">
-                  閉じる ✕
+                  {t.zettelkasten.detailClose}
                 </button>
               </div>
             </div>
@@ -434,7 +443,7 @@ function NoteDetailOverlay({
 
             <div className="mt-4 border-t border-line pt-3">
               <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-                <span className="text-accent">{"//"}</span> 文献メモ（任意）
+                <span className="text-accent">{"//"}</span> {t.zettelkasten.literatureHeading}
               </h3>
               <PermanentNoteLiteratureSection key={detail.id} noteId={detail.id} literatureMemos={detail.literatureMemos} />
             </div>
@@ -458,14 +467,14 @@ function NoteDetailOverlay({
 
         <ConfirmDialog
           open={confirmOpen}
-          title="索引に追加しますか？"
-          warning="索引は少数に保つほど見通しが良くなります。本当によく参照するキーワードだけ追加してください。"
+          title={t.zettelkasten.addToIndexTitle}
+          warning={t.zettelkasten.addToIndexWarning}
           onCancel={() => setConfirmOpen(false)}
           onConfirm={addToIndex}
           confirmDisabled={!keyword.trim()}
         >
           <div>
-            <label className="mb-1 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">キーワード</label>
+            <label className="mb-1 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">{t.zettelkasten.keywordLabel}</label>
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}

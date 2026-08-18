@@ -9,6 +9,8 @@ import type { GlobalOrderEntry } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
 import { validateDraft, type PermanentNoteDraft } from "@/lib/promotionValidation";
 import { midpointRank } from "@/lib/rank";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
+import type { Dictionary } from "@/lib/i18n/types";
 
 export interface EditableLink {
   clientId: string;
@@ -36,11 +38,15 @@ function toDraftForValidation(d: EditableDraft): PermanentNoteDraft {
   };
 }
 
-function gapLabel(gap: EditableDraft["gap"], globalOrder: GlobalOrderEntry[]): string {
-  if (!gap) return "未選択";
-  const beforeTitle = gap.beforeId ? (globalOrder.find((n) => n.id === gap.beforeId)?.title ?? "?") : "先頭";
-  const afterTitle = gap.afterId ? (globalOrder.find((n) => n.id === gap.afterId)?.title ?? "?") : "末尾";
-  return `${beforeTitle} と ${afterTitle} の間`;
+function gapLabel(gap: EditableDraft["gap"], globalOrder: GlobalOrderEntry[], t: Dictionary): string {
+  if (!gap) return t.promotionEditor.gapUnset;
+  const beforeTitle = gap.beforeId
+    ? (globalOrder.find((n) => n.id === gap.beforeId)?.title ?? "?")
+    : t.zettelkasten.gapStart;
+  const afterTitle = gap.afterId
+    ? (globalOrder.find((n) => n.id === gap.afterId)?.title ?? "?")
+    : t.zettelkasten.gapEnd;
+  return t.promotionEditor.gapBetween(beforeTitle, afterTitle);
 }
 
 export function PromotionEditor({
@@ -64,6 +70,7 @@ export function PromotionEditor({
   completing: boolean;
   completeError: string | null;
 }) {
+  const { t, locale } = useI18n();
   function updateDraft(clientId: string, patch: Partial<EditableDraft>) {
     onChangeDrafts(drafts.map((d) => (d.clientId === clientId ? { ...d, ...patch } : d)));
   }
@@ -95,7 +102,7 @@ export function PromotionEditor({
   }
 
   const problemsByDraft = new Map(
-    drafts.map((d) => [d.clientId, validateDraft(toDraftForValidation(d), { hasExistingNotes })]),
+    drafts.map((d) => [d.clientId, validateDraft(toDraftForValidation(d), { hasExistingNotes, locale })]),
   );
   const incompleteCount = drafts.filter((d) => (problemsByDraft.get(d.clientId)?.length ?? 0) > 0).length;
   const allValid = drafts.length > 0 && incompleteCount === 0;
@@ -103,14 +110,12 @@ export function PromotionEditor({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
-        <span className="text-accent">②</span> 永久保存版メモ作成 — {drafts.length}件
+        <span className="text-accent">②</span> {t.promotionEditor.heading(drafts.length)}
       </div>
 
       <div className="flex-1 overflow-auto p-4">
         {drafts.length === 0 && (
-          <p className="py-8 text-center text-xs text-ink-soft">
-            右側の走り書きから選択したら、ここで永久保存版メモを作成します。
-          </p>
+          <p className="py-8 text-center text-xs text-ink-soft">{t.promotionEditor.empty}</p>
         )}
 
         <div className="flex flex-col gap-3">
@@ -131,6 +136,7 @@ export function PromotionEditor({
                 onTogglePositionPicker={() =>
                   onSetActiveDraftId(activeDraftId === draft.clientId ? null : draft.clientId)
                 }
+                t={t}
               />
             );
           })}
@@ -140,17 +146,17 @@ export function PromotionEditor({
           onClick={addDraft}
           className="mt-3 w-full rounded-lg border border-dashed border-line px-3 py-2.5 text-center text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent"
         >
-          ＋ もう一件永久保存版メモを追加
+          {t.promotionEditor.addDraft}
         </button>
       </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-alt px-4 py-3">
         <span className="font-mono text-[10px] text-ink-faint">
           {drafts.length === 0
-            ? "永久保存版メモがありません"
+            ? t.promotionEditor.summaryEmpty
             : incompleteCount > 0
-              ? `${drafts.length}件中 ${incompleteCount}件が未入力`
-              : "すべて入力済み"}
+              ? t.promotionEditor.summaryIncomplete(drafts.length, incompleteCount)
+              : t.promotionEditor.summaryComplete}
         </span>
         {completeError && <span className="font-mono text-[10px] text-accent">{completeError}</span>}
         <button
@@ -159,7 +165,7 @@ export function PromotionEditor({
           className="btn-sheen flex shrink-0 items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-xs font-bold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-ink-faint disabled:hover:scale-100"
         >
           {completing && <Spinner size="xs" />}
-          {completing ? "保存中…" : "完了 — 走り書きから削除して保存"}
+          {completing ? t.promotionEditor.completing : t.promotionEditor.completeButton}
         </button>
       </div>
     </div>
@@ -177,6 +183,7 @@ function DraftCard({
   onChange,
   onRemove,
   onTogglePositionPicker,
+  t,
 }: {
   index: number;
   draft: EditableDraft;
@@ -188,6 +195,7 @@ function DraftCard({
   onChange: (patch: Partial<EditableDraft>) => void;
   onRemove: () => void;
   onTogglePositionPicker: () => void;
+  t: Dictionary;
 }) {
   return (
     <div className="rounded-lg border border-line bg-surface-alt p-3.5">
@@ -196,21 +204,23 @@ function DraftCard({
           <span className="font-mono text-accent">{String(index).padStart(2, "0")}</span>
         </h4>
         <button onClick={onRemove} className="font-mono text-[10px] text-ink-soft hover:text-accent">
-          削除
+          {t.common.delete}
         </button>
       </div>
 
-      <Field label="タイトル" filled={!!draft.title.trim()}>
+      <Field label={t.promotionEditor.titleField} filled={!!draft.title.trim()}>
         <input
           value={draft.title}
           onChange={(e) => onChange({ title: e.target.value })}
-          placeholder="一行で要約するタイトル"
+          placeholder={t.promotionEditor.titlePlaceholder}
           className="w-full bg-transparent text-sm font-bold text-ink placeholder:font-normal placeholder:text-ink-soft focus:outline-none"
         />
       </Field>
 
       <div className="mt-2.5">
-        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">内容</label>
+        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
+          {t.promotionEditor.contentField}
+        </label>
         <BlocksEditor
           blocks={draft.blocks.map((b, i) => ({
             id: `draft-${i}`,
@@ -220,7 +230,7 @@ function DraftCard({
             caption: b.caption ?? null,
           }))}
           onSave={(blocks) => onChange({ blocks })}
-          emptyLabel="＋ 内容を入力"
+          emptyLabel={t.promotionEditor.contentEmptyLabel}
           startInEditMode={draft.blocks.length === 0}
         />
       </div>
@@ -232,23 +242,30 @@ function DraftCard({
           globalOrder={globalOrder}
           required={hasExistingNotes}
           onChange={(links) => onChange({ links })}
+          t={t}
         />
       </div>
 
       <div className="mt-2.5">
-        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">文献メモ（任意・複数可）</label>
+        <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
+          {t.promotionEditor.literatureField}
+        </label>
         <LiteratureMemoDraftField
           selections={draft.literatureSelections}
           onChange={(literatureSelections) => onChange({ literatureSelections })}
         />
       </div>
 
-      <Field label="保存位置" filled={!!draft.orderKey} onClick={hasExistingNotes ? onTogglePositionPicker : undefined}>
+      <Field
+        label={t.promotionEditor.positionField}
+        filled={!!draft.orderKey}
+        onClick={hasExistingNotes ? onTogglePositionPicker : undefined}
+      >
         <span className="flex items-center justify-between">
-          {hasExistingNotes ? gapLabel(draft.gap, globalOrder) : "先頭（自動 — 他のメモがまだ無いため）"}
+          {hasExistingNotes ? gapLabel(draft.gap, globalOrder, t) : t.promotionEditor.firstNoteHint}
           {hasExistingNotes && (
             <span className="font-mono text-[10px] text-ink-faint">
-              {isPickingPosition ? "選択中 ▾" : "変更 ▸"}
+              {isPickingPosition ? t.promotionEditor.positionPickingLabel : t.promotionEditor.positionChangeLabel}
             </span>
           )}
         </span>
@@ -293,12 +310,14 @@ function LinkPicker({
   globalOrder,
   required,
   onChange,
+  t,
 }: {
   links: EditableLink[];
   indexEntries: IndexEntrySummary[];
   globalOrder: GlobalOrderEntry[];
   required: boolean;
   onChange: (links: EditableLink[]) => void;
+  t: Dictionary;
 }) {
   const [kind, setKind] = useState<"INDEX_ENTRY" | "PERMANENT_NOTE">("INDEX_ENTRY");
   const [targetId, setTargetId] = useState("");
@@ -336,7 +355,7 @@ function LinkPicker({
   return (
     <div>
       <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
-        リンク{required ? "（1件以上）" : "（任意 — 他のメモがまだ無いため）"}
+        {t.promotionEditor.linkField(required)}
       </label>
 
       {links.length > 0 && (
@@ -347,7 +366,9 @@ function LinkPicker({
               className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent-soft px-2.5 py-1 font-mono text-[10px] text-accent"
             >
               <b className="font-bold">{l.relationLabel}</b>
-              <span className="text-ink-soft">／ {l.target.type === "INDEX_ENTRY" ? "索引" : "メモ"}: {l.target.label}</span>
+              <span className="text-ink-soft">
+                ／ {l.target.type === "INDEX_ENTRY" ? t.promotionEditor.linkTargetIndexPrefix : t.promotionEditor.linkTargetNotePrefix}: {l.target.label}
+              </span>
               <button
                 onClick={() => onChange(links.filter((x) => x.clientId !== l.clientId))}
                 className="opacity-60 hover:opacity-100"
@@ -369,15 +390,15 @@ function LinkPicker({
             }}
             className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink"
           >
-            <option value="INDEX_ENTRY">索引</option>
-            <option value="PERMANENT_NOTE">メモ</option>
+            <option value="INDEX_ENTRY">{t.promotionEditor.linkKindIndex}</option>
+            <option value="PERMANENT_NOTE">{t.promotionEditor.linkKindNote}</option>
           </select>
           <select
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
             className="min-w-0 flex-1 rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink"
           >
-            <option value="">リンク先を選ぶ…</option>
+            <option value="">{t.promotionEditor.linkTargetPlaceholder}</option>
             {(kind === "INDEX_ENTRY" ? indexEntries : globalOrder).map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {"keyword" in opt ? opt.keyword : opt.title}
@@ -387,7 +408,7 @@ function LinkPicker({
           <input
             value={relationLabel}
             onChange={(e) => setRelationLabel(e.target.value)}
-            placeholder="関係性を一言で（例: 応用元）"
+            placeholder={t.promotionEditor.linkRelationPlaceholder}
             className="min-w-0 flex-1 rounded-md border border-line bg-surface px-2 py-1 text-[10.5px] text-ink placeholder:text-ink-faint"
           />
           <button
@@ -395,7 +416,7 @@ function LinkPicker({
             disabled={!targetId || !relationLabel.trim()}
             className="rounded-md border border-line px-2 py-1 font-mono text-[10px] text-ink-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
           >
-            ＋追加
+            {t.promotionEditor.linkAddButton}
           </button>
         </div>
       )}

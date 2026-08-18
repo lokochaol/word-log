@@ -19,16 +19,16 @@ export async function list(ownerSub: string): Promise<IndexEntrySummary[]> {
 
 export async function create(ownerSub: string, keyword: string, noteId: string): Promise<IndexEntrySummary> {
   const trimmed = keyword.trim();
-  if (!trimmed) throw new ConflictError("キーワードを入力してください");
+  if (!trimmed) throw new ConflictError("keywordRequired", "Keyword is required");
 
   const note = await prisma.permanentNote.findFirst({ where: { id: noteId, ownerSub }, select: { title: true } });
-  if (!note) throw new NotFoundError(`PermanentNote not found: ${noteId}`);
+  if (!note) throw new NotFoundError("permanentNoteNotFound", `PermanentNote not found: ${noteId}`);
 
   const existing = await prisma.indexEntry.findFirst({
     where: { ownerSub, keyword: { equals: trimmed, mode: "insensitive" } },
   });
   if (existing) {
-    throw new ConflictError(`索引キーワード「${trimmed}」はすでに使われています`);
+    throw new ConflictError("indexKeywordTaken", `Index keyword already in use: ${trimmed}`, trimmed);
   }
 
   const entry = await prisma.indexEntry.create({
@@ -39,6 +39,6 @@ export async function create(ownerSub: string, keyword: string, noteId: string):
 
 export async function remove(ownerSub: string, id: string): Promise<void> {
   const entry = await prisma.indexEntry.findFirst({ where: { id, ownerSub } });
-  if (!entry) throw new NotFoundError(`IndexEntry not found: ${id}`);
+  if (!entry) throw new NotFoundError("indexEntryNotFound", `IndexEntry not found: ${id}`);
   await prisma.indexEntry.delete({ where: { id } });
 }

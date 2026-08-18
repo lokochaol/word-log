@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { SearchIcon } from "@/components/SearchIcon";
 import { HudFrame } from "@/components/HudFrame";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 export function HomeSearchBar() {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
 
@@ -31,7 +33,7 @@ export function HomeSearchBar() {
           type="text"
           name="q"
           autoComplete="off"
-          placeholder="単語・意味・関連語で検索…"
+          placeholder={t.scratch.homeSearchPlaceholder}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{ caretColor: "var(--color-accent)" }}

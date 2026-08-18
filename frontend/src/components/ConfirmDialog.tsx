@@ -2,15 +2,16 @@
 
 import type { ReactNode } from "react";
 import { Spinner } from "@/components/LoadingSpinner";
+import { useI18n } from "@/lib/i18n/LocaleProvider";
 
-/** Generic modal confirmation, e.g. "索引に追加しますか？" (§9's one genuinely new interaction primitive). */
+/** Generic modal confirmation, e.g. "Add to index?" (§9's one genuinely new interaction primitive). */
 export function ConfirmDialog({
   open,
   title,
   warning,
   children,
-  confirmLabel = "追加",
-  cancelLabel = "キャンセル",
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
   confirmDisabled = false,
@@ -28,7 +29,11 @@ export function ConfirmDialog({
   /** Shows a spinner on the confirm button (e.g. while a delete is in flight). */
   confirmPending?: boolean;
 }) {
+  const { t } = useI18n();
   if (!open) return null;
+
+  const resolvedConfirmLabel = confirmLabel ?? t.confirmDialog.confirmLabel;
+  const resolvedCancelLabel = cancelLabel ?? t.confirmDialog.cancelLabel;
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60">
@@ -45,7 +50,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="rounded-lg border border-line bg-surface px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-surface-alt"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             onClick={onConfirm}
@@ -53,7 +58,7 @@ export function ConfirmDialog({
             className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
           >
             {confirmPending && <Spinner size="xs" />}
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </button>
         </div>
       </div>

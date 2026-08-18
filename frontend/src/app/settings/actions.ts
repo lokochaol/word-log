@@ -5,6 +5,8 @@ import * as zoteroCredentials from "@/lib/zoteroCredentials";
 import type { ZoteroCredentialSummary } from "@/lib/zoteroCredentials";
 import { EncryptionConfigError } from "@/lib/crypto";
 import { requireOwnerSub } from "@/lib/session";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
 
 export async function getZoteroSettingsAction(): Promise<ZoteroCredentialSummary | null> {
   const ownerSub = await requireOwnerSub();
@@ -17,19 +19,21 @@ export async function saveZoteroSettingsAction(input: {
   libraryType: string;
 }): Promise<{ error: string } | { ok: true }> {
   const ownerSub = await requireOwnerSub();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
   const apiKey = input.apiKey.trim();
   const libraryId = input.libraryId.trim();
   const libraryType = input.libraryType === "group" ? "group" : "user";
 
   if (!apiKey || !libraryId) {
-    return { error: "APIキーとライブラリIDの両方を入力してください" };
+    return { error: dict.settings.missingFieldsError };
   }
 
   try {
     await zoteroCredentials.upsert(ownerSub, { apiKey, libraryId, libraryType });
   } catch (e) {
     if (e instanceof EncryptionConfigError) {
-      return { error: e.message };
+      return { error: dict.errors.encryptionNotConfigured };
     }
     throw e;
   }

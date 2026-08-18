@@ -7,6 +7,7 @@ import type { BlockInput } from "@/lib/blocks";
 import type { GlobalOrderEntry } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
 import { validateDraft, type PermanentNoteDraft } from "@/lib/promotionValidation";
+import { midpointRank } from "@/lib/rank";
 
 export interface EditableLink {
   clientId: string;
@@ -66,10 +67,24 @@ export function PromotionEditor({
     onChangeDrafts(drafts.map((d) => (d.clientId === clientId ? { ...d, ...patch } : d)));
   }
 
+  // With zero existing PermanentNotes there is exactly one possible save
+  // position (the start of an empty sequence) and nothing to link to — both
+  // requirements are waived, and the position is filled in automatically
+  // rather than making the owner click through an empty pile picker.
+  const hasExistingNotes = globalOrder.length > 0;
+
   function addDraft() {
     onChangeDrafts([
       ...drafts,
-      { clientId: crypto.randomUUID(), title: "", blocks: [], links: [], gap: null, orderKey: null, literatureSelections: [] },
+      {
+        clientId: crypto.randomUUID(),
+        title: "",
+        blocks: [],
+        links: [],
+        gap: hasExistingNotes ? null : { beforeId: null, afterId: null },
+        orderKey: hasExistingNotes ? null : midpointRank(null, null),
+        literatureSelections: [],
+      },
     ]);
   }
 
@@ -78,7 +93,9 @@ export function PromotionEditor({
     if (activeDraftId === clientId) onSetActiveDraftId(null);
   }
 
-  const problemsByDraft = new Map(drafts.map((d) => [d.clientId, validateDraft(toDraftForValidation(d))]));
+  const problemsByDraft = new Map(
+    drafts.map((d) => [d.clientId, validateDraft(toDraftForValidation(d), { hasExistingNotes })]),
+  );
   const incompleteCount = drafts.filter((d) => (problemsByDraft.get(d.clientId)?.length ?? 0) > 0).length;
   const allValid = drafts.length > 0 && incompleteCount === 0;
 
@@ -107,6 +124,7 @@ export function PromotionEditor({
                 isPickingPosition={activeDraftId === draft.clientId}
                 indexEntries={indexEntries}
                 globalOrder={globalOrder}
+                hasExistingNotes={hasExistingNotes}
                 onChange={(patch) => updateDraft(draft.clientId, patch)}
                 onRemove={() => removeDraft(draft.clientId)}
                 onTogglePositionPicker={() =>
@@ -153,6 +171,7 @@ function DraftCard({
   isPickingPosition,
   indexEntries,
   globalOrder,
+  hasExistingNotes,
   onChange,
   onRemove,
   onTogglePositionPicker,
@@ -163,6 +182,7 @@ function DraftCard({
   isPickingPosition: boolean;
   indexEntries: IndexEntrySummary[];
   globalOrder: GlobalOrderEntry[];
+  hasExistingNotes: boolean;
   onChange: (patch: Partial<EditableDraft>) => void;
   onRemove: () => void;
   onTogglePositionPicker: () => void;
@@ -208,6 +228,7 @@ function DraftCard({
           links={draft.links}
           indexEntries={indexEntries}
           globalOrder={globalOrder}
+          required={hasExistingNotes}
           onChange={(links) => onChange({ links })}
         />
       </div>
@@ -220,12 +241,14 @@ function DraftCard({
         />
       </div>
 
-      <Field label="保存位置" filled={!!draft.orderKey} onClick={onTogglePositionPicker}>
+      <Field label="保存位置" filled={!!draft.orderKey} onClick={hasExistingNotes ? onTogglePositionPicker : undefined}>
         <span className="flex items-center justify-between">
-          {gapLabel(draft.gap, globalOrder)}
-          <span className="font-mono text-[10px] text-ink-faint">
-            {isPickingPosition ? "選択中 ▾" : "変更 ▸"}
-          </span>
+          {hasExistingNotes ? gapLabel(draft.gap, globalOrder) : "先頭（自動 — 他のメモがまだ無いため）"}
+          {hasExistingNotes && (
+            <span className="font-mono text-[10px] text-ink-faint">
+              {isPickingPosition ? "選択中 ▾" : "変更 ▸"}
+            </span>
+          )}
         </span>
       </Field>
 
@@ -266,11 +289,13 @@ function LinkPicker({
   links,
   indexEntries,
   globalOrder,
+  required,
   onChange,
 }: {
   links: EditableLink[];
   indexEntries: IndexEntrySummary[];
   globalOrder: GlobalOrderEntry[];
+  required: boolean;
   onChange: (links: EditableLink[]) => void;
 }) {
   const [kind, setKind] = useState<"INDEX_ENTRY" | "PERMANENT_NOTE">("INDEX_ENTRY");
@@ -309,7 +334,7 @@ function LinkPicker({
   return (
     <div>
       <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
-        リンク（1件以上）
+        リンク{required ? "（1件以上）" : "（任意 — 他のメモがまだ無いため）"}
       </label>
 
       {links.length > 0 && (
@@ -332,44 +357,46 @@ function LinkPicker({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <select
-          value={kind}
-          onChange={(e) => {
-            setKind(e.target.value as typeof kind);
-            setTargetId("");
-          }}
-          className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink"
-        >
-          <option value="INDEX_ENTRY">索引</option>
-          <option value="PERMANENT_NOTE">メモ</option>
-        </select>
-        <select
-          value={targetId}
-          onChange={(e) => setTargetId(e.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink"
-        >
-          <option value="">リンク先を選ぶ…</option>
-          {(kind === "INDEX_ENTRY" ? indexEntries : globalOrder).map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {"keyword" in opt ? opt.keyword : opt.title}
-            </option>
-          ))}
-        </select>
-        <input
-          value={relationLabel}
-          onChange={(e) => setRelationLabel(e.target.value)}
-          placeholder="関係性を一言で（例: 応用元）"
-          className="min-w-0 flex-1 rounded-md border border-line bg-surface px-2 py-1 text-[10.5px] text-ink placeholder:text-ink-faint"
-        />
-        <button
-          onClick={addLink}
-          disabled={!targetId || !relationLabel.trim()}
-          className="rounded-md border border-line px-2 py-1 font-mono text-[10px] text-ink-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
-        >
-          ＋追加
-        </button>
-      </div>
+      {required && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <select
+            value={kind}
+            onChange={(e) => {
+              setKind(e.target.value as typeof kind);
+              setTargetId("");
+            }}
+            className="rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink"
+          >
+            <option value="INDEX_ENTRY">索引</option>
+            <option value="PERMANENT_NOTE">メモ</option>
+          </select>
+          <select
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            className="min-w-0 flex-1 rounded-md border border-line bg-surface px-1.5 py-1 text-[10.5px] text-ink"
+          >
+            <option value="">リンク先を選ぶ…</option>
+            {(kind === "INDEX_ENTRY" ? indexEntries : globalOrder).map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {"keyword" in opt ? opt.keyword : opt.title}
+              </option>
+            ))}
+          </select>
+          <input
+            value={relationLabel}
+            onChange={(e) => setRelationLabel(e.target.value)}
+            placeholder="関係性を一言で（例: 応用元）"
+            className="min-w-0 flex-1 rounded-md border border-line bg-surface px-2 py-1 text-[10.5px] text-ink placeholder:text-ink-faint"
+          />
+          <button
+            onClick={addLink}
+            disabled={!targetId || !relationLabel.trim()}
+            className="rounded-md border border-line px-2 py-1 font-mono text-[10px] text-ink-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-40"
+          >
+            ＋追加
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function GuideContentEn() {
         <p className="font-mono text-[10.5px] tracking-[0.25em] text-accent uppercase">Guide</p>
         <h1 className="text-3xl font-extrabold tracking-tight text-ink text-balance">What is a Zettelkasten?</h1>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          Everyone takes notes. A <em className="text-ink not-italic font-semibold">Zettelkasten</em> (German for
+          A <em className="text-ink not-italic font-semibold">Zettelkasten</em> (German for
           &ldquo;slip-box&rdquo;) is a specific method for making notes <strong className="text-ink">grow</strong>{" "}
           into something more — practiced by sociologist Niklas Luhmann and popularized by Sönke Ahrens&rsquo; book
           {" "}
@@ -42,8 +42,7 @@ export function GuideContentEn() {
       <section className="flex flex-col gap-5">
         <Eyebrow>1. A note only matters once it&rsquo;s linked</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          A single note, on its own, isn&rsquo;t worth much. Something you found interesting enough to write down
-          will lose its context within a few weeks and go back to being a stray fragment. The core idea of a
+          The core idea of a
           Zettelkasten is that value doesn&rsquo;t live in the note itself — it lives in the{" "}
           <strong className="text-ink">link between notes</strong>. A note only becomes knowledge once it&rsquo;s
           connected to something else.
@@ -56,7 +55,7 @@ export function GuideContentEn() {
       <section className="flex flex-col gap-5">
         <Eyebrow>2. Two stages — fleeting and permanent</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          Trying to write something carefully the moment you think of it rarely works out. So a Zettelkasten
+          A Zettelkasten
           separates capturing a fragment of thought quickly (a fleeting note) from later choosing the ones worth
           keeping, rewriting them in your own words, linking them to what already exists, and only then adding them
           to the box as a permanent note. Fleeting notes are disposable — only the ones worth rewriting survive
@@ -68,12 +67,12 @@ export function GuideContentEn() {
       </section>
 
       <section className="flex flex-col gap-5">
-        <Eyebrow>3. No folders — just a small index</Eyebrow>
+        <Eyebrow>3. Choosing where it sits is a deliberate act</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          You never have to decide &ldquo;which folder does this belong in.&rdquo; A Zettelkasten has no category
-          hierarchy — notes sit in one ordered sequence and connect to each other through links, like a web. You
-          only need a handful of &ldquo;index&rdquo; keywords, for the entry points you&rsquo;ll genuinely come back
-          to often. Structure emerges later, from the links themselves, not from a category you chose upfront.
+          Deciding where a permanent note lives means thinking about where, among everything you&rsquo;ve already
+          written, this new piece of knowledge belongs — chosen carefully, in relation to the notes already there.
+          Notes sit in one ordered sequence and connect to each other through links, like a web. You only need a
+          handful of &ldquo;index&rdquo; keywords, for the entry points you&rsquo;ll genuinely come back to often.
         </p>
         <DiagramFrame>
           <NoFoldersDiagram folderLabel="Folders (skip this)" indexLabel="A few index entries" />
@@ -81,12 +80,14 @@ export function GuideContentEn() {
       </section>
 
       <section className="flex flex-col gap-5">
-        <Eyebrow>4. An order you can always insert into</Eyebrow>
+        <Eyebrow>4. Linking is what keeps old notes alive</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
+          A permanent note only enters the box once it&rsquo;s linked to at least one note or index entry already
+          there. That one requirement — always connecting to what already exists — is what keeps your older notes
+          from being forgotten: they keep getting found and referenced again from whatever you write next.
           Luhmann gave his physical cards addresses like <code className="rounded bg-surface-alt px-1.5 py-0.5 text-[11px] text-ink">21/3d7a26</code>{" "}
-          so a new card could always be slotted between two existing ones — no renumbering, ever. That one trick is
-          what lets a Zettelkasten stay chronologically ordered while still branching wherever a thought needs to
-          branch.
+          so a new card could always be slotted between two existing ones — no renumbering, ever — which is really
+          just another way of always placing a note in relation to something else.
         </p>
         <DiagramFrame>
           <InsertionDiagram label="A new note can always land between A and B" />

@@ -32,7 +32,7 @@ export function GuideContentJa() {
           ツェッテルカステンってなに？
         </h1>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          「メモを取る」だけなら誰でもやっている。ツェッテルカステン（Zettelkasten、ドイツ語で「メモ箱」）は、社会学者ニクラス・ルーマンが実践し、ゾンケ・アーレンス『TAKE
+          ツェッテルカステン（Zettelkasten、ドイツ語で「メモ箱」）は、社会学者ニクラス・ルーマンが実践し、ゾンケ・アーレンス『TAKE
           NOTES!』で紹介された、メモを<strong className="text-ink">育てる</strong>ための方法です。
           特別な才能や記憶力は要りません。ルールはとてもシンプルで、ほとんどが「メモとメモをつなぐ」ことに関するものです。
         </p>
@@ -41,7 +41,6 @@ export function GuideContentJa() {
       <section className="flex flex-col gap-5">
         <Eyebrow>1. メモは、つながって初めて意味を持つ</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          1枚のメモが単体で持つ価値は、実はそれほど大きくありません。「これは面白い」と思って書き留めたメモも、そのまま放置すれば数週間後には文脈を失い、ただの断片に戻ってしまいます。
           ツェッテルカステンの核心は、メモそのものではなく<strong className="text-ink">メモとメモの間のリンク</strong>に価値を置くことです。1枚のメモは、他のメモと結びついたときに初めて「知識」になります。
         </p>
         <DiagramFrame>
@@ -52,7 +51,7 @@ export function GuideContentJa() {
       <section className="flex flex-col gap-5">
         <Eyebrow>2. 2段階で書く — 走り書きと永久保存版</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          思いついたことをその場で丁寧に書こうとすると、たいてい続きません。だからツェッテルカステンでは、まず思考の断片を気軽に書き留める段階（走り書き／fleeting
+          ツェッテルカステンでは、まず思考の断片を気軽に書き留める段階（走り書き／fleeting
           notes）と、後からそれを選び、自分の言葉で書き直し、既存のメモとリンクさせて初めて「永久保存版」として箱に加える段階を分けます。
           走り書きは使い捨てで構いません — 価値があるものだけが、書き直されてツェッテルカステンに残ります。
         </p>
@@ -62,10 +61,10 @@ export function GuideContentJa() {
       </section>
 
       <section className="flex flex-col gap-5">
-        <Eyebrow>3. フォルダ分けをしない — 索引だけを頼りに辿る</Eyebrow>
+        <Eyebrow>3. 保存位置は、関係を考えて丁寧に選ぶ</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          「これは何のフォルダに入れるべきか」を毎回悩む必要はありません。ツェッテルカステンにカテゴリの階層はなく、メモは基本的に時系列に並び、リンクによって網の目のようにつながります。
-          頻繁に辿り着きたい場所だけ、少数の「索引」キーワードとして目印を立てておけば十分です。分類は後から、リンクの積み重ねとして自然に浮かび上がってきます。
+          永久保存版メモをどこに保存するか決める操作は、今まで書き溜めてきたメモ（知識）のどこに新しい知識を位置づけるかを、既存のメモとの関係を考えながら丁寧に選ぶ、という意味を持ちます。
+          メモは基本的に時系列に並び、リンクによって網の目のようにつながっていきます。頻繁に辿り着きたい場所だけ、少数の「索引」キーワードとして目印を立てておけば十分です。
         </p>
         <DiagramFrame>
           <NoFoldersDiagram folderLabel="フォルダ分け（しない）" indexLabel="少数の索引" />
@@ -73,11 +72,11 @@ export function GuideContentJa() {
       </section>
 
       <section className="flex flex-col gap-5">
-        <Eyebrow>4. どこにでも挿し込める順番</Eyebrow>
+        <Eyebrow>4. リンクすることで、過去のメモが生き続ける</Eyebrow>
         <p className="max-w-[62ch] text-sm leading-relaxed text-ink-soft">
-          ルーマンは実物のカードに <code className="rounded bg-surface-alt px-1.5 py-0.5 text-[11px] text-ink">21/3d7a26</code>{" "}
-          のような住所を振り、既存の2枚の間に新しいカードをいくらでも挿し込めるようにしました。番号を振り直す必要はありません。
-          この「後から間に挿せる」という一点だけで、ツェッテルカステンは時系列も保ちながら、思考の枝分かれにも対応できる柔軟な構造になります。
+          永久保存版メモは、必ずすでにあるメモや索引と最低ひとつのリンクを結んで初めて箱に収められます。この「常に既存の知識に関連付ける」というひと手間があるからこそ、過去に書いたメモは孤立して忘れられることなく、新しいメモから再び参照され、生き続けます。
+          ルーマンが実物のカードに <code className="rounded bg-surface-alt px-1.5 py-0.5 text-[11px] text-ink">21/3d7a26</code>{" "}
+          のような住所を振り、既存の2枚の間に新しいカードをいくらでも挿し込めるようにしたのも、この「常にどこかとの関係の中に位置づける」ための工夫です。番号を振り直す必要がないので、時系列を保ちながら思考の枝分かれにも対応できます。
         </p>
         <DiagramFrame>
           <InsertionDiagram label="AとBの間に、いつでも新しいメモを挿し込める" />

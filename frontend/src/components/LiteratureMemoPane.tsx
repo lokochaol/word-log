@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { AddLiteratureMemoButton } from "@/components/AddLiteratureMemoButton";
+import { LoadingBlock, Spinner } from "@/components/LoadingSpinner";
 import {
   getLiteratureMemoDetailAction,
   listLiteratureMemosAction,
@@ -87,7 +88,7 @@ export function LiteratureMemoPane({
       />
 
       {memos === null ? (
-        <p className="py-10 text-center font-mono text-xs text-ink-soft">読み込み中…</p>
+        <LoadingBlock label="読み込み中…" size="md" />
       ) : (
         <NoteTimeline
           emptyLabel={memos.length === 0 ? "まだ文献メモがありません。" : "一致する文献メモが見つかりません。"}
@@ -196,7 +197,7 @@ function LiteratureMemoPaneDetail({
       </button>
 
       {!detail ? (
-        <p className="py-10 text-center font-mono text-xs text-ink-soft">読み込み中…</p>
+        <LoadingBlock label="読み込み中…" size="md" />
       ) : (
         <>
           <div className="flex flex-col gap-2">
@@ -231,8 +232,9 @@ function LiteratureMemoPaneDetail({
               <button
                 disabled={savePending || !citation.trim()}
                 onClick={save}
-                className="btn-sheen rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
+                className="btn-sheen flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
               >
+                {savePending && <Spinner size="xs" />}
                 {savePending ? "保存中…" : saved ? "保存しました" : "保存"}
               </button>
             </div>
@@ -293,6 +295,7 @@ function LiteratureMemoPaneDetail({
             onCancel={() => setConfirmOpen(false)}
             onConfirm={remove}
             confirmDisabled={deletePending}
+            confirmPending={deletePending}
           />
         </>
       )}

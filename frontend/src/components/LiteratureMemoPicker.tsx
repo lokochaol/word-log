@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { HudFrame } from "@/components/HudFrame";
+import { Spinner } from "@/components/LoadingSpinner";
 import { zoteroCreateItemAction, zoteroSearchAction } from "@/app/scratch/actions";
 import { CREATABLE_ITEM_TYPES, type CreatableItemType, type ZoteroSearchResult } from "@/lib/zotero";
 import type { LiteratureSelection } from "@/lib/literatureMemos";
@@ -88,6 +89,7 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
           placeholder="タイトル・著者・年で検索…"
           className="w-full bg-transparent text-xs text-ink placeholder:text-ink-soft focus:outline-none"
         />
+        {state === "searching" && <Spinner size="xs" />}
       </HudFrame>
 
       {state === "unconfigured" && query.trim() && (
@@ -186,8 +188,9 @@ export function LiteratureMemoPicker({ onPick }: { onPick: (selection: Literatur
                       }
                     });
                   }}
-                  className="btn-sheen rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
+                  className="btn-sheen flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-mono text-[10.5px] font-semibold text-on-accent disabled:opacity-50"
                 >
+                  {createPending && <Spinner size="xs" />}
                   {createPending ? "登録中…" : "Zoteroに登録して使う"}
                 </button>
               </div>

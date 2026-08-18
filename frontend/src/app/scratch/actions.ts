@@ -18,11 +18,20 @@ export async function createQuickNoteAction(source: QuickNoteSource = "SCRATCH")
   return note;
 }
 
-export async function replaceQuickNoteBlocksAction(id: string, blocks: BlockInput[]) {
+export async function replaceQuickNoteBlocksAction(id: string, blocks: BlockInput[]): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
-  await quickNotes.replaceBlocks(ownerSub, id, blocks);
+  const note = await quickNotes.replaceBlocks(ownerSub, id, blocks);
   revalidatePath(`/scratch/${id}`);
   revalidatePath("/scratch");
+  revalidatePath("/zettelkasten");
+  return note;
+}
+
+export async function deleteQuickNoteAction(id: string): Promise<void> {
+  const ownerSub = await requireOwnerSub();
+  await quickNotes.remove(ownerSub, id);
+  revalidatePath("/scratch");
+  revalidatePath("/zettelkasten");
 }
 
 export async function setLiteratureMemoAction(id: string, selection: LiteratureSelection): Promise<QuickNoteDetail> {

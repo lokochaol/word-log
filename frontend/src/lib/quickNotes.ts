@@ -145,6 +145,14 @@ export async function setLiteratureMemo(
   return toDetail(await requireOwnedQuickNote(ownerSub, id));
 }
 
+/** Hard-deletes a still-active QuickNote (blocks cascade). Once a note is
+ * ARCHIVED (promoted), it's part of a PromotionBatch's history and this
+ * isn't exposed for it — deletion is only meant for the active timeline. */
+export async function remove(ownerSub: string, id: string): Promise<void> {
+  await requireOwnedQuickNote(ownerSub, id);
+  await prisma.quickNote.delete({ where: { id } });
+}
+
 /** Internal only — called exclusively from the promotion transaction (src/lib/promotion.ts). */
 export async function archiveMany(
   tx: Prisma.TransactionClient,

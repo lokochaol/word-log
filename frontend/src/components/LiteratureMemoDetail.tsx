@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Spinner } from "@/components/LoadingSpinner";
 import { removeLiteratureMemoAction, updateLiteratureMemoDetailsAction } from "@/app/literature/actions";
 import type { LiteratureMemoDetail as LiteratureMemoDetailType } from "@/lib/literatureMemos";
 
@@ -61,7 +62,7 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
 
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-          <span className="text-accent">{"//"}</span> 本に書いてあったこと（自分の言葉で）
+          <span className="text-accent">{"//"}</span> 文献に書いてあったこと（自分の言葉で）
         </h2>
         <p className="font-mono text-[10px] text-ink-faint">
           この要約は、このメモを参照する全ての走り書き・永久保存版メモで共有されます。
@@ -76,8 +77,9 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
           <button
             disabled={savePending || !citation.trim()}
             onClick={save}
-            className="btn-sheen rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
+            className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
           >
+            {savePending && <Spinner size="xs" />}
             {savePending ? "保存中…" : saved ? "保存しました" : "保存"}
           </button>
         </div>
@@ -142,6 +144,7 @@ export function LiteratureMemoDetail({ initialDetail }: { initialDetail: Literat
         onCancel={() => setConfirmOpen(false)}
         onConfirm={remove}
         confirmDisabled={deletePending}
+        confirmPending={deletePending}
       />
     </div>
   );

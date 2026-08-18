@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { LiteratureMemoPicker } from "@/components/LiteratureMemoPicker";
+import { LoadingBlock, Spinner } from "@/components/LoadingSpinner";
 import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
 
 /**
@@ -55,7 +56,12 @@ export function LiteratureMemoField({
             <div className="min-w-0">
               <p className="text-xs font-semibold break-words text-ink">{memo.citation}</p>
               {memo.url && (
-                <a href={memo.url} target="_blank" rel="noreferrer" className="font-mono text-[10.5px] text-accent underline">
+                <a
+                  href={memo.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block font-mono text-[10.5px] text-accent underline break-all"
+                >
                   {memo.url}
                 </a>
               )}
@@ -81,7 +87,7 @@ export function LiteratureMemoField({
 
           <div className="flex flex-col gap-1.5">
             <label className="font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
-              本に書いてあったこと（自分の言葉で） — この文献メモを参照する全ノートで共有されます
+              文献に書いてあったこと（自分の言葉で） — この文献メモを参照する全ノートで共有されます
             </label>
             <textarea
               value={summary}
@@ -93,8 +99,9 @@ export function LiteratureMemoField({
               <button
                 disabled={savePending}
                 onClick={handleSaveSummary}
-                className="btn-sheen rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
+                className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
               >
+                {savePending && <Spinner size="xs" />}
                 {savePending ? "保存中…" : saved ? "保存しました" : "保存"}
               </button>
             </div>
@@ -119,7 +126,7 @@ export function LiteratureMemoField({
             </button>
           )}
           {pickPending ? (
-            <p className="font-mono text-[10.5px] text-ink-faint">リンク中…</p>
+            <LoadingBlock label="リンク中…" className="justify-start py-1" />
           ) : (
             <LiteratureMemoPicker onPick={handlePick} />
           )}

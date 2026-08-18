@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { resolveDrillPath, type Breadcrumb } from "@/lib/pile";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { MermaidPreview } from "@/components/MermaidPreview";
+import { Spinner } from "@/components/LoadingSpinner";
 import type { Block } from "@/lib/quickNotes";
 
 export interface PileDrillItem {
@@ -301,7 +302,7 @@ function FlatView({
 
 function NoteBlocks({ blocks }: { blocks: Block[] | undefined }) {
   if (!blocks) {
-    return <span className="h-2 w-2 animate-pulse-dot rounded-full border border-dashed border-line-strong" />;
+    return <Spinner size="xs" />;
   }
   return (
     <div className="flex flex-col gap-2">

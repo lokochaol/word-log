@@ -25,14 +25,6 @@ export function RotateDeviceGate() {
         >
           <rect x="16" y="6" width="20" height="34" rx="4" stroke="#ff3d1a" strokeWidth="2.4" />
           <line x1="26" y1="34" x2="26" y2="34.5" stroke="#ff3d1a" strokeWidth="2.4" strokeLinecap="round" />
-          <path
-            d="M40 15a12 12 0 1 1-3.2-8.2"
-            stroke="#ff3d1a"
-            strokeOpacity="0.55"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <path d="M40 8v7h-7" stroke="#ff3d1a" strokeOpacity="0.55" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div className="flex flex-col gap-2">

@@ -94,8 +94,8 @@ export const en: Dictionary = {
     summaryPlaceholder: "What the source said (in your own words)",
   },
   signin: {
-    title: "Word Log",
-    tagline: "A personal dictionary that records the words you meet, in the order you meet them.",
+    title: "Zettelkasten",
+    tagline: "A personal knowledge system where your notes grow by linking to one another.",
     googleButton: "Sign in with Google",
   },
   scratch: {

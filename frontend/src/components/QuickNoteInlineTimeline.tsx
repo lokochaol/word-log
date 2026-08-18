@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { NoteTimeline } from "@/components/NoteTimeline";
 import { BlocksEditor } from "@/components/BlocksEditor";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
@@ -27,6 +27,8 @@ function formatDate(date: Date, locale: Locale) {
   return new Date(date).toLocaleDateString(localeTag(locale));
 }
 
+const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)";
+
 /**
  * The ③ column's quick-note list — unlike /scratch's ScratchTimeline, add/
  * edit/delete all complete inline here (no navigation), since leaving the
@@ -39,12 +41,14 @@ export function QuickNoteInlineTimeline({
   selectedIds,
   onToggleSelect,
   onDeleted,
+  header,
 }: {
   notes: QuickNoteSummary[];
   onNotesChange: (notes: QuickNoteSummary[]) => void;
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onDeleted: (id: string) => void;
+  header: ReactNode;
 }) {
   const { t, locale } = useI18n();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -118,6 +122,13 @@ export function QuickNoteInlineTimeline({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-2">
+        <div
+          className="sticky top-0 z-20 -mx-2 flex flex-col gap-3 bg-bg px-4 py-3 pb-6"
+          style={{ maskImage: HEADER_FADE_MASK, WebkitMaskImage: HEADER_FADE_MASK }}
+        >
+          {header}
+        </div>
+
         <NoteTimeline
         emptyLabel={t.zettelkasten.emptyTimeline}
         rows={notes.map((note) => {

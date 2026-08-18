@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Spinner } from "@/components/LoadingSpinner";
 
 /** Generic modal confirmation, e.g. "索引に追加しますか？" (§9's one genuinely new interaction primitive). */
 export function ConfirmDialog({
@@ -13,6 +14,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   confirmDisabled = false,
+  confirmPending = false,
 }: {
   open: boolean;
   title: string;
@@ -23,6 +25,8 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
   confirmDisabled?: boolean;
+  /** Shows a spinner on the confirm button (e.g. while a delete is in flight). */
+  confirmPending?: boolean;
 }) {
   if (!open) return null;
 
@@ -46,8 +50,9 @@ export function ConfirmDialog({
           <button
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className="btn-sheen rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
+            className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
           >
+            {confirmPending && <Spinner size="xs" />}
             {confirmLabel}
           </button>
         </div>

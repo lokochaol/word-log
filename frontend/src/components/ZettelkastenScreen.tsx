@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { PileDrill, type GapSelection } from "@/components/PileDrill";
 import { PromotionEditor, type EditableDraft } from "@/components/PromotionEditor";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { NoteTimeline } from "@/components/NoteTimeline";
 import { MermaidPreview } from "@/components/MermaidPreview";
 import { PermanentNoteLiteratureSection } from "@/components/PermanentNoteLiteratureSection";
 import { LiteratureMemoPane } from "@/components/LiteratureMemoPane";
-import { AddQuickNoteButton } from "@/components/AddQuickNoteButton";
+import { QuickNoteInlineTimeline } from "@/components/QuickNoteInlineTimeline";
+import { LoadingBlock } from "@/components/LoadingSpinner";
 import { navigateWithViewTransition } from "@/lib/viewTransition";
 import type { GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
@@ -295,38 +295,20 @@ export function ZettelkastenScreen({
                 選択した{selectedQuickNoteIds.size}件から永久保存版メモを作成
               </button>
             )}
-            <NoteTimeline
-              emptyLabel="走り書きはまだありません"
-              rows={activeQuickNotes.map((note) => ({
-                key: note.id,
-                meta: (
-                  <span className="font-mono text-[9.5px] text-ink-faint">
-                    {new Date(note.encounteredAt).toLocaleDateString("ja-JP")}
-                  </span>
-                ),
-                card: (
-                  <button
-                    onClick={() => toggleQuickNoteSelection(note.id)}
-                    className={`flex w-full max-w-[360px] flex-col gap-1.5 rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
-                      selectedQuickNoteIds.has(note.id)
-                        ? "border-accent/70 bg-accent-soft"
-                        : "border-line bg-surface-alt hover:border-line-strong"
-                    }`}
-                  >
-                    {note.preview || "(内容未記入)"}
-                    {note.literatureCitation && (
-                      <span className="flex items-start gap-1.5 border-t border-line/60 pt-1.5 font-mono text-[9.5px] text-ink-soft">
-                        <span className="shrink-0 text-accent">📖</span>
-                        <span className="line-clamp-1">{note.literatureCitation}</span>
-                      </span>
-                    )}
-                  </button>
-                ),
-                dotClassName: selectedQuickNoteIds.has(note.id) ? "bg-accent" : "",
-              }))}
+            <QuickNoteInlineTimeline
+              notes={activeQuickNotes}
+              onNotesChange={setActiveQuickNotes}
+              selectedIds={selectedQuickNoteIds}
+              onToggleSelect={toggleQuickNoteSelection}
+              onDeleted={(id) =>
+                setSelectedQuickNoteIds((prev) => {
+                  if (!prev.has(id)) return prev;
+                  const next = new Set(prev);
+                  next.delete(id);
+                  return next;
+                })
+              }
             />
-
-            <AddQuickNoteButton />
           </div>
         </div>
       </div>
@@ -419,7 +401,7 @@ function NoteDetailOverlay({
         className="relative max-h-[80vh] w-full max-w-[560px] overflow-auto rounded-xl border border-line bg-surface p-6 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)]"
       >
         {!detail ? (
-          <p className="py-10 text-center text-xs text-ink-soft">読み込み中…</p>
+          <LoadingBlock label="読み込み中…" size="md" />
         ) : (
           <>
             <div className="mb-4 flex items-start justify-between gap-3">

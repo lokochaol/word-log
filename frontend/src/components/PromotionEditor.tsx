@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { BlocksEditor } from "@/components/BlocksEditor";
 import { LiteratureMemoDraftField, type DraftLiteratureSelection } from "@/components/LiteratureMemoDraftField";
+import { Spinner } from "@/components/LoadingSpinner";
 import type { BlockInput } from "@/lib/blocks";
 import type { GlobalOrderEntry } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
@@ -155,8 +156,9 @@ export function PromotionEditor({
         <button
           disabled={!allValid || completing}
           onClick={onComplete}
-          className="btn-sheen shrink-0 rounded-lg bg-accent px-4 py-2.5 text-xs font-bold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-ink-faint disabled:hover:scale-100"
+          className="btn-sheen flex shrink-0 items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-xs font-bold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-ink-faint disabled:hover:scale-100"
         >
+          {completing && <Spinner size="xs" />}
           {completing ? "保存中…" : "完了 — 走り書きから削除して保存"}
         </button>
       </div>

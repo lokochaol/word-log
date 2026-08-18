@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { searchAllAction, type UnifiedSearchResult } from "@/app/search/actions";
 import { SearchIcon } from "@/components/SearchIcon";
 import { HudFrame } from "@/components/HudFrame";
+import { Spinner } from "@/components/LoadingSpinner";
 
 const KIND_LABEL: Record<UnifiedSearchResult["kind"], string> = {
   QUICK_NOTE: "走り書き",
@@ -53,9 +54,7 @@ export function SearchClient({ initialQuery }: { initialQuery: string }) {
           style={{ caretColor: "var(--color-accent)" }}
           className="w-full bg-transparent font-mono text-ink placeholder:font-sans placeholder:text-ink-soft focus:outline-none"
         />
-        {pending && (
-          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 animate-pulse-dot rounded-full bg-accent" />
-        )}
+        {pending && <Spinner size="xs" />}
       </HudFrame>
 
       {trimmed && results && results.length > 0 && (

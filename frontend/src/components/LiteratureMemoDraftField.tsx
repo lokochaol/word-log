@@ -70,7 +70,7 @@ export function LiteratureMemoDraftField({
               <textarea
                 value={selection.summary ?? ""}
                 onChange={(e) => updateAt(i, { summary: e.target.value })}
-                placeholder="本に書いてあったこと（自分の言葉で）"
+                placeholder="文献に書いてあったこと（自分の言葉で）"
                 rows={2}
                 className="w-full resize-none rounded-md border border-line bg-surface-alt px-2.5 py-1.5 text-xs text-ink focus:border-accent focus:outline-none"
               />

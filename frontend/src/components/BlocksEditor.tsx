@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Block, BlockInput, BlockType } from "@/lib/quickNotes";
 import { MermaidPreview } from "@/components/MermaidPreview";
 import { HudFrame } from "@/components/HudFrame";
+import { Spinner } from "@/components/LoadingSpinner";
 
 type EditableBlock = BlockInput & { key: string };
 
@@ -144,8 +145,9 @@ export function BlocksEditor({
         <button
           disabled={saving}
           onClick={save}
-          className="btn-sheen rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
+          className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
         >
+          {saving && <Spinner size="xs" />}
           {saving ? "保存中…" : "保存"}
         </button>
       </div>

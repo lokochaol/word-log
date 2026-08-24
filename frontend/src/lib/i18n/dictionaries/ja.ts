@@ -132,6 +132,13 @@ export const ja: Dictionary = {
     triggerLabel: "関連を今すぐ探す",
     triggerRunning: "検索中…",
     triggerResult: (checked, found) => `${checked}件のノートを確認し、${found}件見つかりました`,
+    runErrorLabel: "関連の自動探索が失敗しました",
+    runErrorAuth: "APIキーが無効か期限切れの可能性があります。設定を確認してください。",
+    runErrorRateLimit: "利用上限に達しました（レート制限またはクレジット切れの可能性があります）。",
+    runErrorGeneric: (status) => `APIエラーが発生しました（コード ${status}）。`,
+    runErrorUnknown: "予期しないエラーが発生しました。",
+    runErrorAt: (date) => `${date}`,
+    runErrorSettingsLink: "設定を開く",
   },
   zettelkasten: {
     loadingLabel: "ツェッテルカステンを読み込み中…",
@@ -267,6 +274,14 @@ export const ja: Dictionary = {
     aiApiKeyPlaceholderExisting: "変更する場合のみ入力",
     aiApiKeyPlaceholderNew: "発行したAPIキー",
     aiApiKeyHelp: "各サービスの管理画面でAPIキーを発行し、下記に入力してください。",
+    discoveryScheduleHeading: "自動探索の頻度・時刻",
+    discoveryScheduleDescription:
+      "アクティブな走り書きすべてに対して、関連の自動探索を1日に何回・何時（日本時間）に行うかを設定します。",
+    discoveryTimesPerDayLabel: "1日の回数",
+    discoveryTimesOnce: "1回",
+    discoveryTimesTwice: "2回",
+    discoveryHour1Label: "1回目の時刻",
+    discoveryHour2Label: "2回目の時刻",
   },
   errors: {
     keywordRequired: "キーワードを入力してください",

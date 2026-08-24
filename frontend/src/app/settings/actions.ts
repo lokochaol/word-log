@@ -6,6 +6,8 @@ import type { ZoteroCredentialSummary } from "@/lib/zoteroCredentials";
 import * as aiCredentials from "@/lib/aiCredentials";
 import { AiProvider } from "@/lib/aiCredentials";
 import type { AiCredentialSummary } from "@/lib/aiCredentials";
+import * as discovery from "@/lib/discovery";
+import type { DiscoverySchedule } from "@/lib/discovery";
 import { EncryptionConfigError } from "@/lib/crypto";
 import { requireOwnerSub } from "@/lib/session";
 import { getLocale } from "@/lib/i18n/locale";
@@ -87,5 +89,16 @@ export async function saveAiSettingsAction(input: {
 export async function removeAiSettingsAction(): Promise<void> {
   const ownerSub = await requireOwnerSub();
   await aiCredentials.remove(ownerSub);
+  revalidatePath("/settings");
+}
+
+export async function getDiscoveryScheduleAction(): Promise<DiscoverySchedule> {
+  const ownerSub = await requireOwnerSub();
+  return discovery.getSchedule(ownerSub);
+}
+
+export async function saveDiscoveryScheduleAction(input: DiscoverySchedule): Promise<void> {
+  const ownerSub = await requireOwnerSub();
+  await discovery.saveSchedule(ownerSub, input);
   revalidatePath("/settings");
 }

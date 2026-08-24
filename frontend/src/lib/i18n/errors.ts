@@ -1,6 +1,7 @@
 import { getDictionary } from "@/lib/i18n/dictionary";
 import type { DomainError } from "@/lib/errors";
 import type { ZoteroApiError } from "@/lib/zotero";
+import type { DiscoveryErrorCode } from "@/lib/discovery";
 import type { Locale } from "@/lib/i18n/types";
 
 /**
@@ -47,6 +48,23 @@ export function translateDomainError(locale: Locale, error: DomainError): string
       return dict.discoveryCandidateNotFound;
     default:
       return error.message;
+  }
+}
+
+/** Same idea as translateDomainError, for a discovery batch run's recorded
+ * failure (DiscoveryProviderError's code/status, persisted on
+ * DiscoveryRunStatus — see src/lib/discovery.ts). */
+export function translateDiscoveryError(locale: Locale, code: DiscoveryErrorCode, status: number | null): string {
+  const dict = getDictionary(locale).discovery;
+  switch (code) {
+    case "authError":
+      return dict.runErrorAuth;
+    case "rateLimitError":
+      return dict.runErrorRateLimit;
+    case "apiError":
+      return dict.runErrorGeneric(status ?? 0);
+    default:
+      return dict.runErrorUnknown;
   }
 }
 

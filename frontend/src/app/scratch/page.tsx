@@ -7,12 +7,14 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { ScratchTimeline } from "@/components/ScratchTimeline";
 import { ZettelkastenNavButton } from "@/components/ZettelkastenNavButton";
 import { DiscoveryTriggerButton } from "@/components/DiscoveryTriggerButton";
+import { DiscoveryStatusBanner } from "@/components/DiscoveryStatusBanner";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { translateDiscoveryError } from "@/lib/i18n/errors";
 
 export default async function ScratchPage() {
   const session = await requireSession();
@@ -21,9 +23,17 @@ export default async function ScratchPage() {
   const discoveryByNote = await discovery.listForQuickNotes(ownerSub, notes.map((n) => n.id));
   const locale = await getLocale();
   const dict = getDictionary(locale);
+  const runStatus = await discovery.getRunStatus(ownerSub);
+  const runError =
+    runStatus?.lastErrorCode && runStatus.lastErrorAt
+      ? { message: translateDiscoveryError(locale, runStatus.lastErrorCode, runStatus.lastErrorStatus), occurredAt: runStatus.lastErrorAt.toISOString() }
+      : null;
 
   const header = (
     <>
+      {runError && (
+        <DiscoveryStatusBanner message={runError.message} occurredAt={runError.occurredAt} locale={locale} t={dict} />
+      )}
       <div className="flex items-center justify-between gap-3">
         <span className="text-lg font-extrabold tracking-tight text-ink">
           <AppBrand locale={locale} screen="scratch" />

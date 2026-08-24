@@ -132,6 +132,13 @@ export const en: Dictionary = {
     triggerLabel: "Find related now",
     triggerRunning: "Searching…",
     triggerResult: (checked, found) => `Checked ${checked} note(s), found ${found}`,
+    runErrorLabel: "Discovery run failed",
+    runErrorAuth: "The API key may be invalid or expired. Check Settings.",
+    runErrorRateLimit: "Usage limit reached (rate limit or out of credits).",
+    runErrorGeneric: (status) => `An API error occurred (code ${status}).`,
+    runErrorUnknown: "An unexpected error occurred.",
+    runErrorAt: (date) => `${date}`,
+    runErrorSettingsLink: "Open Settings",
   },
   zettelkasten: {
     loadingLabel: "Loading Zettelkasten…",
@@ -268,6 +275,14 @@ export const en: Dictionary = {
     aiApiKeyPlaceholderExisting: "Enter only to change",
     aiApiKeyPlaceholderNew: "The API key you issued",
     aiApiKeyHelp: "Issue an API key from that provider's dashboard and enter it below.",
+    discoveryScheduleHeading: "Discovery frequency & time",
+    discoveryScheduleDescription:
+      "How many times a day, and at which Asia/Tokyo hour(s), to run discovery across all active Dash Off notes.",
+    discoveryTimesPerDayLabel: "Times per day",
+    discoveryTimesOnce: "Once",
+    discoveryTimesTwice: "Twice",
+    discoveryHour1Label: "First run time",
+    discoveryHour2Label: "Second run time",
   },
   errors: {
     keywordRequired: "Please enter a keyword",

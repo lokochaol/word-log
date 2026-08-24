@@ -68,6 +68,12 @@ model QuickNote {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  // Set each time the discovery batch actually attempts this note (success
+  // or "found nothing" both count — only a failed provider call leaves it
+  // untouched, see src/lib/discovery.ts). Drives the least-recently-run-first
+  // rotation when there are more active notes than one run's cap allows.
+  discoveryLastRunAt DateTime? @map("discovery_last_run_at")
+
   blocks               QuickNoteBlock[]
   promotionSourceLinks PromotionSourceQuickNote[]
   discoveryCandidates  DiscoveryCandidate[]
@@ -282,6 +288,41 @@ model DiscoveryCandidate {
   @@index([quickNoteId])
   @@index([ownerSub, status])
   @@map("discovery_candidate")
+}
+
+/// One row per owner — the outcome of their most recent discovery batch run
+/// (manual trigger or cron). `lastErrorCode`/`lastErrorStatus` are set only
+/// when that run failed outright (bad/expired API key, rate limit, etc. —
+/// see DiscoveryProviderError in src/lib/discovery.ts) so /scratch can show
+/// a banner; a clean run clears them. Never records "found nothing" as an
+/// error — that's a normal outcome, not a failure.
+model DiscoveryRunStatus {
+  id              String    @id @default(uuid())
+  ownerSub        String    @unique @map("owner_sub")
+  lastRunAt       DateTime  @map("last_run_at")
+  lastErrorCode   String?   @map("last_error_code")
+  lastErrorStatus Int?      @map("last_error_status")
+  lastErrorAt     DateTime? @map("last_error_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("discovery_run_status")
+}
+
+/// Per-owner customization of the discovery batch's cadence — how many
+/// times a day (1 or 2) and at which Asia/Tokyo local hour(s). The cron
+/// route (src/app/api/cron/discovery) fires hourly and checks each owner's
+/// schedule to decide whether *this* hour is one of theirs; the manual
+/// "今すぐ探す" trigger ignores this entirely and always runs immediately.
+/// No row = the original fixed default (twice a day, 7:00/19:00).
+model DiscoverySchedule {
+  id          String   @id @default(uuid())
+  ownerSub    String   @unique @map("owner_sub")
+  timesPerDay Int      @default(2) @map("times_per_day")
+  hour1       Int      @default(7) @map("hour1")
+  hour2       Int      @default(19) @map("hour2")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("discovery_schedule")
 }
 
 /// Per-user Zotero Web API credentials (this is a multi-tenant app — each

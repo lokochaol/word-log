@@ -83,6 +83,29 @@ export interface DiscoveryFinding {
   confidence: number;
 }
 
+export type DiscoveryErrorCode = "authError" | "rateLimitError" | "apiError" | "unknownError";
+
+/** Thrown by a provider call when the request itself failed outright (bad
+ * key, rate limit, etc.) — as opposed to succeeding but finding nothing,
+ * which just resolves to []. runForActiveNotes catches this to record a
+ * DiscoveryRunStatus the /scratch page can surface as a banner. */
+export class DiscoveryProviderError extends Error {
+  code: DiscoveryErrorCode;
+  status: number | null;
+
+  constructor(code: DiscoveryErrorCode, status: number | null, message: string) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
+
+function errorCodeForStatus(status: number): DiscoveryErrorCode {
+  if (status === 401 || status === 403) return "authError";
+  if (status === 429) return "rateLimitError";
+  return "apiError";
+}
+
 // Cheapest current-gen model per provider — this task is "search +
 // summarize + score", not deep reasoning, and it runs unattended across
 // every active note, on the *owner's own* API key.
@@ -93,9 +116,10 @@ const GOOGLE_MODEL = "gemini-2.5-flash";
 // typically billed per search performed — this bounds worst-case spend for
 // one note regardless of how much the model might otherwise want to search.
 const MAX_SEARCHES_PER_NOTE = 2;
-// A note is only ever sent to the model once, ever (see the "already
-// searched" filter in runForActiveNotes) — the real cost control isn't a
-// cap on searches, it's never re-searching a note that was already checked.
+// Every active note is eligible for a periodic refresh (see
+// runForActiveNotes) — this caps how many the least-recently-run rotation
+// will refresh in one run, so a large note count trickles across runs
+// instead of spiking one run's cost.
 const MAX_NOTES_PER_RUN = 15;
 
 const DISCOVERY_SYSTEM_PROMPT = `あなたはユーザーの走り書きメモを読み、関連しそうな最新ニュースと文献（書籍・論文など）をWeb検索で探すアシスタントです。
@@ -174,7 +198,9 @@ async function findViaAnthropic(apiKey: string, noteText: string): Promise<Disco
       messages: [{ role: "user", content: noteText }],
     }),
   });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    throw new DiscoveryProviderError(errorCodeForStatus(res.status), res.status, `Anthropic API error: ${res.status} ${res.statusText}`);
+  }
 
   const data = (await res.json()) as { content?: AnthropicContentBlock[] };
   const textBlocks = (data.content ?? []).filter((b) => b.type === "text" && b.text);
@@ -210,7 +236,9 @@ async function findViaOpenAi(apiKey: string, noteText: string): Promise<Discover
       tools: [{ type: "web_search" }],
     }),
   });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    throw new DiscoveryProviderError(errorCodeForStatus(res.status), res.status, `OpenAI API error: ${res.status} ${res.statusText}`);
+  }
 
   const data = (await res.json()) as { output?: OpenAiOutputItem[] };
   const messages = (data.output ?? []).filter((o) => o.type === "message");
@@ -242,7 +270,9 @@ async function findViaGoogle(apiKey: string, noteText: string): Promise<Discover
       }),
     },
   );
-  if (!res.ok) return [];
+  if (!res.ok) {
+    throw new DiscoveryProviderError(errorCodeForStatus(res.status), res.status, `Gemini API error: ${res.status} ${res.statusText}`);
+  }
 
   const data = (await res.json()) as { candidates?: GeminiCandidate[] };
   const text = data.candidates?.[0]?.content?.parts
@@ -254,81 +284,154 @@ async function findViaGoogle(apiKey: string, noteText: string): Promise<Discover
 
 /**
  * Dispatches to whichever provider the owner configured in Settings (see
- * AiSettingsForm / aiCredentials.ts) — there is no app-wide default key.
- * Never throws: no credential, a failed request, or unparseable output all
- * resolve to no findings rather than breaking the batch run for other notes.
+ * AiSettingsForm / aiCredentials.ts) — there is no app-wide default key. No
+ * credential configured resolves to no findings (that's a normal,
+ * unconfigured state, not an error). A request that fails outright throws
+ * DiscoveryProviderError — runForActiveNotes is what catches that and
+ * records it as a DiscoveryRunStatus for the /scratch banner; unparseable
+ * output still just yields no findings (see parseFindings).
  */
 export async function findCandidatesForNote(ownerSub: string, noteText: string): Promise<DiscoveryFinding[]> {
   const credential = await aiCredentials.get(ownerSub);
   if (!credential) return [];
 
   const text = noteText.slice(0, 2000);
-  try {
-    switch (credential.provider) {
-      case AiProvider.ANTHROPIC:
-        return await findViaAnthropic(credential.apiKey, text);
-      case AiProvider.OPENAI:
-        return await findViaOpenAi(credential.apiKey, text);
-      case AiProvider.GOOGLE:
-        return await findViaGoogle(credential.apiKey, text);
-      default:
-        return [];
-    }
-  } catch {
-    return [];
+  switch (credential.provider) {
+    case AiProvider.ANTHROPIC:
+      return findViaAnthropic(credential.apiKey, text);
+    case AiProvider.OPENAI:
+      return findViaOpenAi(credential.apiKey, text);
+    case AiProvider.GOOGLE:
+      return findViaGoogle(credential.apiKey, text);
+    default:
+      return [];
   }
 }
 
-/** Runs discovery for one note and stores whatever findCandidatesForNote
- * returns. Returns the number of candidates created. */
+/** Refreshes discovery for one note: replaces all of its stored candidates
+ * (CONFIRMED ones included) with a fresh search. Confirming a candidate
+ * already produced its own independent, permanent record — a LiteratureMemo
+ * row, and for "このメモを書く" a new QuickNote too — so the
+ * DiscoveryCandidate row itself is just a "this was surfaced" sighting, safe
+ * to replace on every refresh without losing anything the owner acted on.
+ * Stamps discoveryLastRunAt regardless of whether anything was found, so the
+ * least-recently-run rotation in runForActiveNotes doesn't get stuck
+ * re-picking a barren note ahead of others. Returns the number of fresh
+ * candidates stored. */
 export async function runForQuickNote(ownerSub: string, quickNoteId: string): Promise<number> {
   const note = await quickNotes.getDetail(ownerSub, quickNoteId);
   const text = note.blocks.map((b) => b.content).join("\n\n").trim();
-  if (!text) return 0;
 
-  const findings = await findCandidatesForNote(ownerSub, text);
-  if (findings.length === 0) return 0;
+  const findings = text ? await findCandidatesForNote(ownerSub, text) : [];
 
-  await prisma.discoveryCandidate.createMany({
-    data: findings.map((f) => ({
-      ownerSub,
-      quickNoteId,
-      kind: f.kind,
-      title: f.title,
-      summary: f.summary,
-      sourceLabel: f.sourceLabel,
-      url: f.url,
-      confidence: f.confidence,
-    })),
-  });
+  await prisma.$transaction([
+    prisma.discoveryCandidate.deleteMany({ where: { quickNoteId } }),
+    ...(findings.length > 0
+      ? [
+          prisma.discoveryCandidate.createMany({
+            data: findings.map((f) => ({
+              ownerSub,
+              quickNoteId,
+              kind: f.kind,
+              title: f.title,
+              summary: f.summary,
+              sourceLabel: f.sourceLabel,
+              url: f.url,
+              confidence: f.confidence,
+            })),
+          }),
+        ]
+      : []),
+    prisma.quickNote.update({ where: { id: quickNoteId }, data: { discoveryLastRunAt: new Date() } }),
+  ]);
+
   return findings.length;
 }
 
-/** Runs discovery across an owner's active QuickNotes — what both the
- * manual "今すぐ探す" trigger and the twice-daily cron call. A note is only
- * ever sent to the model once (searched := already has ≥1 candidate, of any
- * status), so re-running this repeatedly never re-spends on unchanged
- * notes — cost scales with how many *new* notes were written, not with how
- * often the batch fires. Also caps how many never-searched notes one run
- * will attempt, so a large backlog trickles across runs instead of spiking
- * one run's cost. */
-export async function runForActiveNotes(ownerSub: string): Promise<{ notesChecked: number; candidatesFound: number }> {
-  const notes = await quickNotes.listActive(ownerSub);
-  if (notes.length === 0) return { notesChecked: 0, candidatesFound: 0 };
+export interface DiscoveryRunStatusSummary {
+  lastRunAt: Date;
+  lastErrorCode: DiscoveryErrorCode | null;
+  lastErrorStatus: number | null;
+  lastErrorAt: Date | null;
+}
 
-  const searched = await prisma.discoveryCandidate.findMany({
-    where: { ownerSub, quickNoteId: { in: notes.map((n) => n.id) } },
-    select: { quickNoteId: true },
-    distinct: ["quickNoteId"],
+/** For the /scratch banner — null means "never run yet" (e.g. no AI
+ * provider has ever been configured, or no discovery run has fired). */
+export async function getRunStatus(ownerSub: string): Promise<DiscoveryRunStatusSummary | null> {
+  const row = await prisma.discoveryRunStatus.findUnique({ where: { ownerSub } });
+  if (!row) return null;
+  return {
+    lastRunAt: row.lastRunAt,
+    lastErrorCode: row.lastErrorCode as DiscoveryErrorCode | null,
+    lastErrorStatus: row.lastErrorStatus,
+    lastErrorAt: row.lastErrorAt,
+  };
+}
+
+async function recordRunStatus(
+  ownerSub: string,
+  error: { code: DiscoveryErrorCode; status: number | null } | null,
+): Promise<void> {
+  const now = new Date();
+  await prisma.discoveryRunStatus.upsert({
+    where: { ownerSub },
+    create: {
+      ownerSub,
+      lastRunAt: now,
+      lastErrorCode: error?.code ?? null,
+      lastErrorStatus: error?.status ?? null,
+      lastErrorAt: error ? now : null,
+    },
+    update: {
+      lastRunAt: now,
+      lastErrorCode: error?.code ?? null,
+      lastErrorStatus: error?.status ?? null,
+      lastErrorAt: error ? now : null,
+    },
   });
-  const alreadySearched = new Set(searched.map((r) => r.quickNoteId));
-  const pending = notes.filter((n) => !alreadySearched.has(n.id)).slice(0, MAX_NOTES_PER_RUN);
+}
+
+/** Runs discovery across an owner's active QuickNotes — what both the
+ * manual "今すぐ探す" trigger and the (schedule-gated) cron call. Every
+ * active note is eligible for a refresh every time this runs — a note is
+ * never "done forever"; each note's own DiscoverySchedule (1 or 2 times a
+ * day, at whichever Asia/Tokyo hour(s) the owner picked) governs how often
+ * the cron actually reaches it (see isDueAtHour), while this function
+ * itself just refreshes whatever it's given. Only the least-recently-run
+ * notes are picked, up to MAX_NOTES_PER_RUN, so a large note count trickles
+ * across runs — with two runs a day, everything still cycles through
+ * eventually — instead of one run's cost spiking with the note count.
+ *
+ * If a provider call fails outright (bad key, rate limit, etc.), that's
+ * recorded via recordRunStatus and this stops attempting further notes in
+ * the same run — one broken credential would otherwise fail identically on
+ * every remaining note, burning quota for nothing. A run that completes
+ * without any note failing clears any previously recorded error. */
+export async function runForActiveNotes(ownerSub: string): Promise<{ notesChecked: number; candidatesFound: number }> {
+  const candidateNotes = await prisma.quickNote.findMany({
+    where: { ownerSub, status: "ACTIVE" },
+    select: { id: true },
+    orderBy: [{ discoveryLastRunAt: { sort: "asc", nulls: "first" } }, { encounteredAt: "asc" }],
+    take: MAX_NOTES_PER_RUN,
+  });
+  if (candidateNotes.length === 0) return { notesChecked: 0, candidatesFound: 0 };
 
   let candidatesFound = 0;
-  for (const note of pending) {
-    candidatesFound += await runForQuickNote(ownerSub, note.id);
+  let notesChecked = 0;
+  for (const note of candidateNotes) {
+    try {
+      candidatesFound += await runForQuickNote(ownerSub, note.id);
+      notesChecked++;
+    } catch (e) {
+      const error =
+        e instanceof DiscoveryProviderError ? { code: e.code, status: e.status } : { code: "unknownError" as const, status: null };
+      await recordRunStatus(ownerSub, error);
+      return { notesChecked, candidatesFound };
+    }
   }
-  return { notesChecked: pending.length, candidatesFound };
+
+  await recordRunStatus(ownerSub, null);
+  return { notesChecked, candidatesFound };
 }
 
 /** Every owner with at least one active QuickNote — the cron route fans
@@ -340,6 +443,51 @@ export async function listOwnersWithActiveNotes(): Promise<string[]> {
     select: { ownerSub: true },
   });
   return rows.map((r) => r.ownerSub);
+}
+
+export interface DiscoverySchedule {
+  timesPerDay: 1 | 2;
+  hour1: number;
+  hour2: number;
+}
+
+const DEFAULT_SCHEDULE: DiscoverySchedule = { timesPerDay: 2, hour1: 7, hour2: 19 };
+
+/** For the Settings screen. No row yet = the original fixed default
+ * (twice a day, 7:00/19:00 Asia/Tokyo). */
+export async function getSchedule(ownerSub: string): Promise<DiscoverySchedule> {
+  const row = await prisma.discoverySchedule.findUnique({ where: { ownerSub } });
+  if (!row) return DEFAULT_SCHEDULE;
+  return { timesPerDay: row.timesPerDay === 1 ? 1 : 2, hour1: row.hour1, hour2: row.hour2 };
+}
+
+export async function saveSchedule(ownerSub: string, input: DiscoverySchedule): Promise<void> {
+  const timesPerDay = input.timesPerDay === 1 ? 1 : 2;
+  const hour1 = Math.min(23, Math.max(0, Math.round(input.hour1)));
+  const hour2 = Math.min(23, Math.max(0, Math.round(input.hour2)));
+  await prisma.discoverySchedule.upsert({
+    where: { ownerSub },
+    create: { ownerSub, timesPerDay, hour1, hour2 },
+    update: { timesPerDay, hour1, hour2 },
+  });
+}
+
+/** The Asia/Tokyo local hour (0-23) for a given instant — the schedule is
+ * always expressed in that timezone, matching how this feature was
+ * originally specified (7:00/19:00 JST), regardless of the owner's locale
+ * setting or where the server itself runs. */
+export function tokyoHour(at: Date): number {
+  return Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", hour: "numeric", hour12: false }).format(at),
+  );
+}
+
+/** Whether `schedule` is due at the given hour — what the cron route (see
+ * src/app/api/cron/discovery) uses to decide whether to actually run
+ * discovery for one owner this pass. The manual "今すぐ探す" trigger never
+ * calls this; it always runs immediately regardless of schedule. */
+export function isDueAtHour(schedule: DiscoverySchedule, hour: number): boolean {
+  return hour === schedule.hour1 || (schedule.timesPerDay === 2 && hour === schedule.hour2);
 }
 
 /**

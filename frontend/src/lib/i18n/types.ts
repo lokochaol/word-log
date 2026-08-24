@@ -149,6 +149,13 @@ export interface Dictionary {
     triggerLabel: string;
     triggerRunning: string;
     triggerResult: (checked: number, found: number) => string;
+    runErrorLabel: string;
+    runErrorAuth: string;
+    runErrorRateLimit: string;
+    runErrorGeneric: (status: number) => string;
+    runErrorUnknown: string;
+    runErrorAt: (date: string) => string;
+    runErrorSettingsLink: string;
   };
   zettelkasten: {
     loadingLabel: string;
@@ -281,6 +288,13 @@ export interface Dictionary {
     aiApiKeyPlaceholderExisting: string;
     aiApiKeyPlaceholderNew: string;
     aiApiKeyHelp: string;
+    discoveryScheduleHeading: string;
+    discoveryScheduleDescription: string;
+    discoveryTimesPerDayLabel: string;
+    discoveryTimesOnce: string;
+    discoveryTimesTwice: string;
+    discoveryHour1Label: string;
+    discoveryHour2Label: string;
   };
   errors: {
     keywordRequired: string;

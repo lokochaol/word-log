@@ -25,6 +25,9 @@ export const en: Dictionary = {
     creating: "Creating…",
     linking: "Linking…",
     registering: "Registering…",
+    offlineBanner: "You're offline. Actions are held and will save automatically once you're back online.",
+    savingOffline: "Waiting to save (offline)…",
+    offlinePageMessage: "You're offline. This will return to normal automatically once you're back online.",
   },
   nav: {
     scratchLabel: "Dash Off",
@@ -106,6 +109,8 @@ export const en: Dictionary = {
     emptyTimeline: "No Dash Off notes yet. Record your first one.",
     deleteConfirmTitle: "Delete this Dash Off note?",
     deleteConfirmWarning: "This can't be undone.",
+    pendingDraftLabel: "Unsaved draft",
+    pendingSaveLabel: "Waiting to save…",
     loadingLabel: "Loading Dash Off notes…",
     sourceVoice: "Voice memo",
     sourceScratch: "Dash Off",

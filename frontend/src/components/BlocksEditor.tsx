@@ -47,6 +47,7 @@ export function BlocksEditor({
   onSave,
   onCancel,
   saving = false,
+  savingLabel,
   emptyLabel,
   startInEditMode = false,
 }: {
@@ -58,6 +59,10 @@ export function BlocksEditor({
    * reset too or the surrounding UI never returns to its non-editing view. */
   onCancel?: () => void;
   saving?: boolean;
+  /** Overrides the Save button's pending label (default t.common.saving) —
+   * e.g. PendingQuickNoteCard swaps in an offline-aware label while a save
+   * is queued waiting for connectivity. */
+  savingLabel?: string;
   emptyLabel?: string;
   startInEditMode?: boolean;
 }) {
@@ -155,7 +160,7 @@ export function BlocksEditor({
           className="btn-sheen flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-on-accent transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
         >
           {saving && <Spinner size="xs" />}
-          {saving ? t.common.saving : t.common.save}
+          {saving ? (savingLabel ?? t.common.saving) : t.common.save}
         </button>
       </div>
     </div>

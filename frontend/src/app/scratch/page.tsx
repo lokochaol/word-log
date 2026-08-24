@@ -8,6 +8,7 @@ import { ScratchTimeline } from "@/components/ScratchTimeline";
 import { ZettelkastenNavButton } from "@/components/ZettelkastenNavButton";
 import { DiscoveryTriggerButton } from "@/components/DiscoveryTriggerButton";
 import { DiscoveryStatusBanner } from "@/components/DiscoveryStatusBanner";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
@@ -31,6 +32,7 @@ export default async function ScratchPage() {
 
   const header = (
     <>
+      <OfflineBanner />
       {runError && (
         <DiscoveryStatusBanner message={runError.message} occurredAt={runError.occurredAt} locale={locale} t={dict} />
       )}

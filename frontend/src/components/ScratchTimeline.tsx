@@ -6,8 +6,10 @@ import { NoteTimeline } from "@/components/NoteTimeline";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AddQuickNoteButton } from "@/components/AddQuickNoteButton";
+import { DiscoveryShelf } from "@/components/DiscoveryShelf";
 import { deleteQuickNoteAction } from "@/app/scratch/actions";
 import type { QuickNoteSummary } from "@/lib/quickNotes";
+import type { DiscoveryCandidateSummary } from "@/lib/discovery";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
@@ -37,10 +39,19 @@ const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transp
  * `header` (brand/nav/search) is rendered inside the same scroll container,
  * pinned via `sticky` with a bottom gradient mask — so notes scrolling up
  * don't get clipped by a hard edge, they fade out under the header instead. */
-export function ScratchTimeline({ initialNotes, header }: { initialNotes: QuickNoteSummary[]; header: ReactNode }) {
+export function ScratchTimeline({
+  initialNotes,
+  initialDiscovery,
+  header,
+}: {
+  initialNotes: QuickNoteSummary[];
+  initialDiscovery: Record<string, DiscoveryCandidateSummary[]>;
+  header: ReactNode;
+}) {
   const router = useRouter();
   const { t, locale } = useI18n();
   const [notes, setNotes] = useState(initialNotes);
+  const [discoveryByNote, setDiscoveryByNote] = useState(initialDiscovery);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
   const scrollRef = useAutoScrollToBottom<HTMLDivElement>(notes.length);
@@ -91,6 +102,10 @@ export function ScratchTimeline({ initialNotes, header }: { initialNotes: QuickN
                 <QuickNoteActionMenu
                   onEdit={() => router.push(`/scratch/${note.id}`)}
                   onDelete={() => setDeleteTargetId(note.id)}
+                />
+                <DiscoveryShelf
+                  candidates={discoveryByNote[note.id] ?? []}
+                  onCandidatesChange={(next) => setDiscoveryByNote((prev) => ({ ...prev, [note.id]: next }))}
                 />
                 <ConfirmDialog
                   open={deleteTargetId === note.id}

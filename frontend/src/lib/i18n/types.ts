@@ -133,6 +133,23 @@ export interface Dictionary {
     literatureHeading: string;
     homeSearchPlaceholder: string;
   };
+  discovery: {
+    shelfLabel: (n: number) => string;
+    kindNews: string;
+    kindLiterature: string;
+    candidateLabel: string;
+    confirmedLabel: string;
+    addAction: string;
+    addedLabel: string;
+    writeAction: string;
+    openUrlAction: string;
+    openArticleAction: string;
+    citationFieldPlaceholder: string;
+    urlFieldPlaceholder: string;
+    triggerLabel: string;
+    triggerRunning: string;
+    triggerResult: (checked: number, found: number) => string;
+  };
   zettelkasten: {
     loadingLabel: string;
     backToScratch: string;
@@ -269,6 +286,7 @@ export interface Dictionary {
     literatureMemoNotFound: string;
     quickNoteNotFound: string;
     linkNotFound: string;
+    discoveryCandidateNotFound: string;
     encryptionNotConfigured: string;
     zoteroTitleRequired: string;
     zoteroApiError: (status: number, statusText: string) => string;

@@ -96,16 +96,19 @@ export function QuickNoteInlineTimeline({
   }
 
   function saveEdit(id: string, blocks: BlockInput[]) {
-    startSaveTransition(async () => {
-      const detail = await replaceQuickNoteBlocksAction(id, blocks);
-      onNotesChange(
-        notes.map((n) =>
-          n.id === id
-            ? { ...n, preview: previewFrom(detail.blocks), hasLiterature: !!detail.literatureMemo, literatureCitation: detail.literatureMemo?.citation ?? null }
-            : n,
-        ),
-      );
-      setEditingId(null);
+    return new Promise<void>((resolve) => {
+      startSaveTransition(async () => {
+        const detail = await replaceQuickNoteBlocksAction(id, blocks);
+        onNotesChange(
+          notes.map((n) =>
+            n.id === id
+              ? { ...n, preview: previewFrom(detail.blocks), hasLiterature: !!detail.literatureMemo, literatureCitation: detail.literatureMemo?.citation ?? null }
+              : n,
+          ),
+        );
+        setEditingId(null);
+        resolve();
+      });
     });
   }
 

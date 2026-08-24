@@ -43,6 +43,8 @@ export function translateDomainError(locale: Locale, error: DomainError): string
       return dict.quickNoteNotFound;
     case "linkNotFound":
       return dict.linkNotFound;
+    case "discoveryCandidateNotFound":
+      return dict.discoveryCandidateNotFound;
     default:
       return error.message;
   }

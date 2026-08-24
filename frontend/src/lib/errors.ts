@@ -25,7 +25,8 @@ export type DomainErrorCode =
   | "linkedIndexEntryNotFound"
   | "literatureMemoNotFound"
   | "quickNoteNotFound"
-  | "linkNotFound";
+  | "linkNotFound"
+  | "discoveryCandidateNotFound";
 
 export class DomainError extends Error {
   code: DomainErrorCode;

@@ -8,6 +8,8 @@ import type { ZoteroSearchResult } from "@/lib/zotero";
 import * as zoteroCredentials from "@/lib/zoteroCredentials";
 import * as literatureMemos from "@/lib/literatureMemos";
 import type { LiteratureMemoSummary, LiteratureSelection } from "@/lib/literatureMemos";
+import * as discovery from "@/lib/discovery";
+import type { DiscoveryCandidateSummary } from "@/lib/discovery";
 import { requireOwnerSub } from "@/lib/session";
 import { QuickNoteSource } from "@/generated/prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
@@ -123,4 +125,45 @@ export async function listActiveQuickNotesAction() {
 export async function getQuickNoteDetailAction(id: string): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
   return quickNotes.getDetail(ownerSub, id);
+}
+
+/** Manual "今すぐ探す" trigger — runs the same discovery pass the twice-daily
+ * cron runs (src/app/api/cron/discovery), scoped to the signed-in owner. */
+export async function runDiscoveryAction(): Promise<{ notesChecked: number; candidatesFound: number }> {
+  const ownerSub = await requireOwnerSub();
+  const result = await discovery.runForActiveNotes(ownerSub);
+  revalidatePath("/scratch");
+  return result;
+}
+
+export async function listDiscoveryForNotesAction(
+  quickNoteIds: string[],
+): Promise<Record<string, DiscoveryCandidateSummary[]>> {
+  const ownerSub = await requireOwnerSub();
+  return discovery.listForQuickNotes(ownerSub, quickNoteIds);
+}
+
+/** "📖 文献に追加" — turns a candidate into (or matches it to) a LiteratureMemo
+ * without writing a note from it. */
+export async function confirmDiscoveryLiteratureAction(
+  candidateId: string,
+  overrides: { citation: string; url: string | null },
+): Promise<{ literatureMemoId: string }> {
+  const ownerSub = await requireOwnerSub();
+  const literatureMemoId = await discovery.resolveLiteratureForCandidate(ownerSub, candidateId, overrides);
+  revalidatePath("/scratch");
+  return { literatureMemoId };
+}
+
+/** "＋ このメモを書く" — resolves the candidate's literature memo (adding it
+ * first if this is the first action taken on it) and creates a new QuickNote
+ * already linked to it, ready for the caller to navigate to /scratch/[id]. */
+export async function writeNoteFromDiscoveryAction(
+  candidateId: string,
+  overrides: { citation: string; url: string | null },
+): Promise<QuickNoteDetail> {
+  const ownerSub = await requireOwnerSub();
+  const note = await discovery.writeNoteFromCandidate(ownerSub, candidateId, overrides);
+  revalidatePath("/scratch");
+  return note;
 }

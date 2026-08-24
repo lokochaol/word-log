@@ -97,9 +97,13 @@ export async function getDetail(ownerSub: string, id: string): Promise<QuickNote
   return toDetail(note);
 }
 
-export async function create(ownerSub: string, source: QuickNoteSource = "SCRATCH"): Promise<QuickNoteDetail> {
+export async function create(
+  ownerSub: string,
+  source: QuickNoteSource = "SCRATCH",
+  literatureMemoId?: string,
+): Promise<QuickNoteDetail> {
   const note = await prisma.quickNote.create({
-    data: { ownerSub, source },
+    data: { ownerSub, source, literatureMemoId },
     include: quickNoteInclude,
   });
   return toDetail(note);

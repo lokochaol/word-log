@@ -133,6 +133,23 @@ export interface Dictionary {
     literatureHeading: string;
     homeSearchPlaceholder: string;
   };
+  discovery: {
+    shelfLabel: (n: number) => string;
+    kindNews: string;
+    kindLiterature: string;
+    candidateLabel: string;
+    confirmedLabel: string;
+    addAction: string;
+    addedLabel: string;
+    writeAction: string;
+    openUrlAction: string;
+    openArticleAction: string;
+    citationFieldPlaceholder: string;
+    urlFieldPlaceholder: string;
+    triggerLabel: string;
+    triggerRunning: string;
+    triggerResult: (checked: number, found: number) => string;
+  };
   zettelkasten: {
     loadingLabel: string;
     backToScratch: string;
@@ -252,6 +269,18 @@ export interface Dictionary {
     libraryIdPlaceholder: string;
     libraryTypeLabel: string;
     missingFieldsError: string;
+    aiHeading: string;
+    aiDescription: string;
+    aiProviderLabel: string;
+    aiProviderAnthropic: string;
+    aiProviderOpenAi: string;
+    aiProviderGoogle: string;
+    aiConnectedSummary: (provider: string) => string;
+    aiDisconnect: string;
+    aiApiKeyLabel: string;
+    aiApiKeyPlaceholderExisting: string;
+    aiApiKeyPlaceholderNew: string;
+    aiApiKeyHelp: string;
   };
   errors: {
     keywordRequired: string;
@@ -269,6 +298,7 @@ export interface Dictionary {
     literatureMemoNotFound: string;
     quickNoteNotFound: string;
     linkNotFound: string;
+    discoveryCandidateNotFound: string;
     encryptionNotConfigured: string;
     zoteroTitleRequired: string;
     zoteroApiError: (status: number, statusText: string) => string;

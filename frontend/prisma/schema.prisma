@@ -29,6 +29,22 @@ enum LinkTargetType {
   INDEX_ENTRY
 }
 
+enum DiscoveryKind {
+  NEWS
+  LITERATURE
+}
+
+enum DiscoveryStatus {
+  CANDIDATE
+  CONFIRMED
+}
+
+enum AiProvider {
+  ANTHROPIC
+  OPENAI
+  GOOGLE
+}
+
 /// A temporary, quickly-captured note ("走り書き"). Either typed on the spot
 /// (SCRATCH) or, in a future phase, transcribed from a voice memo (VOICE — the
 /// voice* columns are a schema hook only, not wired up in Phase 1). Active
@@ -54,6 +70,7 @@ model QuickNote {
 
   blocks               QuickNoteBlock[]
   promotionSourceLinks PromotionSourceQuickNote[]
+  discoveryCandidates  DiscoveryCandidate[]
 
   @@index([ownerSub, status, encounteredAt])
   @@index([literatureMemoId])
@@ -224,12 +241,47 @@ model LiteratureMemo {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  quickNotes         QuickNote[]
-  permanentNoteLinks PermanentNoteLiteratureMemo[]
+  quickNotes          QuickNote[]
+  permanentNoteLinks  PermanentNoteLiteratureMemo[]
+  discoveryCandidates DiscoveryCandidate[]
 
   @@unique([ownerSub, zoteroKey])
   @@index([ownerSub])
   @@map("literature_memo")
+}
+
+/// An AI-surfaced "might be related" suggestion (a news article or a piece
+/// of literature) attached to one QuickNote — populated by the twice-daily
+/// discovery batch (src/lib/discovery.ts, wired to run at 7:00/19:00 via
+/// vercel.json's cron + src/app/api/cron/discovery). The app never judges
+/// relevance itself: a candidate starts as CANDIDATE and only flips to
+/// CONFIRMED when the owner acts on it — adding it as a literature memo, or
+/// writing a new QuickNote from it. There is no separate "mark relevant"
+/// action. `literatureMemoId` is set once the candidate has been turned into
+/// (or matched to) a LiteratureMemo — see resolveLiteratureForCandidate's
+/// URL-keyed find-or-create in src/lib/discovery.ts, which is how the same
+/// article surfacing twice never creates two literature memos.
+model DiscoveryCandidate {
+  id          String          @id @default(uuid())
+  ownerSub    String          @map("owner_sub")
+  quickNoteId String          @map("quick_note_id")
+  quickNote   QuickNote       @relation(fields: [quickNoteId], references: [id], onDelete: Cascade)
+  kind        DiscoveryKind
+  status      DiscoveryStatus @default(CANDIDATE)
+  title       String
+  summary     String
+  sourceLabel String          @map("source_label")
+  url         String?
+  confidence  Int
+
+  literatureMemoId String?         @map("literature_memo_id")
+  literatureMemo   LiteratureMemo? @relation(fields: [literatureMemoId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([quickNoteId])
+  @@index([ownerSub, status])
+  @@map("discovery_candidate")
 }
 
 /// Per-user Zotero Web API credentials (this is a multi-tenant app — each
@@ -246,4 +298,20 @@ model ZoteroCredential {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("zotero_credential")
+}
+
+/// Per-user LLM API credential — whichever provider the owner brings their
+/// own key for backs the discovery batch's search+summarize step (see
+/// findCandidatesForNote in src/lib/discovery.ts). No app-wide default key:
+/// without this row, discovery runs succeed but always find nothing, same
+/// "gracefully unconfigured" shape as ZoteroCredential.
+model AiCredential {
+  id              String     @id @default(uuid())
+  ownerSub        String     @unique @map("owner_sub")
+  provider        AiProvider
+  apiKeyEncrypted String     @map("api_key_encrypted")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  @@map("ai_credential")
 }

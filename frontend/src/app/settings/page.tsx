@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/session";
-import { getZoteroSettingsAction } from "@/app/settings/actions";
+import { getZoteroSettingsAction, getAiSettingsAction } from "@/app/settings/actions";
 import { ZoteroSettingsForm } from "@/components/ZoteroSettingsForm";
+import { AiSettingsForm } from "@/components/AiSettingsForm";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
@@ -11,6 +12,7 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 export default async function SettingsPage() {
   const session = await requireSession();
   const zotero = await getZoteroSettingsAction();
+  const ai = await getAiSettingsAction();
   const dict = getDictionary(await getLocale());
 
   return (
@@ -42,6 +44,14 @@ export default async function SettingsPage() {
           <h1 className="text-3xl font-extrabold tracking-tight text-ink">{dict.settings.heading}</h1>
           <p className="font-mono text-xs text-ink-soft">{dict.settings.description}</p>
         </div>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+            <span className="text-accent">{"//"}</span> {dict.settings.aiHeading}
+          </h2>
+          <p className="font-mono text-[10.5px] text-ink-soft">{dict.settings.aiDescription}</p>
+          <AiSettingsForm initial={ai} />
+        </section>
 
         <section className="flex flex-col gap-3">
           <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">

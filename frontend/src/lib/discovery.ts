@@ -396,7 +396,7 @@ async function recordRunStatus(
  * active note is eligible for a refresh every time this runs — a note is
  * never "done forever"; each note's own DiscoverySchedule (1 or 2 times a
  * day, at whichever Asia/Tokyo hour(s) the owner picked) governs how often
- * the cron actually reaches it (see isDueThisHour), while this function
+ * the cron actually reaches it (see isDueAtHour), while this function
  * itself just refreshes whatever it's given. Only the least-recently-run
  * notes are picked, up to MAX_NOTES_PER_RUN, so a large note count trickles
  * across runs — with two runs a day, everything still cycles through
@@ -482,10 +482,10 @@ export function tokyoHour(at: Date): number {
   );
 }
 
-/** Whether `schedule` is due at the given hour — what the hourly cron uses
- * to decide whether to actually run discovery for one owner this pass. The
- * manual "今すぐ探す" trigger never calls this; it always runs immediately
- * regardless of schedule. */
+/** Whether `schedule` is due at the given hour — what the cron route (see
+ * src/app/api/cron/discovery) uses to decide whether to actually run
+ * discovery for one owner this pass. The manual "今すぐ探す" trigger never
+ * calls this; it always runs immediately regardless of schedule. */
 export function isDueAtHour(schedule: DiscoverySchedule, hour: number): boolean {
   return hour === schedule.hour1 || (schedule.timesPerDay === 2 && hour === schedule.hour2);
 }

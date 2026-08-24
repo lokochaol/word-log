@@ -3,15 +3,21 @@ import * as discovery from "@/lib/discovery";
 
 /**
  * The scheduled half of the "Discovery Rails" batch — see
- * frontend/vercel.json, which fires this hourly, and DiscoveryTriggerButton
- * for the manual, single-owner, schedule-ignoring equivalent.
+ * frontend/vercel.json, and DiscoveryTriggerButton for the manual,
+ * single-owner, schedule-ignoring equivalent.
  *
- * Firing hourly (rather than at two fixed times) is what makes each owner's
- * own DiscoverySchedule (1 or 2 times a day, at whichever Asia/Tokyo
- * hour(s) they picked in Settings — src/lib/discovery.ts's
- * getSchedule/isDueAtHour) actually take effect: every pass checks the
- * current Tokyo hour against each owner's schedule and only runs discovery
- * for the ones due *this* hour.
+ * vercel.json registers 24 separate cron jobs hitting this same path, one
+ * per Asia/Tokyo hour (0 15 * * *, 0 16 * * *, … each in UTC) — NOT a
+ * single hourly cron. Vercel's Hobby plan caps each individual cron job at
+ * once per day ("0 * * * *" fails deployment outright), so 24
+ * once-a-day jobs at staggered hours is what actually delivers "checked
+ * every hour" within that limit (well under the separate 100-cron-job cap).
+ * Each invocation still just checks the current Tokyo hour against every
+ * owner's own DiscoverySchedule (1 or 2 times a day, at whichever hour(s)
+ * they picked in Settings — src/lib/discovery.ts's
+ * getSchedule/isDueAtHour) and only runs discovery for the ones due *this*
+ * hour, so this route's own logic doesn't need to know it's being fanned
+ * out across 24 registrations instead of one.
  *
  * There is no browser session here (Vercel Cron calls this server-to-server),
  * so this can't use requireOwnerSub() — instead it's gated by CRON_SECRET, the

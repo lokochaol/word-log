@@ -39,6 +39,12 @@ enum DiscoveryStatus {
   CONFIRMED
 }
 
+enum AiProvider {
+  ANTHROPIC
+  OPENAI
+  GOOGLE
+}
+
 /// A temporary, quickly-captured note ("走り書き"). Either typed on the spot
 /// (SCRATCH) or, in a future phase, transcribed from a voice memo (VOICE — the
 /// voice* columns are a schema hook only, not wired up in Phase 1). Active
@@ -292,4 +298,20 @@ model ZoteroCredential {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("zotero_credential")
+}
+
+/// Per-user LLM API credential — whichever provider the owner brings their
+/// own key for backs the discovery batch's search+summarize step (see
+/// findCandidatesForNote in src/lib/discovery.ts). No app-wide default key:
+/// without this row, discovery runs succeed but always find nothing, same
+/// "gracefully unconfigured" shape as ZoteroCredential.
+model AiCredential {
+  id              String     @id @default(uuid())
+  ownerSub        String     @unique @map("owner_sub")
+  provider        AiProvider
+  apiKeyEncrypted String     @map("api_key_encrypted")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  @@map("ai_credential")
 }

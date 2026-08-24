@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import * as zoteroCredentials from "@/lib/zoteroCredentials";
 import type { ZoteroCredentialSummary } from "@/lib/zoteroCredentials";
+import * as aiCredentials from "@/lib/aiCredentials";
+import { AiProvider } from "@/lib/aiCredentials";
+import type { AiCredentialSummary } from "@/lib/aiCredentials";
 import { EncryptionConfigError } from "@/lib/crypto";
 import { requireOwnerSub } from "@/lib/session";
 import { getLocale } from "@/lib/i18n/locale";
@@ -45,5 +48,44 @@ export async function saveZoteroSettingsAction(input: {
 export async function removeZoteroSettingsAction(): Promise<void> {
   const ownerSub = await requireOwnerSub();
   await zoteroCredentials.remove(ownerSub);
+  revalidatePath("/settings");
+}
+
+export async function getAiSettingsAction(): Promise<AiCredentialSummary | null> {
+  const ownerSub = await requireOwnerSub();
+  return aiCredentials.getSummary(ownerSub);
+}
+
+export async function saveAiSettingsAction(input: {
+  provider: string;
+  apiKey: string;
+}): Promise<{ error: string } | { ok: true }> {
+  const ownerSub = await requireOwnerSub();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+  const apiKey = input.apiKey.trim();
+  const provider =
+    input.provider === "OPENAI" ? AiProvider.OPENAI : input.provider === "GOOGLE" ? AiProvider.GOOGLE : AiProvider.ANTHROPIC;
+
+  if (!apiKey) {
+    return { error: dict.settings.missingFieldsError };
+  }
+
+  try {
+    await aiCredentials.upsert(ownerSub, { provider, apiKey });
+  } catch (e) {
+    if (e instanceof EncryptionConfigError) {
+      return { error: dict.errors.encryptionNotConfigured };
+    }
+    throw e;
+  }
+
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function removeAiSettingsAction(): Promise<void> {
+  const ownerSub = await requireOwnerSub();
+  await aiCredentials.remove(ownerSub);
   revalidatePath("/settings");
 }

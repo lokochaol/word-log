@@ -269,6 +269,18 @@ export interface Dictionary {
     libraryIdPlaceholder: string;
     libraryTypeLabel: string;
     missingFieldsError: string;
+    aiHeading: string;
+    aiDescription: string;
+    aiProviderLabel: string;
+    aiProviderAnthropic: string;
+    aiProviderOpenAi: string;
+    aiProviderGoogle: string;
+    aiConnectedSummary: (provider: string) => string;
+    aiDisconnect: string;
+    aiApiKeyLabel: string;
+    aiApiKeyPlaceholderExisting: string;
+    aiApiKeyPlaceholderNew: string;
+    aiApiKeyHelp: string;
   };
   errors: {
     keywordRequired: string;

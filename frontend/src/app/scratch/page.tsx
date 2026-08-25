@@ -70,7 +70,7 @@ export default async function ScratchPage() {
   return (
     <main className="flex h-dvh flex-col items-center overflow-hidden bg-bg px-6 py-6">
       <DiscoveryRunToast />
-      <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col">
+      <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col landscape:lg:max-w-[1120px]">
         <ScratchTimeline initialNotes={notes} initialDiscovery={discoveryByNote} header={header} />
       </div>
     </main>

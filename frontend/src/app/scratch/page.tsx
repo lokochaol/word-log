@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { ScratchTimeline } from "@/components/ScratchTimeline";
 import { ZettelkastenNavButton } from "@/components/ZettelkastenNavButton";
 import { DiscoveryTriggerButton } from "@/components/DiscoveryTriggerButton";
+import { DiscoveryRunToast } from "@/components/DiscoveryRunToast";
 import { DiscoveryStatusBanner } from "@/components/DiscoveryStatusBanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { AppBrand } from "@/components/AppBrand";
@@ -68,6 +69,7 @@ export default async function ScratchPage() {
 
   return (
     <main className="flex h-dvh flex-col items-center overflow-hidden bg-bg px-6 py-6">
+      <DiscoveryRunToast />
       <div className="flex h-full w-full max-w-[720px] min-h-0 flex-col">
         <ScratchTimeline initialNotes={notes} initialDiscovery={discoveryByNote} header={header} />
       </div>

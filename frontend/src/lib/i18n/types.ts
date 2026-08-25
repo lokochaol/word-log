@@ -154,6 +154,7 @@ export interface Dictionary {
     triggerLabel: string;
     triggerRunning: string;
     triggerResult: (checked: number, found: number) => string;
+    triggerFailed: string;
     runErrorLabel: string;
     runErrorAuth: string;
     runErrorRateLimit: string;

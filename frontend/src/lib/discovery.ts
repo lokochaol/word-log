@@ -403,22 +403,28 @@ async function recordRunStatus(
  * across runs — with two runs a day, everything still cycles through
  * eventually — instead of one run's cost spiking with the note count.
  *
- * Notes refreshed within the last MIN_REFRESH_INTERVAL_HOURS are skipped
- * regardless of who's asking — this is what keeps repeated manual "今すぐ
- * 探す" clicks from re-spending API calls on a note that was just checked.
+ * Notes refreshed within the last MIN_REFRESH_INTERVAL_HOURS are skipped by
+ * default — this is what keeps repeated manual "今すぐ探す" clicks from
+ * re-spending API calls on a note that was just checked. `force: true`
+ * (the manual trigger, after the owner explicitly confirms the token-spend
+ * warning — see DiscoveryConfirmDialog) skips that check entirely; the
+ * scheduled cron never passes it, so it always respects the cooldown.
  *
  * If a provider call fails outright (bad key, rate limit, etc.), that's
  * recorded via recordRunStatus and this stops attempting further notes in
  * the same run — one broken credential would otherwise fail identically on
  * every remaining note, burning quota for nothing. A run that completes
  * without any note failing clears any previously recorded error. */
-export async function runForActiveNotes(ownerSub: string): Promise<{ notesChecked: number; candidatesFound: number }> {
+export async function runForActiveNotes(
+  ownerSub: string,
+  options?: { force?: boolean },
+): Promise<{ notesChecked: number; candidatesFound: number }> {
   const refreshCutoff = new Date(Date.now() - MIN_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000);
   const candidateNotes = await prisma.quickNote.findMany({
     where: {
       ownerSub,
       status: "ACTIVE",
-      OR: [{ discoveryLastRunAt: null }, { discoveryLastRunAt: { lt: refreshCutoff } }],
+      ...(options?.force ? {} : { OR: [{ discoveryLastRunAt: null }, { discoveryLastRunAt: { lt: refreshCutoff } }] }),
     },
     select: { id: true },
     orderBy: [{ discoveryLastRunAt: { sort: "asc", nulls: "first" } }, { encounteredAt: "asc" }],

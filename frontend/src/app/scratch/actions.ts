@@ -153,10 +153,13 @@ export async function getQuickNoteDetailAction(id: string): Promise<QuickNoteDet
 }
 
 /** Manual "今すぐ探す" trigger — runs the same discovery pass the twice-daily
- * cron runs (src/app/api/cron/discovery), scoped to the signed-in owner. */
-export async function runDiscoveryAction(): Promise<{ notesChecked: number; candidatesFound: number }> {
+ * cron runs (src/app/api/cron/discovery), scoped to the signed-in owner.
+ * `force: true` bypasses the 12h-per-note cooldown (see DiscoveryConfirmDialog,
+ * which gates this behind an explicit confirmation since it can re-spend AI
+ * tokens on notes checked moments ago). The cron itself never passes force. */
+export async function runDiscoveryAction(force = false): Promise<{ notesChecked: number; candidatesFound: number }> {
   const ownerSub = await requireOwnerSub();
-  const result = await discovery.runForActiveNotes(ownerSub);
+  const result = await discovery.runForActiveNotes(ownerSub, { force });
   revalidatePath("/scratch");
   return result;
 }

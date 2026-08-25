@@ -25,6 +25,9 @@ export const ja: Dictionary = {
     creating: "作成中…",
     linking: "リンク中…",
     registering: "登録中…",
+    offlineBanner: "オフラインです。操作は保留され、オンラインに戻り次第自動的に保存されます。",
+    savingOffline: "保存待ち（オフライン）…",
+    offlinePageMessage: "オフラインです。接続が回復すると、開いていた画面に自動的に戻ります。",
   },
   nav: {
     scratchLabel: "文献メモ",
@@ -106,6 +109,8 @@ export const ja: Dictionary = {
     emptyTimeline: "まだ走り書きがありません。最初の一件を記録しましょう。",
     deleteConfirmTitle: "この走り書きを削除しますか？",
     deleteConfirmWarning: "元に戻せません。",
+    pendingDraftLabel: "未保存の下書き",
+    pendingSaveLabel: "保存待ち…",
     loadingLabel: "走り書きを読み込み中…",
     sourceVoice: "ボイスメモ",
     sourceScratch: "走り書き",

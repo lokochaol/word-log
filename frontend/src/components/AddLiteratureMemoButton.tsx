@@ -6,11 +6,11 @@ import type { LiteratureMemoDetail } from "@/lib/literatureMemos";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /**
- * Same ring/glow HUD "+" treatment as AddQuickNoteButton — creates a blank
- * LiteratureMemo (not linked to any note yet) and hands the caller the full
- * detail so it can navigate into it (the /literature page) or open it inline
- * (ZettelkastenScreen's pane). This is the "add it on its own, flesh it out
- * later" path, mirroring how 走り書き gets added.
+ * Same ring/glow HUD "+" treatment used across the app's add-buttons —
+ * creates a blank LiteratureMemo (not linked to any note yet) and hands the
+ * caller the full detail so it can navigate into it (the /literature page)
+ * or open it inline (ZettelkastenScreen's pane). This is the "add it on its
+ * own, flesh it out later" path.
  */
 export function AddLiteratureMemoButton({ onCreated }: { onCreated: (memo: LiteratureMemoDetail) => void }) {
   const { t } = useI18n();

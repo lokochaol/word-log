@@ -23,6 +23,20 @@ export async function createQuickNoteAction(source: QuickNoteSource = "SCRATCH")
   return note;
 }
 
+/** Creates a note and saves its content in one call — what
+ * PendingQuickNoteCard uses so the whole "add a 走り書き" operation is a
+ * single Server Action. With experimental.useOffline (next.config.ts) that
+ * single call is what sits pending and retries automatically once the
+ * connection returns, rather than the composer needing to track a
+ * create-then-save pair across a network drop. */
+export async function createQuickNoteWithBlocksAction(blocks: BlockInput[]): Promise<QuickNoteDetail> {
+  const ownerSub = await requireOwnerSub();
+  const note = await quickNotes.create(ownerSub, "SCRATCH");
+  const detail = await quickNotes.replaceBlocks(ownerSub, note.id, blocks);
+  revalidatePath("/scratch");
+  return detail;
+}
+
 export async function replaceQuickNoteBlocksAction(id: string, blocks: BlockInput[]): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
   const note = await quickNotes.replaceBlocks(ownerSub, id, blocks);

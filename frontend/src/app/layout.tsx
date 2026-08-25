@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CustomCursor } from "@/components/CustomCursor";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 import { getLocale } from "@/lib/i18n/locale";
 
@@ -23,9 +24,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
+    manifest: "/manifest.webmanifest",
     appleWebApp: { title },
   };
 }
+
+export const viewport: Viewport = {
+  themeColor: "#050505",
+};
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
@@ -34,6 +40,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full bg-bg text-ink">
         <LocaleProvider initialLocale={locale}>
           <CustomCursor />
+          <ServiceWorkerRegister />
           {children}
         </LocaleProvider>
       </body>

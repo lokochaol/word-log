@@ -42,6 +42,9 @@ export interface Dictionary {
     creating: string;
     linking: string;
     registering: string;
+    offlineBanner: string;
+    savingOffline: string;
+    offlinePageMessage: string;
   };
   nav: {
     scratchLabel: string;
@@ -123,6 +126,8 @@ export interface Dictionary {
     emptyTimeline: string;
     deleteConfirmTitle: string;
     deleteConfirmWarning: string;
+    pendingDraftLabel: string;
+    pendingSaveLabel: string;
     loadingLabel: string;
     sourceVoice: string;
     sourceScratch: string;

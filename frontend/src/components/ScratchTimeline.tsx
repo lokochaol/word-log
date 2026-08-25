@@ -133,8 +133,14 @@ export function ScratchTimeline({
                 ),
                 card: (
                   <>
-                    {/* Narrow/portrait: unchanged card + shelf-below layout. */}
-                    <div className="landscape:lg:hidden">
+                    {/* Narrow/portrait: unchanged card + shelf-below layout.
+                        min-w-0 matters here: as a flex item of NoteTimeline's
+                        `items-center` row, this would otherwise default to
+                        min-width:auto and refuse to shrink below
+                        DiscoveryShelf's un-scrolled content width, pushing
+                        the whole row past the viewport instead of letting
+                        the shelf's own overflow-x-auto scroll internally. */}
+                    <div className="w-full min-w-0 max-w-[420px] landscape:lg:hidden">
                       {noteCard}
                       <DiscoveryShelf candidates={candidates} onCandidatesChange={onCandidatesChange} />
                     </div>

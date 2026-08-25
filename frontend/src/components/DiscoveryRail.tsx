@@ -168,7 +168,9 @@ export function DiscoveryRail({
     }
   }
 
-  if (news.length === 0 && literature.length === 0) return <>{noteCard}</>;
+  if (news.length === 0 && literature.length === 0) {
+    return <div className="flex w-full justify-center">{noteCard}</div>;
+  }
 
   return (
     <div className="relative grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-6">

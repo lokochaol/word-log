@@ -137,6 +137,7 @@ export const ja: Dictionary = {
     triggerLabel: "関連を今すぐ探す",
     triggerRunning: "検索中…",
     triggerResult: (checked, found) => `${checked}件のノートを確認し、${found}件見つかりました`,
+    triggerFailed: "検索に失敗しました。設定画面のAPIキーを確認してください。",
     runErrorLabel: "関連の自動探索が失敗しました",
     runErrorAuth: "APIキーが無効か期限切れの可能性があります。設定を確認してください。",
     runErrorRateLimit: "利用上限に達しました（レート制限またはクレジット切れの可能性があります）。",

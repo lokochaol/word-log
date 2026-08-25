@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
 import * as quickNotes from "@/lib/quickNotes";
 import type { BlockInput, QuickNoteDetail } from "@/lib/quickNotes";
 import * as zotero from "@/lib/zotero";
@@ -28,10 +29,20 @@ export async function createQuickNoteAction(source: QuickNoteSource = "SCRATCH")
  * single Server Action. With experimental.useOffline (next.config.ts) that
  * single call is what sits pending and retries automatically once the
  * connection returns, rather than the composer needing to track a
- * create-then-save pair across a network drop. */
-export async function createQuickNoteWithBlocksAction(blocks: BlockInput[]): Promise<QuickNoteDetail> {
+ * create-then-save pair across a network drop.
+ *
+ * `literatureSelection` lets the same compose step link a 文献メモ, the
+ * way the /scratch/[id] detail page's LiteratureMemoField does — but that
+ * one always operates on an already-created note (setLiteratureMemoAction),
+ * so here the selection is resolved to a memo id up front and passed
+ * straight into quickNotes.create instead of a separate follow-up call. */
+export async function createQuickNoteWithBlocksAction(
+  blocks: BlockInput[],
+  literatureSelection?: LiteratureSelection | null,
+): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
-  const note = await quickNotes.create(ownerSub, "SCRATCH");
+  const literatureMemoId = await literatureMemos.resolveSelection(prisma, ownerSub, literatureSelection);
+  const note = await quickNotes.create(ownerSub, "SCRATCH", literatureMemoId ?? undefined);
   const detail = await quickNotes.replaceBlocks(ownerSub, note.id, blocks);
   revalidatePath("/scratch");
   return detail;

@@ -1,10 +1,12 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useOffline } from "next/offline";
 import { BlocksEditor } from "@/components/BlocksEditor";
+import { PendingLiteratureMemoField } from "@/components/PendingLiteratureMemoField";
 import { createQuickNoteWithBlocksAction } from "@/app/scratch/actions";
 import type { Block, BlockInput, QuickNoteSummary } from "@/lib/quickNotes";
+import type { LiteratureSelection } from "@/lib/literatureMemos";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 function previewFrom(blocks: Block[]): string {
@@ -21,6 +23,11 @@ function previewFrom(blocks: Block[]): string {
  * state beyond the label it shows. BlocksEditor only disables its own Save
  * button while `saving` is true, not the textareas, so the content stays
  * editable for as long as the note remains local.
+ *
+ * Also lets a 文献メモ be linked before the note ever exists server-side
+ * (PendingLiteratureMemoField), matching what the /scratch/[id] detail
+ * page's editor offers — the picked LiteratureSelection just rides along
+ * with the blocks into createQuickNoteWithBlocksAction.
  */
 export function PendingQuickNoteCard({
   onSynced,
@@ -32,17 +39,31 @@ export function PendingQuickNoteCard({
   const { t } = useI18n();
   const isOffline = useOffline();
   const [saving, startTransition] = useTransition();
+  const [literatureSelection, setLiteratureSelection] = useState<LiteratureSelection | null>(null);
 
-  function handleSave(blocks: BlockInput[]) {
-    startTransition(async () => {
-      const note = await createQuickNoteWithBlocksAction(blocks);
-      onSynced({
-        id: note.id,
-        source: note.source,
-        encounteredAt: note.encounteredAt,
-        preview: previewFrom(note.blocks),
-        hasLiterature: false,
-        literatureCitation: null,
+  function handleSave(blocks: BlockInput[]): Promise<void> {
+    // BlocksEditor awaits this before it exits edit mode (`await onSave(...);
+    // setEditing(false)`) — startTransition itself doesn't return a promise
+    // that waits for its callback, so without this wrapper BlocksEditor would
+    // flip out of edit mode the instant this function returns, well before
+    // createQuickNoteWithBlocksAction actually resolves, and fall back to
+    // its `blocks={[]}` empty-state prompt for the whole real wait.
+    return new Promise<void>((resolve, reject) => {
+      startTransition(async () => {
+        try {
+          const note = await createQuickNoteWithBlocksAction(blocks, literatureSelection);
+          onSynced({
+            id: note.id,
+            source: note.source,
+            encounteredAt: note.encounteredAt,
+            preview: previewFrom(note.blocks),
+            hasLiterature: !!note.literatureMemo,
+            literatureCitation: note.literatureMemo?.citation ?? null,
+          });
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
       });
     });
   }
@@ -63,6 +84,12 @@ export function PendingQuickNoteCard({
           savingLabel={isOffline ? t.common.savingOffline : undefined}
           emptyLabel={t.blocksEditor.addBlock}
         />
+        <div className="mt-3 border-t border-line pt-3">
+          <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+            <span className="text-accent">{"//"}</span> {t.scratch.literatureHeading}
+          </h3>
+          <PendingLiteratureMemoField selection={literatureSelection} onChange={setLiteratureSelection} />
+        </div>
       </div>
     </div>
   );

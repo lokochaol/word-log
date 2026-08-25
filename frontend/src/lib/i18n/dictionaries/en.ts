@@ -137,6 +137,7 @@ export const en: Dictionary = {
     triggerLabel: "Find related now",
     triggerRunning: "Searching…",
     triggerResult: (checked, found) => `Checked ${checked} note(s), found ${found}`,
+    triggerFailed: "The search failed. Check your API key in Settings.",
     runErrorLabel: "Discovery run failed",
     runErrorAuth: "The API key may be invalid or expired. Check Settings.",
     runErrorRateLimit: "Usage limit reached (rate limit or out of credits).",

@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PendingQuickNoteCard } from "@/components/PendingQuickNoteCard";
 import { AddQuickNoteTrigger } from "@/components/AddQuickNoteTrigger";
 import { DiscoveryShelf } from "@/components/DiscoveryShelf";
+import { DiscoveryRail } from "@/components/DiscoveryRail";
 import { deleteQuickNoteAction } from "@/app/scratch/actions";
 import type { QuickNoteSummary } from "@/lib/quickNotes";
 import type { DiscoveryCandidateSummary } from "@/lib/discovery";
@@ -88,8 +89,42 @@ export function ScratchTimeline({
         <NoteTimeline
           emptyLabel={t.scratch.emptyTimeline}
           rows={[
-            ...notes.map(
-              (note): TimelineRow => ({
+            ...notes.map((note): TimelineRow => {
+              const noteCard = (
+                <div className="relative w-full max-w-[420px]">
+                  <button
+                    onClick={() => router.push(`/scratch/${note.id}`)}
+                    className="flex w-full flex-col gap-2 rounded-lg border border-line bg-surface-alt p-4 text-left text-sm text-ink transition-colors hover:border-line-strong"
+                  >
+                    {note.preview || t.common.noContent}
+                    {note.literatureCitation && (
+                      <span className="flex items-start gap-1.5 border-t border-line pt-2 font-mono text-[10.5px] text-ink-soft">
+                        <span className="shrink-0 text-accent">📖</span>
+                        <span className="line-clamp-1">{note.literatureCitation}</span>
+                      </span>
+                    )}
+                  </button>
+                  <QuickNoteActionMenu
+                    onEdit={() => router.push(`/scratch/${note.id}`)}
+                    onDelete={() => setDeleteTargetId(note.id)}
+                  />
+                  <ConfirmDialog
+                    open={deleteTargetId === note.id}
+                    title={t.scratch.deleteConfirmTitle}
+                    warning={t.scratch.deleteConfirmWarning}
+                    confirmLabel={t.common.delete}
+                    onCancel={() => setDeleteTargetId(null)}
+                    onConfirm={confirmDelete}
+                    confirmDisabled={deletePending}
+                    confirmPending={deletePending}
+                  />
+                </div>
+              );
+              const candidates = discoveryByNote[note.id] ?? [];
+              const onCandidatesChange = (next: DiscoveryCandidateSummary[]) =>
+                setDiscoveryByNote((prev) => ({ ...prev, [note.id]: next }));
+
+              return {
                 key: note.id,
                 meta: (
                   <span className="font-mono text-[10px] tracking-wider text-ink-soft">
@@ -97,41 +132,21 @@ export function ScratchTimeline({
                   </span>
                 ),
                 card: (
-                  <div className="relative w-full max-w-[420px]">
-                    <button
-                      onClick={() => router.push(`/scratch/${note.id}`)}
-                      className="flex w-full flex-col gap-2 rounded-lg border border-line bg-surface-alt p-4 text-left text-sm text-ink transition-colors hover:border-line-strong"
-                    >
-                      {note.preview || t.common.noContent}
-                      {note.literatureCitation && (
-                        <span className="flex items-start gap-1.5 border-t border-line pt-2 font-mono text-[10.5px] text-ink-soft">
-                          <span className="shrink-0 text-accent">📖</span>
-                          <span className="line-clamp-1">{note.literatureCitation}</span>
-                        </span>
-                      )}
-                    </button>
-                    <QuickNoteActionMenu
-                      onEdit={() => router.push(`/scratch/${note.id}`)}
-                      onDelete={() => setDeleteTargetId(note.id)}
-                    />
-                    <DiscoveryShelf
-                      candidates={discoveryByNote[note.id] ?? []}
-                      onCandidatesChange={(next) => setDiscoveryByNote((prev) => ({ ...prev, [note.id]: next }))}
-                    />
-                    <ConfirmDialog
-                      open={deleteTargetId === note.id}
-                      title={t.scratch.deleteConfirmTitle}
-                      warning={t.scratch.deleteConfirmWarning}
-                      confirmLabel={t.common.delete}
-                      onCancel={() => setDeleteTargetId(null)}
-                      onConfirm={confirmDelete}
-                      confirmDisabled={deletePending}
-                      confirmPending={deletePending}
-                    />
-                  </div>
+                  <>
+                    {/* Narrow/portrait: unchanged card + shelf-below layout. */}
+                    <div className="landscape:lg:hidden">
+                      {noteCard}
+                      <DiscoveryShelf candidates={candidates} onCandidatesChange={onCandidatesChange} />
+                    </div>
+                    {/* Wide landscape: news/note/literature laid out as three
+                        connected columns instead — see DiscoveryRail. */}
+                    <div className="hidden w-full landscape:lg:block">
+                      <DiscoveryRail candidates={candidates} onCandidatesChange={onCandidatesChange} noteCard={noteCard} />
+                    </div>
+                  </>
                 ),
-              }),
-            ),
+              };
+            }),
             ...pendingIds.map(
               (localId): TimelineRow => ({
                 key: localId,

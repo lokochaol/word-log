@@ -155,6 +155,9 @@ export interface Dictionary {
     triggerRunning: string;
     triggerResult: (checked: number, found: number) => string;
     triggerFailed: string;
+    confirmTitle: string;
+    confirmBody: string;
+    confirmAction: string;
     runErrorLabel: string;
     runErrorAuth: string;
     runErrorRateLimit: string;

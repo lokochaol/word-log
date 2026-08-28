@@ -3,6 +3,7 @@ import * as literatureMemos from "@/lib/literatureMemos";
 import { requireSession } from "@/lib/session";
 import { LiteratureMemoList } from "@/components/LiteratureMemoList";
 import { LocaleToggle } from "@/components/LocaleToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { getLocale } from "@/lib/i18n/locale";
@@ -29,6 +30,7 @@ export default async function LiteraturePage() {
               {dict.nav.guideLabel}
             </Link>
             <LocaleToggle />
+            <ThemeToggle />
             <HeaderAccountBadge email={session.user?.email ?? dict.common.unknownEmail} />
           </HeaderMenu>
         </div>

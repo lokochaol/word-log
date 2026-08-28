@@ -11,11 +11,20 @@ export function HomeSearchBar() {
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
+    function isTyping(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      return target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+    }
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === "/" && document.activeElement !== inputRef.current) {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
+      if (e.key !== "/") return;
+      if (document.activeElement === inputRef.current) return;
+      // Don't steal focus while typing "/" as ordinary text into a
+      // 走り書き block or any other field — e.g. typing a URL or a date
+      // like "8/24" in a note's textarea shouldn't jump to search.
+      if (isTyping(e.target)) return;
+      e.preventDefault();
+      inputRef.current?.focus();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/session";
 import { LocaleToggle } from "@/components/LocaleToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { GuideContentJa } from "@/components/guide/GuideContentJa";
@@ -34,6 +35,7 @@ export default async function GuidePage() {
               {dict.nav.literatureLabel}
             </Link>
             <LocaleToggle />
+            <ThemeToggle />
           </HeaderMenu>
         </div>
 

@@ -13,6 +13,7 @@ import { DiscoveryStatusBanner } from "@/components/DiscoveryStatusBanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { getLocale } from "@/lib/i18n/locale";
@@ -59,6 +60,7 @@ export default async function ScratchPage() {
             </Link>
             <DiscoveryTriggerButton />
             <LocaleToggle />
+            <ThemeToggle />
             <SignOutButton />
           </HeaderMenu>
         </div>

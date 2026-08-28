@@ -2,9 +2,31 @@
 
 import { useEffect, useId, useState } from "react";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { useTheme } from "@/lib/theme/ThemeProvider";
+
+const DARK_THEME_VARIABLES = {
+  background: "#121212",
+  primaryColor: "#1c1c1c",
+  primaryTextColor: "#f5f5f5",
+  primaryBorderColor: "#ff3d1a",
+  lineColor: "#8a8a8a",
+  secondaryColor: "#1c1c1c",
+  tertiaryColor: "#1c1c1c",
+};
+
+const LIGHT_THEME_VARIABLES = {
+  background: "#ffffff",
+  primaryColor: "#eceef2",
+  primaryTextColor: "#15161a",
+  primaryBorderColor: "#ff3d1a",
+  lineColor: "#63656d",
+  secondaryColor: "#eceef2",
+  tertiaryColor: "#eceef2",
+};
 
 export function MermaidPreview({ source }: { source: string }) {
   const { t } = useI18n();
+  const { theme } = useTheme();
   const id = useId().replace(/:/g, "-");
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -18,15 +40,7 @@ export function MermaidPreview({ source }: { source: string }) {
         theme: "base",
         fontFamily: "var(--font-inter)",
         suppressErrorRendering: true,
-        themeVariables: {
-          background: "#121212",
-          primaryColor: "#1c1c1c",
-          primaryTextColor: "#f5f5f5",
-          primaryBorderColor: "#ff3d1a",
-          lineColor: "#8a8a8a",
-          secondaryColor: "#1c1c1c",
-          tertiaryColor: "#1c1c1c",
-        },
+        themeVariables: theme === "light" ? LIGHT_THEME_VARIABLES : DARK_THEME_VARIABLES,
       });
       try {
         const { svg: rendered } = await mermaid.render(`mermaid-${id}`, source);
@@ -44,7 +58,7 @@ export function MermaidPreview({ source }: { source: string }) {
     return () => {
       cancelled = true;
     };
-  }, [source, id, t]);
+  }, [source, id, t, theme]);
 
   if (!source.trim()) return null;
   if (error) return <p className="text-xs text-accent">{error}</p>;

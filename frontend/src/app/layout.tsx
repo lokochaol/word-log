@@ -5,6 +5,8 @@ import { CustomCursor } from "@/components/CustomCursor";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 import { getLocale } from "@/lib/i18n/locale";
+import { ThemeProvider } from "@/lib/theme/ThemeProvider";
+import { getTheme } from "@/lib/theme/theme";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,20 +31,24 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = {
-  themeColor: "#050505",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const theme = await getTheme();
+  return { themeColor: theme === "light" ? "#f3f4f7" : "#050505" };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
+  const theme = await getTheme();
   return (
-    <html lang={locale} className={`${inter.variable} h-full antialiased`}>
+    <html lang={locale} data-theme={theme} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-ink">
-        <LocaleProvider initialLocale={locale}>
-          <CustomCursor />
-          <ServiceWorkerRegister />
-          {children}
-        </LocaleProvider>
+        <ThemeProvider initialTheme={theme}>
+          <LocaleProvider initialLocale={locale}>
+            <CustomCursor />
+            <ServiceWorkerRegister />
+            {children}
+          </LocaleProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

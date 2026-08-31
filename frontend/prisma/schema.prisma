@@ -7,13 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum BlockType {
-  TEXT
-  CODE
-  MERMAID
-  IMAGE
-}
-
 enum QuickNoteSource {
   SCRATCH
   VOICE
@@ -56,6 +49,13 @@ model QuickNote {
   source   QuickNoteSource @default(SCRATCH)
   status   QuickNoteStatus @default(ACTIVE)
 
+  /// Plain-text/Markdown content — a single free-form document, VSCode-editor
+  /// style, instead of a typed block list. ```lang fences embed code,
+  /// ```mermaid fences embed diagrams, ![caption](url) embeds images; there's
+  /// no other markdown syntax support beyond that (see MarkdownNoteEditor.tsx
+  /// for the source/preview split and src/lib/embeddedContent.ts for parsing).
+  content String @default("")
+
   literatureMemoId String?         @map("literature_memo_id")
   literatureMemo   LiteratureMemo? @relation(fields: [literatureMemoId], references: [id], onDelete: SetNull)
 
@@ -74,27 +74,12 @@ model QuickNote {
   // rotation when there are more active notes than one run's cap allows.
   discoveryLastRunAt DateTime? @map("discovery_last_run_at")
 
-  blocks               QuickNoteBlock[]
   promotionSourceLinks PromotionSourceQuickNote[]
   discoveryCandidates  DiscoveryCandidate[]
 
   @@index([ownerSub, status, encounteredAt])
   @@index([literatureMemoId])
   @@map("quick_note")
-}
-
-model QuickNoteBlock {
-  id          String    @id @default(uuid())
-  quickNoteId String    @map("quick_note_id")
-  quickNote   QuickNote @relation(fields: [quickNoteId], references: [id], onDelete: Cascade)
-  position    Int
-  type        BlockType @map("block_type")
-  content     String
-  language    String?
-  caption     String?
-
-  @@index([quickNoteId, position])
-  @@map("quick_note_block")
 }
 
 /// A permanent note ("ツェッテルカステン" card). Lives in one strict,
@@ -107,10 +92,12 @@ model PermanentNote {
   title    String
   orderKey String @map("order_key")
 
+  /// See QuickNote.content — same plain-text/Markdown model, no block table.
+  content String @default("")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  blocks               PermanentNoteBlock[]
   outboundLinks        PermanentNoteLink[]             @relation("LinkSource")
   inboundLinks         PermanentNoteLink[]             @relation("LinkTargetNote")
   indexEntries         IndexEntry[]
@@ -137,20 +124,6 @@ model PermanentNoteLiteratureMemo {
   @@unique([permanentNoteId, literatureMemoId])
   @@index([literatureMemoId])
   @@map("permanent_note_literature_memo")
-}
-
-model PermanentNoteBlock {
-  id              String        @id @default(uuid())
-  permanentNoteId String        @map("permanent_note_id")
-  permanentNote   PermanentNote @relation(fields: [permanentNoteId], references: [id], onDelete: Cascade)
-  position        Int
-  type            BlockType     @map("block_type")
-  content         String
-  language        String?
-  caption         String?
-
-  @@index([permanentNoteId, position])
-  @@map("permanent_note_block")
 }
 
 /// A link from a PermanentNote to either another PermanentNote or an

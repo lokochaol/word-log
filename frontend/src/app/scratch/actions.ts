@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import * as quickNotes from "@/lib/quickNotes";
-import type { BlockInput, QuickNoteDetail } from "@/lib/quickNotes";
+import type { QuickNoteDetail } from "@/lib/quickNotes";
 import * as zotero from "@/lib/zotero";
 import type { ZoteroSearchResult } from "@/lib/zotero";
 import * as zoteroCredentials from "@/lib/zoteroCredentials";
@@ -36,21 +36,21 @@ export async function createQuickNoteAction(source: QuickNoteSource = "SCRATCH")
  * one always operates on an already-created note (setLiteratureMemoAction),
  * so here the selection is resolved to a memo id up front and passed
  * straight into quickNotes.create instead of a separate follow-up call. */
-export async function createQuickNoteWithBlocksAction(
-  blocks: BlockInput[],
+export async function createQuickNoteWithContentAction(
+  content: string,
   literatureSelection?: LiteratureSelection | null,
 ): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
   const literatureMemoId = await literatureMemos.resolveSelection(prisma, ownerSub, literatureSelection);
   const note = await quickNotes.create(ownerSub, "SCRATCH", literatureMemoId ?? undefined);
-  const detail = await quickNotes.replaceBlocks(ownerSub, note.id, blocks);
+  const detail = await quickNotes.updateContent(ownerSub, note.id, content);
   revalidatePath("/scratch");
   return detail;
 }
 
-export async function replaceQuickNoteBlocksAction(id: string, blocks: BlockInput[]): Promise<QuickNoteDetail> {
+export async function updateQuickNoteContentAction(id: string, content: string): Promise<QuickNoteDetail> {
   const ownerSub = await requireOwnerSub();
-  const note = await quickNotes.replaceBlocks(ownerSub, id, blocks);
+  const note = await quickNotes.updateContent(ownerSub, id, content);
   revalidatePath(`/scratch/${id}`);
   revalidatePath("/scratch");
   revalidatePath("/zettelkasten");

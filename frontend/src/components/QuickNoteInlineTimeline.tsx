@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { NoteTimeline } from "@/components/NoteTimeline";
-import { BlocksEditor } from "@/components/BlocksEditor";
+import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LoadingBlock } from "@/components/LoadingSpinner";
@@ -10,17 +10,17 @@ import {
   createQuickNoteAction,
   deleteQuickNoteAction,
   getQuickNoteDetailAction,
-  replaceQuickNoteBlocksAction,
+  updateQuickNoteContentAction,
 } from "@/app/scratch/actions";
-import type { Block, BlockInput, QuickNoteSummary } from "@/lib/quickNotes";
+import type { QuickNoteSummary } from "@/lib/quickNotes";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
 import { useAutoScrollToBottom } from "@/lib/useAutoScrollToBottom";
 
-function previewFrom(blocks: Block[] | BlockInput[]): string {
-  const first = blocks.find((b) => b.content.trim().length > 0);
-  return first?.content.slice(0, 200) ?? "";
+function previewFrom(content: string): string {
+  const firstLine = content.split("\n").find((line) => line.trim().length > 0);
+  return firstLine?.trim().slice(0, 200) ?? "";
 }
 
 function formatDate(date: Date, locale: Locale) {
@@ -66,8 +66,7 @@ export function QuickNoteInlineTimeline({
   const { t, locale } = useI18n();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
-  const [editingBlocks, setEditingBlocks] = useState<Block[]>([]);
-  const [savePending, startSaveTransition] = useTransition();
+  const [editingContent, setEditingContent] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
   const [creating, setCreating] = useState(false);
@@ -88,28 +87,22 @@ export function QuickNoteInlineTimeline({
     setLoadingEditId(id);
     try {
       const detail = await getQuickNoteDetailAction(id);
-      setEditingBlocks(detail.blocks);
+      setEditingContent(detail.content);
       setEditingId(id);
     } finally {
       setLoadingEditId(null);
     }
   }
 
-  function saveEdit(id: string, blocks: BlockInput[]) {
-    return new Promise<void>((resolve) => {
-      startSaveTransition(async () => {
-        const detail = await replaceQuickNoteBlocksAction(id, blocks);
-        onNotesChange(
-          notes.map((n) =>
-            n.id === id
-              ? { ...n, preview: previewFrom(detail.blocks), hasLiterature: !!detail.literatureMemo, literatureCitation: detail.literatureMemo?.citation ?? null }
-              : n,
-          ),
-        );
-        setEditingId(null);
-        resolve();
-      });
-    });
+  async function saveEdit(id: string, content: string) {
+    const detail = await updateQuickNoteContentAction(id, content);
+    onNotesChange(
+      notes.map((n) =>
+        n.id === id
+          ? { ...n, preview: previewFrom(detail.content), hasLiterature: !!detail.literatureMemo, literatureCitation: detail.literatureMemo?.citation ?? null }
+          : n,
+      ),
+    );
   }
 
   function confirmDelete() {
@@ -139,7 +132,7 @@ export function QuickNoteInlineTimeline({
           literatureCitation: null,
         },
       ]);
-      setEditingBlocks([]);
+      setEditingContent("");
       setEditingId(detail.id);
     } finally {
       setCreating(false);
@@ -173,14 +166,15 @@ export function QuickNoteInlineTimeline({
               >
                 {isEditing ? (
                   <div className="rounded-lg border border-accent/60 bg-surface-alt p-3">
-                    <BlocksEditor
-                      blocks={editingBlocks}
-                      onSave={(blocks) => saveEdit(note.id, blocks)}
-                      onCancel={() => setEditingId(null)}
-                      saving={savePending}
-                      startInEditMode
-                      emptyLabel={t.promotionEditor.contentEmptyLabel}
-                    />
+                    <div className="mb-1 flex justify-end">
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="font-mono text-[9.5px] text-ink-soft transition-colors hover:text-accent"
+                      >
+                        {t.common.close}
+                      </button>
+                    </div>
+                    <MarkdownNoteEditor content={editingContent} onSave={(content) => saveEdit(note.id, content)} />
                   </div>
                 ) : isLoadingEdit ? (
                   <div className="rounded-lg border border-line bg-surface-alt p-3">

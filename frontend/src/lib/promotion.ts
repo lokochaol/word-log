@@ -148,23 +148,14 @@ async function runPromotionTransaction(
     const permanentNoteIds: string[] = [];
     for (let i = 0; i < input.drafts.length; i++) {
       const draft = input.drafts[i];
-      const filteredBlocks = draft.blocks.filter((b) => b.content.trim());
       const literatureMemoIds = await literatureMemos.resolveSelections(tx, ownerSub, draft.literatureSelections);
       const created = await tx.permanentNote.create({
         data: {
           ownerSub,
           title: draft.title.trim(),
           orderKey: resolvedOrderKeys[i],
+          content: draft.content,
           literatureMemos: { create: literatureMemoIds.map((literatureMemoId) => ({ literatureMemoId })) },
-          blocks: {
-            create: filteredBlocks.map((b, i) => ({
-              position: i,
-              type: b.type,
-              content: b.content,
-              language: b.language || null,
-              caption: b.caption || null,
-            })),
-          },
           outboundLinks: {
             create: draft.links.map((l) => ({
               relationLabel: l.relationLabel.trim(),

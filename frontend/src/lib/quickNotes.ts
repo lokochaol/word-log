@@ -1,18 +1,16 @@
 import { prisma } from "@/lib/db";
 import { Prisma, QuickNoteSource, QuickNoteStatus } from "@/generated/prisma/client";
 import { NotFoundError } from "@/lib/errors";
-import type { Block, BlockInput } from "@/lib/blocks";
 import * as literatureMemos from "@/lib/literatureMemos";
 import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
 
-export type { Block, BlockInput, BlockType } from "@/lib/blocks";
 export type { LiteratureMemoRef } from "@/lib/literatureMemos";
 
 export interface QuickNoteSummary {
   id: string;
   source: QuickNoteSource;
   encounteredAt: Date;
-  /** First TEXT block's content, for a one-line summary in timelines/pickers. */
+  /** First non-blank line of content, for a one-line summary in timelines/pickers. */
   preview: string;
   hasLiterature: boolean;
   /** Linked LiteratureMemo's citation, if any — shown inline on the /scratch timeline card. */
@@ -23,7 +21,7 @@ export interface QuickNoteDetail {
   id: string;
   source: QuickNoteSource;
   status: QuickNoteStatus;
-  blocks: Block[];
+  content: string;
   literatureMemo: LiteratureMemoRef | null;
   encounteredAt: Date;
   createdAt: Date;
@@ -31,29 +29,27 @@ export interface QuickNoteDetail {
 }
 
 const quickNoteInclude = {
-  blocks: { orderBy: { position: "asc" } },
   literatureMemo: true,
 } satisfies Prisma.QuickNoteInclude;
 
-type QuickNoteWithBlocks = Prisma.QuickNoteGetPayload<{ include: typeof quickNoteInclude }>;
+type QuickNoteWithDetail = Prisma.QuickNoteGetPayload<{ include: typeof quickNoteInclude }>;
 
-function toLiteratureMemoRef(memo: QuickNoteWithBlocks["literatureMemo"]): LiteratureMemoRef | null {
+function toLiteratureMemoRef(memo: QuickNoteWithDetail["literatureMemo"]): LiteratureMemoRef | null {
   if (!memo) return null;
   return { id: memo.id, zoteroKey: memo.zoteroKey, citation: memo.citation, url: memo.url, summary: memo.summary };
 }
 
-function toDetail(note: QuickNoteWithBlocks): QuickNoteDetail {
+function previewFrom(content: string): string {
+  const firstLine = content.split("\n").find((line) => line.trim().length > 0);
+  return firstLine?.trim().slice(0, 200) ?? "";
+}
+
+function toDetail(note: QuickNoteWithDetail): QuickNoteDetail {
   return {
     id: note.id,
     source: note.source,
     status: note.status,
-    blocks: note.blocks.map((b) => ({
-      id: b.id,
-      type: b.type,
-      content: b.content,
-      language: b.language,
-      caption: b.caption,
-    })),
+    content: note.content,
     literatureMemo: toLiteratureMemoRef(note.literatureMemo),
     encounteredAt: note.encounteredAt,
     createdAt: note.createdAt,
@@ -61,20 +57,19 @@ function toDetail(note: QuickNoteWithBlocks): QuickNoteDetail {
   };
 }
 
-function toSummary(note: QuickNoteWithBlocks): QuickNoteSummary {
-  const firstText = note.blocks.find((b) => b.content.trim().length > 0);
+function toSummary(note: QuickNoteWithDetail): QuickNoteSummary {
   return {
     id: note.id,
     source: note.source,
     encounteredAt: note.encounteredAt,
-    preview: firstText?.content.slice(0, 200) ?? "",
+    preview: previewFrom(note.content),
     hasLiterature: !!note.literatureMemo,
     literatureCitation: note.literatureMemo?.citation ?? null,
   };
 }
 
 /** Internal ownership gate — every mutation and detail read goes through this first. */
-export async function requireOwnedQuickNote(ownerSub: string, id: string): Promise<QuickNoteWithBlocks> {
+export async function requireOwnedQuickNote(ownerSub: string, id: string): Promise<QuickNoteWithDetail> {
   const note = await prisma.quickNote.findFirst({
     where: { id, ownerSub },
     include: quickNoteInclude,
@@ -109,28 +104,14 @@ export async function create(
   return toDetail(note);
 }
 
-export async function replaceBlocks(ownerSub: string, id: string, blocks: BlockInput[]): Promise<QuickNoteDetail> {
+export async function updateContent(ownerSub: string, id: string, content: string): Promise<QuickNoteDetail> {
   await requireOwnedQuickNote(ownerSub, id);
-
-  await prisma.$transaction([
-    prisma.quickNoteBlock.deleteMany({ where: { quickNoteId: id } }),
-    prisma.quickNote.update({
-      where: { id },
-      data: {
-        blocks: {
-          create: blocks.map((b, i) => ({
-            position: i,
-            type: b.type,
-            content: b.content,
-            language: b.language || null,
-            caption: b.caption || null,
-          })),
-        },
-      },
-    }),
-  ]);
-
-  return toDetail(await requireOwnedQuickNote(ownerSub, id));
+  const note = await prisma.quickNote.update({
+    where: { id },
+    data: { content },
+    include: quickNoteInclude,
+  });
+  return toDetail(note);
 }
 
 export async function setLiteratureMemo(
@@ -149,9 +130,9 @@ export async function setLiteratureMemo(
   return toDetail(await requireOwnedQuickNote(ownerSub, id));
 }
 
-/** Hard-deletes a still-active QuickNote (blocks cascade). Once a note is
- * ARCHIVED (promoted), it's part of a PromotionBatch's history and this
- * isn't exposed for it — deletion is only meant for the active timeline. */
+/** Hard-deletes a still-active QuickNote. Once a note is ARCHIVED
+ * (promoted), it's part of a PromotionBatch's history and this isn't
+ * exposed for it — deletion is only meant for the active timeline. */
 export async function remove(ownerSub: string, id: string): Promise<void> {
   await requireOwnedQuickNote(ownerSub, id);
   await prisma.quickNote.delete({ where: { id } });
@@ -169,23 +150,20 @@ export async function archiveMany(
   });
 }
 
-/** Full-text-ish search across a quick note's block contents, scoped to the owner, active notes only. */
+/** Full-text-ish search across a quick note's content, scoped to the owner, active notes only. */
 export async function search(ownerSub: string, query: string, limit = 20): Promise<QuickNoteSummary[]> {
   const q = query.trim();
   if (!q) return [];
 
   const rows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT DISTINCT qn.id,
-      GREATEST(
-        MAX(COALESCE(similarity(qb.content, ${q}), 0)),
-        CASE WHEN bool_or(qb.content ILIKE ${"%" + q + "%"}) THEN 0.9 ELSE 0 END
-      ) AS rank
+    SELECT qn.id
     FROM quick_note qn
-    JOIN quick_note_block qb ON qb.quick_note_id = qn.id
     WHERE qn.owner_sub = ${ownerSub} AND qn.status = 'ACTIVE'
-      AND (qb.content % ${q} OR qb.content ILIKE ${"%" + q + "%"})
-    GROUP BY qn.id
-    ORDER BY rank DESC
+      AND (qn.content % ${q} OR qn.content ILIKE ${"%" + q + "%"})
+    ORDER BY GREATEST(
+      similarity(qn.content, ${q}),
+      CASE WHEN qn.content ILIKE ${"%" + q + "%"} THEN 0.9 ELSE 0 END
+    ) DESC
     LIMIT ${limit}
   `;
   if (rows.length === 0) return [];

@@ -208,7 +208,6 @@ export async function getDetail(ownerSub: string, id: string): Promise<Literatur
     where: { id, ownerSub },
     include: {
       quickNotes: {
-        include: { blocks: { orderBy: { position: "asc" }, take: 1 } },
         orderBy: { encounteredAt: "desc" },
       },
       permanentNoteLinks: {
@@ -230,7 +229,7 @@ export async function getDetail(ownerSub: string, id: string): Promise<Literatur
     updatedAt: memo.updatedAt,
     quickNotes: memo.quickNotes.map((n) => ({
       id: n.id,
-      preview: n.blocks[0]?.content.slice(0, 120) ?? "",
+      preview: (n.content.split("\n").find((line) => line.trim().length > 0) ?? "").trim().slice(0, 120),
     })),
     permanentNotes: permanentNotes.map((n) => ({ id: n.id, title: n.title })),
   };

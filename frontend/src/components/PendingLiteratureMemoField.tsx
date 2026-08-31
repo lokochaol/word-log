@@ -20,7 +20,7 @@ function urlOf(selection: LiteratureSelection): string | null {
  * (LiteratureMemoPicker) as the /scratch/[id] detail page's
  * LiteratureMemoField, but there's no note id yet to persist a link
  * against, so this just holds the picked LiteratureSelection as plain local
- * state. PendingQuickNoteCard passes it to createQuickNoteWithBlocksAction,
+ * state. PendingQuickNoteCard passes it to createQuickNoteWithContentAction,
  * which resolves it (dedup included, same as the detail page's
  * setLiteratureMemoAction) at the moment the note itself is created. */
 export function PendingLiteratureMemoField({

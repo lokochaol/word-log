@@ -1,4 +1,3 @@
-import type { BlockInput } from "@/lib/blocks";
 import type { LiteratureSelection } from "@/lib/literatureMemos";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
@@ -17,7 +16,7 @@ export interface DraftLink {
 
 export interface PermanentNoteDraft {
   title: string;
-  blocks: BlockInput[];
+  content: string;
   links: DraftLink[];
   /** Resolved via computeInsertRankAction / insertRank before submission — null means "not yet chosen". */
   orderKey: string | null;
@@ -52,7 +51,7 @@ export function validateDraft(draft: PermanentNoteDraft, opts: ValidateDraftOpti
   const dict = getDictionary(opts.locale ?? "ja").validation;
   const problems: string[] = [];
   if (!draft.title.trim()) problems.push(dict.titleRequired);
-  if (draft.blocks.filter((b) => b.content.trim()).length === 0) problems.push(dict.contentRequired);
+  if (!draft.content.trim()) problems.push(dict.contentRequired);
   if (opts.hasExistingNotes && draft.links.length === 0) problems.push(dict.linkRequired);
   if (draft.links.some((l) => !l.relationLabel.trim())) problems.push(dict.linkRelationRequired);
   if (draft.orderKey === null) problems.push(dict.positionRequired);

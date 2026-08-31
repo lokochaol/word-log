@@ -159,10 +159,6 @@ export function ScratchTimeline({
                 dotClassName: "bg-accent animate-pulse-dot",
                 card: (
                   <PendingQuickNoteCard
-                    onSynced={(note) => {
-                      setNotes((prev) => [...prev, note]);
-                      setPendingIds((prev) => prev.filter((id) => id !== localId));
-                    }}
                     onDiscard={() => setPendingIds((prev) => prev.filter((id) => id !== localId))}
                   />
                 ),

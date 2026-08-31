@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db";
 import { Prisma, LinkTargetType } from "@/generated/prisma/client";
 import { NotFoundError } from "@/lib/errors";
 import { midpointRank } from "@/lib/rank";
-import type { Block, BlockType } from "@/lib/blocks";
 import * as literatureMemos from "@/lib/literatureMemos";
 import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
 
@@ -31,7 +30,7 @@ export interface PermanentNoteDetail {
   id: string;
   title: string;
   orderKey: string;
-  blocks: Block[];
+  content: string;
   outboundLinks: LinkView[];
   inboundLinks: LinkView[];
   indexEntries: IndexEntryRefView[];
@@ -41,7 +40,6 @@ export interface PermanentNoteDetail {
 }
 
 const detailInclude = {
-  blocks: { orderBy: { position: "asc" } },
   outboundLinks: { include: { targetNote: true, targetIndexEntry: true } },
   inboundLinks: { include: { sourceNote: true } },
   indexEntries: true,
@@ -55,13 +53,7 @@ function toDetail(note: PermanentNoteWithDetail): PermanentNoteDetail {
     id: note.id,
     title: note.title,
     orderKey: note.orderKey,
-    blocks: note.blocks.map((b) => ({
-      id: b.id,
-      type: b.type as BlockType,
-      content: b.content,
-      language: b.language,
-      caption: b.caption,
-    })),
+    content: note.content,
     outboundLinks: note.outboundLinks.map((l) => ({
       id: l.id,
       relationLabel: l.relationLabel,
@@ -205,7 +197,7 @@ export interface PermanentNoteSearchResult {
   title: string;
 }
 
-/** Full-text-ish search across a permanent note's title and block contents, scoped to the owner. */
+/** Full-text-ish search across a permanent note's title and content, scoped to the owner. */
 export async function search(ownerSub: string, query: string, limit = 20): Promise<PermanentNoteSearchResult[]> {
   const q = query.trim();
   if (!q) return [];
@@ -217,10 +209,8 @@ export async function search(ownerSub: string, query: string, limit = 20): Promi
       AND (
         pn.title % ${q}
         OR pn.title ILIKE ${"%" + q + "%"}
-        OR EXISTS (
-          SELECT 1 FROM permanent_note_block pb
-          WHERE pb.permanent_note_id = pn.id AND (pb.content % ${q} OR pb.content ILIKE ${"%" + q + "%"})
-        )
+        OR pn.content % ${q}
+        OR pn.content ILIKE ${"%" + q + "%"}
       )
     ORDER BY GREATEST(
       similarity(pn.title, ${q}),

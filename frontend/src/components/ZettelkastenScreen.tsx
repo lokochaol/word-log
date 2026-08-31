@@ -6,7 +6,7 @@ import Link from "next/link";
 import { PileDrill, type GapSelection } from "@/components/PileDrill";
 import { PromotionEditor, type EditableDraft } from "@/components/PromotionEditor";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { MermaidPreview } from "@/components/MermaidPreview";
+import { EmbeddedContentPreview } from "@/components/EmbeddedContentPreview";
 import { PermanentNoteLiteratureSection } from "@/components/PermanentNoteLiteratureSection";
 import { LiteratureMemoPane } from "@/components/LiteratureMemoPane";
 import { QuickNoteInlineTimeline } from "@/components/QuickNoteInlineTimeline";
@@ -14,7 +14,7 @@ import { LoadingBlock } from "@/components/LoadingSpinner";
 import { navigateWithViewTransition } from "@/lib/viewTransition";
 import type { GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
-import type { QuickNoteSummary, Block } from "@/lib/quickNotes";
+import type { QuickNoteSummary } from "@/lib/quickNotes";
 import {
   computeInsertRankAction,
   createIndexEntryAction,
@@ -96,9 +96,9 @@ export function ZettelkastenScreen({
     );
   }
 
-  const loadBlocks = useCallback(async (id: string): Promise<Block[]> => {
+  const loadContent = useCallback(async (id: string): Promise<string> => {
     const detail = await getPermanentNoteDetailAction(id);
-    return detail.blocks;
+    return detail.content;
   }, []);
 
   function toggleQuickNoteSelection(id: string) {
@@ -133,7 +133,7 @@ export function ZettelkastenScreen({
       {
         clientId: crypto.randomUUID(),
         title: "",
-        blocks: [],
+        content: "",
         links: [],
         gap: hasExistingNotes ? null : { beforeId: null, afterId: null },
         orderKey: hasExistingNotes ? null : midpointRank(null, null),
@@ -149,7 +149,7 @@ export function ZettelkastenScreen({
       quickNoteIds: [...selectedQuickNoteIds],
       drafts: drafts.map((d) => ({
         title: d.title,
-        blocks: d.blocks,
+        content: d.content,
         links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
         orderKey: d.orderKey,
         literatureSelections: d.literatureSelections,
@@ -280,7 +280,7 @@ export function ZettelkastenScreen({
                   onOpenNote={(id) => setOpenNoteId(id)}
                   onSelectGap={handleSelectGap}
                   selectedGap={activeDraft?.gap ?? null}
-                  loadBlocks={loadBlocks}
+                  loadContent={loadContent}
                 />
               </div>
             ) : (
@@ -456,21 +456,7 @@ function NoteDetailOverlay({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              {detail.blocks.map((b) => (
-                <div key={b.id} className="rounded-lg border border-line bg-surface-alt p-3">
-                  {b.type === "TEXT" && <p className="text-sm whitespace-pre-wrap text-ink">{b.content}</p>}
-                  {b.type === "CODE" && (
-                    <pre className="overflow-x-auto font-mono text-xs text-ink">{b.content}</pre>
-                  )}
-                  {b.type === "MERMAID" && <MermaidPreview source={b.content} />}
-                  {b.type === "IMAGE" && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.content} alt={b.caption ?? ""} className="h-20 w-20 rounded object-cover" />
-                  )}
-                </div>
-              ))}
-            </div>
+            <EmbeddedContentPreview content={detail.content} />
 
             <div className="mt-4 border-t border-line pt-3">
               <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">

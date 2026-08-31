@@ -59,17 +59,10 @@ export interface Dictionary {
     confirmLabel: string;
     cancelLabel: string;
   };
-  blocksEditor: {
-    addBlock: string;
-    editButton: string;
-    typeLabels: { TEXT: string; CODE: string; MERMAID: string; IMAGE: string };
-    addTypeButton: { TEXT: string; CODE: string; MERMAID: string; IMAGE: string };
-    textPlaceholder: string;
-    codeLanguagePlaceholder: string;
-    codeContentPlaceholder: string;
-    mermaidPlaceholder: string;
-    imageUrlPlaceholder: string;
-    imageCaptionPlaceholder: string;
+  noteEditor: {
+    placeholder: string;
+    savingLabel: string;
+    savedLabel: string;
   };
   quickNoteActionMenu: {
     actionsAriaLabel: string;
@@ -127,7 +120,6 @@ export interface Dictionary {
     deleteConfirmTitle: string;
     deleteConfirmWarning: string;
     pendingDraftLabel: string;
-    pendingSaveLabel: string;
     loadingLabel: string;
     sourceVoice: string;
     sourceScratch: string;
@@ -215,7 +207,6 @@ export interface Dictionary {
     titleField: string;
     titlePlaceholder: string;
     contentField: string;
-    contentEmptyLabel: string;
     literatureField: string;
     positionField: string;
     positionAutoLabel: string;

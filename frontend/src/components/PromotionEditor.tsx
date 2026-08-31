@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BlocksEditor } from "@/components/BlocksEditor";
+import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { LiteratureMemoDraftField, type DraftLiteratureSelection } from "@/components/LiteratureMemoDraftField";
 import { Spinner } from "@/components/LoadingSpinner";
-import type { BlockInput } from "@/lib/blocks";
 import type { GlobalOrderEntry } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
 import { validateDraft, type PermanentNoteDraft } from "@/lib/promotionValidation";
@@ -21,7 +20,7 @@ export interface EditableLink {
 export interface EditableDraft {
   clientId: string;
   title: string;
-  blocks: BlockInput[];
+  content: string;
   links: EditableLink[];
   gap: { beforeId: string | null; afterId: string | null } | null;
   orderKey: string | null;
@@ -31,7 +30,7 @@ export interface EditableDraft {
 function toDraftForValidation(d: EditableDraft): PermanentNoteDraft {
   return {
     title: d.title,
-    blocks: d.blocks,
+    content: d.content,
     links: d.links.map((l) => ({ relationLabel: l.relationLabel, target: l.target })),
     orderKey: d.orderKey,
     literatureSelections: d.literatureSelections,
@@ -87,7 +86,7 @@ export function PromotionEditor({
       {
         clientId: crypto.randomUUID(),
         title: "",
-        blocks: [],
+        content: "",
         links: [],
         gap: hasExistingNotes ? null : { beforeId: null, afterId: null },
         orderKey: hasExistingNotes ? null : midpointRank(null, null),
@@ -221,18 +220,7 @@ function DraftCard({
         <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
           {t.promotionEditor.contentField}
         </label>
-        <BlocksEditor
-          blocks={draft.blocks.map((b, i) => ({
-            id: `draft-${i}`,
-            type: b.type,
-            content: b.content,
-            language: b.language ?? null,
-            caption: b.caption ?? null,
-          }))}
-          onSave={(blocks) => onChange({ blocks })}
-          emptyLabel={t.promotionEditor.contentEmptyLabel}
-          startInEditMode={draft.blocks.length === 0}
-        />
+        <MarkdownNoteEditor content={draft.content} onSave={(content) => onChange({ content })} />
       </div>
 
       <div className="mt-2.5">

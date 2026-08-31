@@ -3,9 +3,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { resolveDrillPath, type Breadcrumb } from "@/lib/pile";
 import { NoteTimeline } from "@/components/NoteTimeline";
-import { MermaidPreview } from "@/components/MermaidPreview";
+import { EmbeddedContentPreview } from "@/components/EmbeddedContentPreview";
 import { Spinner } from "@/components/LoadingSpinner";
-import type { Block } from "@/lib/quickNotes";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import type { Dictionary } from "@/lib/i18n/types";
 
@@ -35,7 +34,7 @@ export function PileDrill({
   onOpenNote,
   onSelectGap,
   selectedGap = null,
-  loadBlocks,
+  loadContent,
   emptyLabel,
 }: {
   items: PileDrillItem[];
@@ -46,7 +45,7 @@ export function PileDrill({
   onOpenNote?: (id: string) => void;
   onSelectGap?: (gap: GapSelection) => void;
   selectedGap?: GapSelection | null;
-  loadBlocks: (id: string) => Promise<Block[]>;
+  loadContent: (id: string) => Promise<string>;
   emptyLabel?: string;
 }) {
   const { t } = useI18n();
@@ -61,18 +60,18 @@ export function PileDrill({
     [items, drillPath, groupSize, drillLabels],
   );
 
-  const [blockCache, setBlockCache] = useState<Map<string, Block[]>>(new Map());
+  const [contentCache, setContentCache] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (!result.isFlat || !result.flatItems) return;
-    const missing = result.flatItems.filter((it) => !blockCache.has(it.id));
+    const missing = result.flatItems.filter((it) => !contentCache.has(it.id));
     if (missing.length === 0) return;
     let cancelled = false;
-    Promise.all(missing.map(async (it) => [it.id, await loadBlocks(it.id)] as const)).then((pairs) => {
+    Promise.all(missing.map(async (it) => [it.id, await loadContent(it.id)] as const)).then((pairs) => {
       if (cancelled) return;
-      setBlockCache((prev) => {
+      setContentCache((prev) => {
         const next = new Map(prev);
-        for (const [id, blocks] of pairs) next.set(id, blocks);
+        for (const [id, content] of pairs) next.set(id, content);
         return next;
       });
     });
@@ -80,7 +79,7 @@ export function PileDrill({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result.isFlat, result.flatItems, loadBlocks]);
+  }, [result.isFlat, result.flatItems, loadContent]);
 
   if (items.length === 0) {
     return <p className="py-16 text-center text-sm text-ink-soft">{resolvedEmptyLabel}</p>;
@@ -98,7 +97,7 @@ export function PileDrill({
           onOpenNote={onOpenNote}
           onSelectGap={onSelectGap}
           selectedGap={selectedGap}
-          blockCache={blockCache}
+          contentCache={contentCache}
           t={t}
         />
       ) : (
@@ -242,7 +241,7 @@ function FlatView({
   onOpenNote,
   onSelectGap,
   selectedGap,
-  blockCache,
+  contentCache,
   t,
 }: {
   flatItems: PileDrillItem[];
@@ -251,7 +250,7 @@ function FlatView({
   onOpenNote?: (id: string) => void;
   onSelectGap?: (gap: GapSelection) => void;
   selectedGap: GapSelection | null;
-  blockCache: Map<string, Block[]>;
+  contentCache: Map<string, string>;
   t: Dictionary;
 }) {
   const globalStart = fullOrder.findIndex((it) => it.id === flatItems[0]?.id);
@@ -280,7 +279,7 @@ function FlatView({
           mode === "browse" ? "cursor-pointer transition-colors hover:border-accent/60" : ""
         }`}
       >
-        <NoteBlocks blocks={blockCache.get(item.id)} />
+        <NoteContent content={contentCache.get(item.id)} />
       </div>
     ),
   }));
@@ -305,7 +304,7 @@ function FlatView({
           <div key={item.id} className="flex w-full flex-col items-center">
             <div className="w-full max-w-[420px] rounded-lg border border-line bg-surface-alt p-4">
               <p className="mb-2 font-mono text-[9.5px] tracking-wider text-accent">{item.title}</p>
-              <NoteBlocks blocks={blockCache.get(item.id)} />
+              <NoteContent content={contentCache.get(item.id)} />
             </div>
             <GapSlot
               before={item}
@@ -321,25 +320,9 @@ function FlatView({
   );
 }
 
-function NoteBlocks({ blocks }: { blocks: Block[] | undefined }) {
-  if (!blocks) {
+function NoteContent({ content }: { content: string | undefined }) {
+  if (content === undefined) {
     return <Spinner size="xs" />;
   }
-  return (
-    <div className="flex flex-col gap-2">
-      {blocks.map((b) => (
-        <div key={b.id} className="text-xs leading-relaxed text-ink">
-          {b.type === "TEXT" && <p className="whitespace-pre-wrap">{b.content}</p>}
-          {b.type === "CODE" && (
-            <pre className="overflow-x-auto rounded bg-surface p-2 font-mono text-[11px]">{b.content}</pre>
-          )}
-          {b.type === "MERMAID" && <MermaidPreview source={b.content} />}
-          {b.type === "IMAGE" && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={b.content} alt={b.caption ?? ""} className="h-16 w-16 rounded object-cover" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
+  return <EmbeddedContentPreview content={content} />;
 }

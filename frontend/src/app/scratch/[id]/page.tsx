@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import * as quickNotes from "@/lib/quickNotes";
 import { requireOwnerSub } from "@/lib/session";
 import { NotFoundError } from "@/lib/errors";
-import { QuickNoteBlocksSection } from "@/components/QuickNoteBlocksSection";
+import { QuickNoteContentSection } from "@/components/QuickNoteContentSection";
 import { QuickNoteLiteratureSection } from "@/components/QuickNoteLiteratureSection";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary, localeTag } from "@/lib/i18n/dictionary";
@@ -35,7 +35,7 @@ export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
-      <div className="flex w-full max-w-[720px] flex-col gap-8">
+      <div className="flex w-full max-w-[860px] flex-col gap-8">
         <Link
           href="/scratch"
           className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
@@ -59,7 +59,7 @@ export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id
           <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
             <span className="text-accent">{"//"}</span> {dict.scratch.contentHeading}
           </h2>
-          <QuickNoteBlocksSection noteId={note.id} blocks={note.blocks} />
+          <QuickNoteContentSection noteId={note.id} content={note.content} />
         </section>
 
         <section className="flex flex-col gap-3">

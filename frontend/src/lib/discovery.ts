@@ -321,7 +321,7 @@ export async function findCandidatesForNote(ownerSub: string, noteText: string):
  * candidates stored. */
 export async function runForQuickNote(ownerSub: string, quickNoteId: string): Promise<number> {
   const note = await quickNotes.getDetail(ownerSub, quickNoteId);
-  const text = note.blocks.map((b) => b.content).join("\n\n").trim();
+  const text = note.content.trim();
 
   const findings = text ? await findCandidatesForNote(ownerSub, text) : [];
 

@@ -1,94 +1,81 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useOffline } from "next/offline";
-import { BlocksEditor } from "@/components/BlocksEditor";
+import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { PendingLiteratureMemoField } from "@/components/PendingLiteratureMemoField";
-import { createQuickNoteWithBlocksAction } from "@/app/scratch/actions";
-import type { Block, BlockInput, QuickNoteSummary } from "@/lib/quickNotes";
+import {
+  createQuickNoteWithContentAction,
+  updateQuickNoteContentAction,
+  deleteQuickNoteAction,
+  setLiteratureMemoAction,
+} from "@/app/scratch/actions";
 import type { LiteratureSelection } from "@/lib/literatureMemos";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 
-function previewFrom(blocks: Block[]): string {
-  const first = blocks.find((b) => b.content.trim().length > 0);
-  return first?.content.slice(0, 200) ?? "";
-}
-
 /**
- * One not-yet-synced 走り書き, rendered as its own row in the timeline right
- * alongside already-synced notes. Each card owns an independent save
- * transition, so starting a second (or third) draft never has to wait for an
- * earlier one's save to finish — offline or just slow, it's the same await
- * either way, which is what lets this component stay ignorant of network
- * state beyond the label it shows. BlocksEditor only disables its own Save
- * button while `saving` is true, not the textareas, so the content stays
- * editable for as long as the note remains local.
- *
- * Also lets a 文献メモ be linked before the note ever exists server-side
- * (PendingLiteratureMemoField), matching what the /scratch/[id] detail
- * page's editor offers — the picked LiteratureSelection just rides along
- * with the blocks into createQuickNoteWithBlocksAction.
+ * One not-yet-synced 走り書き, rendered inline in the timeline. The very
+ * first autosave has to *create* the note (there's no id yet); every one
+ * after that just replaces its content. This card deliberately never
+ * "graduates" into a normal collapsed timeline row on its own once that
+ * first save lands: doing so mid-typing (autosave fires on every pause, not
+ * just when you're done) would yank the open editor out from under whoever's
+ * still writing. It just stays open until the owner navigates away (a real
+ * page load then shows it correctly as a synced note, same as any other).
  */
-export function PendingQuickNoteCard({
-  onSynced,
-  onDiscard,
-}: {
-  onSynced: (note: QuickNoteSummary) => void;
-  onDiscard: () => void;
-}) {
+export function PendingQuickNoteCard({ onDiscard }: { onDiscard: () => void }) {
   const { t } = useI18n();
   const isOffline = useOffline();
-  const [saving, startTransition] = useTransition();
-  const [literatureSelection, setLiteratureSelection] = useState<LiteratureSelection | null>(null);
+  const noteIdRef = useRef<string | null>(null);
+  const [literatureSelection, setLiteratureSelectionState] = useState<LiteratureSelection | null>(null);
+  const [discarding, setDiscarding] = useState(false);
 
-  function handleSave(blocks: BlockInput[]): Promise<void> {
-    // BlocksEditor awaits this before it exits edit mode (`await onSave(...);
-    // setEditing(false)`) — startTransition itself doesn't return a promise
-    // that waits for its callback, so without this wrapper BlocksEditor would
-    // flip out of edit mode the instant this function returns, well before
-    // createQuickNoteWithBlocksAction actually resolves, and fall back to
-    // its `blocks={[]}` empty-state prompt for the whole real wait.
-    return new Promise<void>((resolve, reject) => {
-      startTransition(async () => {
-        try {
-          const note = await createQuickNoteWithBlocksAction(blocks, literatureSelection);
-          onSynced({
-            id: note.id,
-            source: note.source,
-            encounteredAt: note.encounteredAt,
-            preview: previewFrom(note.blocks),
-            hasLiterature: !!note.literatureMemo,
-            literatureCitation: note.literatureMemo?.citation ?? null,
-          });
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
+  async function handleSave(content: string) {
+    if (!noteIdRef.current) {
+      const note = await createQuickNoteWithContentAction(content, literatureSelection);
+      noteIdRef.current = note.id;
+    } else {
+      await updateQuickNoteContentAction(noteIdRef.current, content);
+    }
+  }
+
+  async function handleLiteratureChange(selection: LiteratureSelection | null) {
+    setLiteratureSelectionState(selection);
+    if (noteIdRef.current) {
+      await setLiteratureMemoAction(noteIdRef.current, selection ?? { type: "none" });
+    }
+  }
+
+  async function handleDiscard() {
+    if (noteIdRef.current) {
+      setDiscarding(true);
+      try {
+        await deleteQuickNoteAction(noteIdRef.current);
+      } finally {
+        setDiscarding(false);
+      }
+    }
+    onDiscard();
   }
 
   return (
-    <div className="relative w-full max-w-[420px]">
-      <div className="rounded-lg border border-dashed border-accent/60 bg-surface-alt p-4">
-        <p className="mb-3 flex items-center gap-1.5 font-mono text-[10px] text-accent">
-          <span aria-hidden="true" className="animate-pulse-dot h-1.5 w-1.5 rounded-full bg-accent" />
-          {saving ? (isOffline ? t.common.savingOffline : t.scratch.pendingSaveLabel) : t.scratch.pendingDraftLabel}
-        </p>
-        <BlocksEditor
-          blocks={[]}
-          startInEditMode
-          onSave={handleSave}
-          onCancel={onDiscard}
-          saving={saving}
-          savingLabel={isOffline ? t.common.savingOffline : undefined}
-          emptyLabel={t.blocksEditor.addBlock}
-        />
-        <div className="mt-3 border-t border-line pt-3">
-          <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
-            <span className="text-accent">{"//"}</span> {t.scratch.literatureHeading}
-          </h3>
-          <PendingLiteratureMemoField selection={literatureSelection} onChange={setLiteratureSelection} />
+    <div className="w-full max-w-[420px]">
+      <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface-alt p-4">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[9px] tracking-widest text-ink-faint uppercase">
+            {t.scratch.pendingDraftLabel}
+          </span>
+          <button
+            onClick={handleDiscard}
+            disabled={discarding}
+            className="font-mono text-[10px] text-ink-soft transition-colors hover:text-accent disabled:opacity-50"
+          >
+            {t.common.delete}
+          </button>
+        </div>
+        <MarkdownNoteEditor content="" onSave={handleSave} savingLabelOverride={isOffline ? t.common.savingOffline : undefined} />
+        <div className="border-t border-line pt-3">
+          <PendingLiteratureMemoField selection={literatureSelection} onChange={handleLiteratureChange} />
         </div>
       </div>
     </div>

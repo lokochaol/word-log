@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/LocaleProvider";
 /** Shown whenever the browser is offline — requires next.config.ts's
  * experimental.useOffline (without it useOffline() always returns false).
  * Purely informational: it doesn't change what's usable — walking-書き can
- * already be added offline (see PendingQuickNoteCard); this just makes that
+ * already be added offline (see NewQuickNoteOverlay); this just makes that
  * state visible instead of silent. */
 export function OfflineBanner() {
   const { t } = useI18n();

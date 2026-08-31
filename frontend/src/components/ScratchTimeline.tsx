@@ -5,7 +5,7 @@ import { useState, useTransition, type CSSProperties, type ReactNode } from "rea
 import { NoteTimeline, type TimelineRow } from "@/components/NoteTimeline";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { PendingQuickNoteCard } from "@/components/PendingQuickNoteCard";
+import { NewQuickNoteOverlay } from "@/components/NewQuickNoteOverlay";
 import { AddQuickNoteTrigger } from "@/components/AddQuickNoteTrigger";
 import { DiscoveryShelf } from "@/components/DiscoveryShelf";
 import { DiscoveryRail } from "@/components/DiscoveryRail";
@@ -30,24 +30,23 @@ function formatDate(date: Date, locale: Locale) {
 const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transparent 100%)";
 
 /** /scratch's timeline — extracted to a client component so each card can
- * carry a corner 編集/削除 menu (編集 navigates to the full detail page,
- * 削除 removes it in place) alongside the "+" add flow (AddQuickNoteTrigger +
- * PendingQuickNoteCard, which compose and save a new note without leaving
- * this screen — works offline too, see those components). The screen itself
- * doesn't scroll — only the list does, anchored to the bottom (latest note) by default, matching a
- * chat-style history view. The add button lives inside the scrollable area,
- * after the last note, so it scrolls out of view when scrolling up into
- * history — it isn't a pinned footer here (unlike QuickNoteInlineTimeline's
- * ③ pane).
+ * carry a corner 編集/削除 menu (both navigate to the full detail page)
+ * alongside the "+" add flow. Editing always happens on "the detail screen" —
+ * for an already-synced note that's a real navigation to /scratch/[id]; for
+ * a brand-new one, NewQuickNoteOverlay is a full-screen overlay laid out
+ * like that same detail page rather than an inline card sitting in this
+ * list, so composing never happens in-place among the other notes. It's
+ * still a plain client component (no real navigation), specifically so it
+ * renders instantly and accepts typing offline — see NewQuickNoteOverlay's
+ * own doc comment. The screen itself doesn't scroll — only the list does,
+ * anchored to the bottom (latest note) by default, matching a chat-style
+ * history view. The add button lives inside the scrollable area, after the
+ * last note, so it scrolls out of view when scrolling up into history — it
+ * isn't a pinned footer here (unlike QuickNoteInlineTimeline's ③ pane).
  *
  * `header` (brand/nav/search) is rendered inside the same scroll container,
  * pinned via `sticky` with a bottom gradient mask — so notes scrolling up
- * don't get clipped by a hard edge, they fade out under the header instead.
- *
- * Not-yet-synced drafts (`pendingIds`) render as extra rows in the same
- * NoteTimeline list, right after the synced notes — not as a separate
- * composer box below it — so multiple can be open and saving at once, each
- * independently, and they read exactly like a normal note while local. */
+ * don't get clipped by a hard edge, they fade out under the header instead. */
 export function ScratchTimeline({
   initialNotes,
   initialDiscovery,
@@ -63,8 +62,8 @@ export function ScratchTimeline({
   const [discoveryByNote, setDiscoveryByNote] = useState(initialDiscovery);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
-  const [pendingIds, setPendingIds] = useState<string[]>([]);
-  const scrollRef = useAutoScrollToBottom<HTMLDivElement>(notes.length + pendingIds.length);
+  const [composingNew, setComposingNew] = useState(false);
+  const scrollRef = useAutoScrollToBottom<HTMLDivElement>(notes.length);
 
   function confirmDelete() {
     if (!deleteTargetId) return;
@@ -78,6 +77,12 @@ export function ScratchTimeline({
 
   return (
     <div className="min-h-0 flex-1" style={{ viewTransitionName: "note-timeline" } as CSSProperties}>
+      {composingNew && (
+        <NewQuickNoteOverlay
+          onClose={() => setComposingNew(false)}
+          onCreated={(note) => setNotes((prev) => [...prev, note])}
+        />
+      )}
       <div ref={scrollRef} className="scrollbar-hidden h-full overflow-y-auto px-4">
         <div
           className="sticky top-0 z-20 -mx-4 flex flex-col gap-6 bg-bg px-4 pt-6 pb-8"
@@ -153,21 +158,10 @@ export function ScratchTimeline({
                 ),
               };
             }),
-            ...pendingIds.map(
-              (localId): TimelineRow => ({
-                key: localId,
-                dotClassName: "bg-accent animate-pulse-dot",
-                card: (
-                  <PendingQuickNoteCard
-                    onDiscard={() => setPendingIds((prev) => prev.filter((id) => id !== localId))}
-                  />
-                ),
-              }),
-            ),
           ]}
         />
 
-        <AddQuickNoteTrigger onClick={() => setPendingIds((prev) => [...prev, crypto.randomUUID()])} />
+        {!composingNew && <AddQuickNoteTrigger onClick={() => setComposingNew(true)} />}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 
 /** The "+ 走り書き" ring/glow button. Purely a trigger — clicking it just
- * asks the caller to open another PendingQuickNoteCard; it carries no state
+ * asks the caller to open NewQuickNoteOverlay; it carries no state
  * of its own so it stays clickable while any number of drafts are still
  * saving. */
 export function AddQuickNoteTrigger({ onClick }: { onClick: () => void }) {

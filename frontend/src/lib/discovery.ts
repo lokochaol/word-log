@@ -542,7 +542,7 @@ export async function resolveLiteratureForCandidate(
 /** Creates a new QuickNote already linked to the candidate's (resolved)
  * literature memo, and lands it on the real /scratch/[id] editor — the
  * literature link needs that page's dedicated section, so unlike
- * PendingQuickNoteCard's inline compose-then-save flow, this one still
+ * NewQuickNoteOverlay's compose-then-save flow, this one still
  * creates first and navigates to edit. */
 export async function writeNoteFromCandidate(
   ownerSub: string,

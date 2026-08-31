@@ -25,7 +25,7 @@ export async function createQuickNoteAction(source: QuickNoteSource = "SCRATCH")
 }
 
 /** Creates a note and saves its content in one call — what
- * PendingQuickNoteCard uses so the whole "add a 走り書き" operation is a
+ * NewQuickNoteOverlay uses so the whole "add a 走り書き" operation is a
  * single Server Action. With experimental.useOffline (next.config.ts) that
  * single call is what sits pending and retries automatically once the
  * connection returns, rather than the composer needing to track a

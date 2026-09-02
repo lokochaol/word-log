@@ -160,8 +160,12 @@ export function MarkdownNoteEditor({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex justify-end">
-        {statusLabel && <span className="font-mono text-[9.5px] tracking-wide text-ink-faint">{statusLabel}</span>}
+      {/* Fixed height regardless of whether statusLabel is shown — otherwise
+          this row's height popping in/out on every save cycle (idle ->
+          saving -> saved -> idle) shifts everything below it, which reads as
+          the whole page jumping each time a save fires. */}
+      <div className="flex h-3.5 justify-end">
+        <span className="font-mono text-[9.5px] tracking-wide text-ink-faint">{statusLabel}</span>
       </div>
 
       {editing ? (

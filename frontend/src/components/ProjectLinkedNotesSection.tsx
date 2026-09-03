@@ -1,13 +1,26 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { QuickNoteDetailOverlay } from "@/components/QuickNoteDetailOverlay";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
 import type { LinkedPermanentNoteRef, LinkedQuickNoteRef } from "@/lib/projects";
+import type { QuickNoteDetail } from "@/lib/quickNotes";
+
+function previewFrom(content: string): string {
+  const firstLine = content.split("\n").find((line) => line.trim().length > 0);
+  return firstLine?.trim().slice(0, 200) ?? "";
+}
 
 /** "またdash-off, 永久保存版メモに保存されたプロジェクトに関連付けられたメモ
  * を一覧表示する" — every QuickNote/PermanentNote ever linked to this
- * project, both still-active and (for QuickNote) archived-by-project-close. */
+ * project, both still-active and (for QuickNote) archived-by-project-close.
+ * Opening a QuickNote shows it in QuickNoteDetailOverlay in place — never a
+ * real navigation to /scratch/[id] — the same pattern the Zettelkasten
+ * screen's own 走り書き list uses. */
 export function ProjectLinkedNotesSection({
-  quickNotes,
+  quickNotes: initialQuickNotes,
   permanentNotes,
   locale,
 }: {
@@ -16,7 +29,13 @@ export function ProjectLinkedNotesSection({
   locale: Locale;
 }) {
   const t = getDictionary(locale);
+  const [quickNotes, setQuickNotes] = useState(initialQuickNotes);
+  const [openQuickNoteId, setOpenQuickNoteId] = useState<string | null>(null);
   const isEmpty = quickNotes.length === 0 && permanentNotes.length === 0;
+
+  function handleContentSaved(detail: QuickNoteDetail) {
+    setQuickNotes((prev) => prev.map((n) => (n.id === detail.id ? { ...n, preview: previewFrom(detail.content) } : n)));
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -29,14 +48,14 @@ export function ProjectLinkedNotesSection({
           </h3>
           <div className="flex flex-col gap-1.5">
             {quickNotes.map((note) => (
-              <Link
+              <button
                 key={note.id}
-                href={`/scratch/${note.id}`}
-                className="truncate rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink transition-colors hover:border-accent"
+                onClick={() => setOpenQuickNoteId(note.id)}
+                className="truncate rounded-lg border border-line bg-surface px-3 py-2 text-left text-xs text-ink transition-colors hover:border-accent"
               >
                 {note.preview || t.common.noContent}
                 {note.status === "ARCHIVED" && <span className="ml-2 text-ink-faint">{t.projects.archivedSuffix}</span>}
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -59,6 +78,14 @@ export function ProjectLinkedNotesSection({
             ))}
           </div>
         </div>
+      )}
+
+      {openQuickNoteId && (
+        <QuickNoteDetailOverlay
+          noteId={openQuickNoteId}
+          onClose={() => setOpenQuickNoteId(null)}
+          onContentSaved={handleContentSaved}
+        />
       )}
     </div>
   );

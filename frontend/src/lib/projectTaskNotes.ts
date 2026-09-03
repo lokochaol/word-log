@@ -165,10 +165,26 @@ export async function listTimelineMarks(
 
   const marks: ProjectTimelineMark[] = [];
   for (const p of activeProjects) {
-    const effectiveEnd = p.closedAt && p.closedAt < today ? p.closedAt : today;
+    // Whether this project overlaps the requested month AT ALL depends only
+    // on its own startedAt/closedAt vs. the month's calendar boundaries —
+    // never on "today". Comparing against "today" here (as an earlier
+    // version of this function did) made a project vanish from its own
+    // start month whenever its real startedAt timestamp read as even
+    // slightly later than "today" — which can happen even under a single
+    // consistent clock (e.g. a project created moments before this request
+    // resolves) and is exactly what caused the "empty timeline" bug.
+    if (p.startedAt > monthEnd) continue; // hasn't started yet as of this month
+    if (p.closedAt && p.closedAt < monthStart) continue; // already closed before this month
+
     const rangeStartDate = p.startedAt > monthStart ? p.startedAt : monthStart;
-    const rangeEndDate = effectiveEnd < monthEnd ? effectiveEnd : monthEnd;
-    if (rangeStartDate > rangeEndDate) continue; // not active at all during this month
+    let rangeEndDate = p.closedAt && p.closedAt < monthEnd ? p.closedAt : monthEnd;
+    // An open project's bar never extends past "today" — but clamp
+    // defensively (never below rangeStartDate) rather than dropping the
+    // row if "today" ends up earlier than the project's own start.
+    if (!p.closedAt && today < rangeEndDate) {
+      rangeEndDate = today < rangeStartDate ? rangeStartDate : today;
+    }
+
     marks.push({
       projectId: p.id,
       projectName: p.name,

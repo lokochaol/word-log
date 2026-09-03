@@ -109,25 +109,36 @@ export async function listAllProjectsTodayNotes(ownerSub: string, dateKey: strin
 export interface ProjectTimelineMark {
   projectId: string;
   projectName: string;
-  startedAt: Date;
-  closedAt: Date | null;
-  /** Every date (YYYY-MM-DD) this project has a task note on, for the tappable marks. */
+  /** This project's active span within the requested month, already clipped
+   * to [monthStart, monthEnd] and to [startedAt, today-or-closedAt] — the
+   * bar drawn for this row runs exactly from rangeStart to rangeEnd. */
+  rangeStart: string;
+  rangeEnd: string;
+  /** Every date (YYYY-MM-DD) this project has a task note on THIS MONTH, for
+   * the tappable marks — not the project's whole history, so this payload
+   * stays bounded no matter how long a project has been running. */
   noteDates: string[];
 }
 
 /** Backs Calendar's 横向きタイムライン view — one line per active project,
- * spanning startedAt to now (or to closedAt, for a project closed since the
- * last render — though a closed project is filtered out of listActive
- * entirely, so in practice this only ever returns still-open projects). */
-export async function listTimelineMarks(ownerSub: string): Promise<ProjectTimelineMark[]> {
+ * scoped to a single calendar month (1-indexed `month`). A project's bar
+ * always extends only up to today while it stays open (never further,
+ * never less — closing is the only thing that ever freezes it, see
+ * src/lib/projects.ts#close) and only ever within the requested month. */
+export async function listTimelineMarks(ownerSub: string, year: number, month: number): Promise<ProjectTimelineMark[]> {
   const activeProjects = await prisma.project.findMany({
     where: { ownerSub, status: "ACTIVE" },
     orderBy: [{ isDefault: "desc" }, { startedAt: "asc" }],
   });
   if (activeProjects.length === 0) return [];
 
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const monthEnd = new Date(Date.UTC(year, month, 0));
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
   const notes = await prisma.projectTaskNote.findMany({
-    where: { projectId: { in: activeProjects.map((p) => p.id) } },
+    where: { projectId: { in: activeProjects.map((p) => p.id) }, date: { gte: monthStart, lte: monthEnd } },
     select: { projectId: true, date: true },
   });
   const datesByProject = new Map<string, string[]>();
@@ -137,11 +148,19 @@ export async function listTimelineMarks(ownerSub: string): Promise<ProjectTimeli
     datesByProject.set(n.projectId, arr);
   }
 
-  return activeProjects.map((p) => ({
-    projectId: p.id,
-    projectName: p.name,
-    startedAt: p.startedAt,
-    closedAt: p.closedAt,
-    noteDates: (datesByProject.get(p.id) ?? []).sort(),
-  }));
+  const marks: ProjectTimelineMark[] = [];
+  for (const p of activeProjects) {
+    const effectiveEnd = p.closedAt && p.closedAt < today ? p.closedAt : today;
+    const rangeStartDate = p.startedAt > monthStart ? p.startedAt : monthStart;
+    const rangeEndDate = effectiveEnd < monthEnd ? effectiveEnd : monthEnd;
+    if (rangeStartDate > rangeEndDate) continue; // not active at all during this month
+    marks.push({
+      projectId: p.id,
+      projectName: p.name,
+      rangeStart: toDateKey(rangeStartDate),
+      rangeEnd: toDateKey(rangeEndDate),
+      noteDates: (datesByProject.get(p.id) ?? []).sort(),
+    });
+  }
+  return marks;
 }

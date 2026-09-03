@@ -349,6 +349,8 @@ export interface Dictionary {
     timelineTodayLabel: string;
     timelineNoNotes: string;
     timelineOpenDay: (date: string) => string;
+    timelinePrevMonth: string;
+    timelineNextMonth: string;
   };
   errors: {
     keywordRequired: string;

@@ -338,6 +338,8 @@ export const en: Dictionary = {
     timelineTodayLabel: "Today",
     timelineNoNotes: "No notes",
     timelineOpenDay: (date) => `Open notes for ${date}`,
+    timelinePrevMonth: "Previous month",
+    timelineNextMonth: "Next month",
   },
   errors: {
     keywordRequired: "Please enter a keyword",

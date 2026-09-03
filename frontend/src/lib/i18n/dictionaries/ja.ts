@@ -337,6 +337,8 @@ export const ja: Dictionary = {
     timelineTodayLabel: "今日",
     timelineNoNotes: "記録なし",
     timelineOpenDay: (date) => `${date}のメモを開く`,
+    timelinePrevMonth: "前の月",
+    timelineNextMonth: "次の月",
   },
   errors: {
     keywordRequired: "キーワードを入力してください",

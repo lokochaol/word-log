@@ -4,26 +4,31 @@ import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import type { ProjectTimelineMark } from "@/lib/projectTaskNotes";
 
-function daysBetween(a: string, b: string): number {
-  return Math.round((new Date(`${b}T00:00:00Z`).getTime() - new Date(`${a}T00:00:00Z`).getTime()) / (24 * 60 * 60 * 1000));
+function dayOfMonth(dateKey: string): number {
+  return Number(dateKey.slice(-2));
 }
 
-function dateKeyOf(date: Date): string {
-  return date.toISOString().slice(0, 10);
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
-/** ④横向きタイムライン — one horizontal line per active project, spanning
- * from its start date to today (the bar always extends to "now" while a
- * project stays open — it only ever freezes if the project is explicitly
- * closed via ProjectCloseButton, never from a goal deadline). Days with a
- * task note get a tappable mark that opens that day's note on the Project
- * detail page. */
+/** ④横向きタイムライン — one horizontal line per active project, scoped to a
+ * single calendar month: the track spans day 1 through the month's last
+ * day, and the accent segment marks the days the project was actually
+ * active (it only ever freezes at a project's explicit close, never a goal
+ * deadline — see ProjectCloseButton). Days with a task note get a tappable
+ * mark that opens that day's note on the Project detail page. */
 export function CalendarTimelineView({
   marks,
+  year,
+  month,
   todayKey,
   onOpenProjectDay,
 }: {
   marks: ProjectTimelineMark[];
+  /** The month this timeline is scoped to (1-indexed). */
+  year: number;
+  month: number;
   todayKey: string;
   /** When provided, tapping a day-mark (or a project's name) calls this
    * instead of navigating to /projects/[id]?date=... — used inline within
@@ -44,7 +49,9 @@ export function CalendarTimelineView({
     return <p className="py-16 text-center text-sm text-ink-soft">{t.calendar.timelineNoNotes}</p>;
   }
 
-  const maxSpan = Math.max(1, ...marks.map((m) => daysBetween(dateKeyOf(m.startedAt), todayKey)));
+  const totalDays = daysInMonth(year, month);
+  const isCurrentMonth = todayKey.slice(0, 7) === `${year}-${String(month).padStart(2, "0")}`;
+  const todayLeftPct = isCurrentMonth ? ((dayOfMonth(todayKey) - 0.5) / totalDays) * 100 : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,25 +59,25 @@ export function CalendarTimelineView({
         <span className="text-accent">{"//"}</span> {t.calendar.timelineHeading}
       </h2>
       {marks.map((mark) => {
-        const startKey = dateKeyOf(mark.startedAt);
-        const span = Math.max(1, daysBetween(startKey, todayKey));
-        const widthPct = (span / maxSpan) * 100;
+        const startDay = dayOfMonth(mark.rangeStart);
+        const endDay = dayOfMonth(mark.rangeEnd);
+        const barLeftPct = ((startDay - 1) / totalDays) * 100;
+        const barWidthPct = ((endDay - startDay + 1) / totalDays) * 100;
         return (
           <div key={mark.projectId} className="flex flex-col gap-1.5">
             <button
-              onClick={() => openDay(mark.projectId, todayKey)}
+              onClick={() => openDay(mark.projectId, mark.rangeEnd)}
               className="w-fit font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
             >
               {mark.projectName}
             </button>
             <div className="relative h-6 w-full rounded-full bg-surface-alt">
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-accent/25"
-                style={{ width: `${widthPct}%` }}
+                className="absolute inset-y-0 rounded-full bg-accent/25"
+                style={{ left: `${barLeftPct}%`, width: `${barWidthPct}%` }}
               />
               {mark.noteDates.map((dateKey) => {
-                const offset = daysBetween(startKey, dateKey);
-                const leftPct = span === 0 ? 0 : (offset / span) * widthPct;
+                const leftPct = ((dayOfMonth(dateKey) - 0.5) / totalDays) * 100;
                 return (
                   <button
                     key={dateKey}
@@ -81,11 +88,13 @@ export function CalendarTimelineView({
                   />
                 );
               })}
-              <div
-                title={t.calendar.timelineTodayLabel}
-                style={{ left: `${widthPct}%` }}
-                className="absolute top-[-4px] bottom-[-4px] w-px -translate-x-1/2 bg-ink-soft"
-              />
+              {todayLeftPct !== null && (
+                <div
+                  title={t.calendar.timelineTodayLabel}
+                  style={{ left: `${todayLeftPct}%` }}
+                  className="absolute top-[-4px] bottom-[-4px] w-px -translate-x-1/2 bg-ink-soft"
+                />
+              )}
             </div>
           </div>
         );

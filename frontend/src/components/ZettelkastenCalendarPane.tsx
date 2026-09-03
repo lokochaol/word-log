@@ -15,7 +15,7 @@ function todayKeyValue() {
 
 /** ①②③のツェッテルカステン本体の代わりに、ペイン部分にそのままカレンダー
  * （今日／タイムライン）を表示する — /calendar ページ自体と違い、ここでの
- * 表示切り替えはURLのクエリではなくローカル状態で行う（このペインは
+ * 表示切り替え・月送りはURLのクエリではなくローカル状態で行う（このペインは
  * ZettelkastenScreen上のインプレース表示なので、独立したルートではない）。 */
 export function ZettelkastenCalendarPane({
   onOpenProjectDay,
@@ -25,41 +25,78 @@ export function ZettelkastenCalendarPane({
   const { t, locale } = useI18n();
   const [view, setView] = useState<"today" | "timeline">("today");
   const [todayNotes, setTodayNotes] = useState<TodayProjectNote[] | null>(null);
-  const [timelineMarks, setTimelineMarks] = useState<ProjectTimelineMark[] | null>(null);
+
+  const todayKey = todayKeyValue();
+  const todayDate = new Date(`${todayKey}T00:00:00.000Z`);
+  const currentYear = todayDate.getUTCFullYear();
+  const currentMonth = todayDate.getUTCMonth() + 1;
+
+  const [viewedYear, setViewedYear] = useState(currentYear);
+  const [viewedMonth, setViewedMonth] = useState(currentMonth);
+  const monthKey = `${viewedYear}-${viewedMonth}`;
+  const [timelineData, setTimelineData] = useState<{ key: string; marks: ProjectTimelineMark[] } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     if (view === "today" && todayNotes === null) {
-      listTodayProjectNotesAction(todayKeyValue()).then((result) => {
+      listTodayProjectNotesAction(todayKey).then((result) => {
         if (!cancelled) setTodayNotes(result);
       });
     }
-    if (view === "timeline" && timelineMarks === null) {
-      listTimelineMarksAction().then((result) => {
-        if (!cancelled) setTimelineMarks(result);
+    if (view === "timeline" && timelineData?.key !== monthKey) {
+      listTimelineMarksAction(viewedYear, viewedMonth).then((result) => {
+        if (!cancelled) setTimelineData({ key: monthKey, marks: result });
       });
     }
     return () => {
       cancelled = true;
     };
-  }, [view, todayNotes, timelineMarks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, viewedYear, viewedMonth, monthKey]);
 
-  const todayKey = todayKeyValue();
-  const today = new Date(`${todayKey}T00:00:00.000Z`);
-  const todayLabel = today.toLocaleDateString(localeTag(locale), {
+  function shiftMonth(delta: number) {
+    const base = new Date(Date.UTC(viewedYear, viewedMonth - 1 + delta, 1));
+    setViewedYear(base.getUTCFullYear());
+    setViewedMonth(base.getUTCMonth() + 1);
+  }
+
+  const todayLabel = todayDate.toLocaleDateString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  // The timeline currently spans a project's whole lifetime, but that won't
-  // hold once it's paginated by month — so its title only ever commits to
-  // month-level granularity, never a specific day.
-  const monthLabel = today.toLocaleDateString(localeTag(locale), { year: "numeric", month: "2-digit" });
+  const monthLabel = new Date(Date.UTC(viewedYear, viewedMonth - 1, 1)).toLocaleDateString(localeTag(locale), {
+    year: "numeric",
+    month: "2-digit",
+  });
+  const isCurrentViewedMonth = viewedYear === currentYear && viewedMonth === currentMonth;
+  const timelineLoading = view === "timeline" && timelineData?.key !== monthKey;
 
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-extrabold tracking-tight text-ink">{view === "today" ? todayLabel : monthLabel}</h1>
+        {view === "today" ? (
+          <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => shiftMonth(-1)}
+              aria-label={t.calendar.timelinePrevMonth}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
+            >
+              ‹
+            </button>
+            <h1 className="text-lg font-extrabold tracking-tight text-ink">{monthLabel}</h1>
+            <button
+              onClick={() => shiftMonth(1)}
+              disabled={isCurrentViewedMonth}
+              aria-label={t.calendar.timelineNextMonth}
+              className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              ›
+            </button>
+          </div>
+        )}
         <div className="flex gap-1.5 rounded-full border border-line-strong bg-surface p-1">
           {(["today", "timeline"] as const).map((v) => (
             <button
@@ -83,10 +120,16 @@ export function ZettelkastenCalendarPane({
         ))}
 
       {view === "timeline" &&
-        (timelineMarks === null ? (
+        (timelineLoading ? (
           <LoadingBlock label={t.calendar.projectTaskLoading} />
         ) : (
-          <CalendarTimelineView marks={timelineMarks} todayKey={todayKey} onOpenProjectDay={onOpenProjectDay} />
+          <CalendarTimelineView
+            marks={timelineData!.marks}
+            year={viewedYear}
+            month={viewedMonth}
+            todayKey={todayKey}
+            onOpenProjectDay={onOpenProjectDay}
+          />
         ))}
     </div>
   );

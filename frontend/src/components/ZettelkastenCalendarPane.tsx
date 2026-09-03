@@ -17,11 +17,7 @@ function todayKeyValue() {
  * （今日／タイムライン）を表示する — /calendar ページ自体と違い、ここでの
  * 表示切り替え・月送りはURLのクエリではなくローカル状態で行う（このペインは
  * ZettelkastenScreen上のインプレース表示なので、独立したルートではない）。 */
-export function ZettelkastenCalendarPane({
-  onOpenProjectDay,
-}: {
-  onOpenProjectDay: (projectId: string, dateKey: string) => void;
-}) {
+export function ZettelkastenCalendarPane() {
   const { t, locale } = useI18n();
   const [view, setView] = useState<"today" | "timeline">("today");
   const [todayNotes, setTodayNotes] = useState<TodayProjectNote[] | null>(null);
@@ -36,6 +32,13 @@ export function ZettelkastenCalendarPane({
   const monthKey = `${viewedYear}-${viewedMonth}`;
   const [timelineData, setTimelineData] = useState<{ key: string; marks: ProjectTimelineMark[] } | null>(null);
 
+  // Selecting a day on ④タイムライン shows that day's notes for every active
+  // project inline — the same fully-expanded view ③今日 uses, just for the
+  // tapped date — rather than jumping to a specific project. `null` means
+  // the timeline itself is showing.
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedDayData, setSelectedDayData] = useState<{ key: string; notes: TodayProjectNote[] } | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     if (view === "today" && todayNotes === null) {
@@ -48,11 +51,16 @@ export function ZettelkastenCalendarPane({
         if (!cancelled) setTimelineData({ key: monthKey, marks: result });
       });
     }
+    if (selectedDay && selectedDayData?.key !== selectedDay) {
+      listTodayProjectNotesAction(selectedDay).then((result) => {
+        if (!cancelled) setSelectedDayData({ key: selectedDay, notes: result });
+      });
+    }
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, viewedYear, viewedMonth, monthKey]);
+  }, [view, viewedYear, viewedMonth, monthKey, selectedDay]);
 
   function shiftMonth(delta: number) {
     const base = new Date(Date.UTC(viewedYear, viewedMonth - 1 + delta, 1));
@@ -69,8 +77,37 @@ export function ZettelkastenCalendarPane({
     year: "numeric",
     month: "2-digit",
   });
+  const selectedDayLabel = selectedDay
+    ? new Date(`${selectedDay}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+    : "";
   const isCurrentViewedMonth = viewedYear === currentYear && viewedMonth === currentMonth;
   const timelineLoading = view === "timeline" && timelineData?.key !== monthKey;
+  const selectedDayLoading = selectedDay !== null && selectedDayData?.key !== selectedDay;
+
+  if (selectedDay) {
+    return (
+      <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSelectedDay(null)}
+            className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
+          >
+            <span className="text-accent">&lt;</span> {t.calendar.viewTimeline}
+          </button>
+          <h1 className="text-lg font-extrabold tracking-tight text-ink">{selectedDayLabel}</h1>
+        </div>
+        {selectedDayLoading ? (
+          <LoadingBlock label={t.calendar.projectTaskLoading} />
+        ) : (
+          <CalendarTodayView key={selectedDay} dateKey={selectedDay} initialNotes={selectedDayData!.notes} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
@@ -116,7 +153,7 @@ export function ZettelkastenCalendarPane({
         (todayNotes === null ? (
           <LoadingBlock label={t.calendar.projectTaskLoading} />
         ) : (
-          <CalendarTodayView initialNotes={todayNotes} />
+          <CalendarTodayView key={todayKey} dateKey={todayKey} initialNotes={todayNotes} />
         ))}
 
       {view === "timeline" &&
@@ -128,7 +165,7 @@ export function ZettelkastenCalendarPane({
             year={viewedYear}
             month={viewedMonth}
             todayKey={todayKey}
-            onOpenProjectDay={onOpenProjectDay}
+            onSelectDay={setSelectedDay}
           />
         ))}
     </div>

@@ -1,11 +1,24 @@
 "use client";
 
-import Link from "next/link";
+import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
+
+export type ZettelkastenMainView = "notes" | "projects" | "calendar";
 
 /** Simple line-icon glyphs — no emoji, so they read consistently with the
  * rest of the HUD's monochrome/mono-label visual language across themes
  * (currentColor picks up the button's own text color). */
+function NotesIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="3.2" y="1.5" width="9" height="11" rx="1" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M5.2 4.5H10.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M5.2 7H10.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M5.2 9.5H8.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ProjectsIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -28,33 +41,63 @@ function CalendarIcon() {
   );
 }
 
+function ActionBarButton({
+  active,
+  label,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      aria-pressed={active}
+      className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
+        active
+          ? "border-accent bg-accent-soft text-accent"
+          : "border-transparent text-ink-soft hover:bg-surface-alt hover:text-accent"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 /**
  * A fixed, always-visible icon-button strip along the very left edge of the
  * zettelkasten screen's pane area — not a HeaderMenu entry (which is a
- * collapsed, tap-to-open overflow list). Sits outside the col①/②/③ grid so
- * it doesn't animate/resize with editorOpen. Dash Off intentionally has no
- * equivalent bar — Projects/Calendar are reached from here only.
+ * collapsed, tap-to-open overflow list) and not a real navigation either:
+ * picking an icon swaps which content the pane area shows (③本来のノート／
+ * プロジェクト／カレンダー) in place, without leaving this screen, and the
+ * active icon stays highlighted so the current view is always visible at a
+ * glance. "notes" (①②③のツェッテルカステン本体) is included here too so
+ * there's always a way back to it once you've switched away.
  */
-export function ZettelkastenSideActionBar() {
+export function ZettelkastenSideActionBar({
+  active,
+  onSelect,
+}: {
+  active: ZettelkastenMainView;
+  onSelect: (view: ZettelkastenMainView) => void;
+}) {
   const { t } = useI18n();
   return (
     <div className="flex w-11 shrink-0 flex-col items-center gap-2 border-r border-line py-3">
-      <Link
-        href="/projects"
-        title={t.nav.projectsLabel}
-        aria-label={t.nav.projectsLabel}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
-      >
+      <ActionBarButton active={active === "notes"} label={t.brand.zettelkasten} onClick={() => onSelect("notes")}>
+        <NotesIcon />
+      </ActionBarButton>
+      <ActionBarButton active={active === "projects"} label={t.nav.projectsLabel} onClick={() => onSelect("projects")}>
         <ProjectsIcon />
-      </Link>
-      <Link
-        href="/calendar"
-        title={t.nav.calendarLabel}
-        aria-label={t.nav.calendarLabel}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
-      >
+      </ActionBarButton>
+      <ActionBarButton active={active === "calendar"} label={t.nav.calendarLabel} onClick={() => onSelect("calendar")}>
         <CalendarIcon />
-      </Link>
+      </ActionBarButton>
     </div>
   );
 }

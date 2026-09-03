@@ -31,7 +31,9 @@ import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
-import { ZettelkastenSideActionBar } from "@/components/ZettelkastenSideActionBar";
+import { ZettelkastenSideActionBar, type ZettelkastenMainView } from "@/components/ZettelkastenSideActionBar";
+import { ZettelkastenProjectsPane } from "@/components/ZettelkastenProjectsPane";
+import { ZettelkastenCalendarPane } from "@/components/ZettelkastenCalendarPane";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { SignOutButton } from "@/components/SignOutButton";
 import { RotateDeviceGate } from "@/components/RotateDeviceGate";
@@ -65,6 +67,7 @@ export function ZettelkastenScreen({
   const [indexPanelOpen, setIndexPanelOpen] = useState(false);
   const [openNoteId, setOpenNoteId] = useState<string | null>(deepLinkOpenId ?? null);
   const [col1Mode, setCol1Mode] = useState<"notes" | "literature">("notes");
+  const [mainView, setMainView] = useState<ZettelkastenMainView>("notes");
   const [focusQuickNoteRequest, setFocusQuickNoteRequest] = useState<{ id: string; token: number } | null>(null);
 
   function focusQuickNote(id: string) {
@@ -213,7 +216,18 @@ export function ZettelkastenScreen({
       </div>
 
       <div className="flex min-h-0 flex-1">
-        <ZettelkastenSideActionBar />
+        <ZettelkastenSideActionBar active={mainView} onSelect={setMainView} />
+        {mainView === "projects" && (
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto px-6 py-6">
+            <ZettelkastenProjectsPane />
+          </div>
+        )}
+        {mainView === "calendar" && (
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto px-6 py-6">
+            <ZettelkastenCalendarPane />
+          </div>
+        )}
+        {mainView === "notes" && (
         <div
           className="grid min-h-0 min-w-0 flex-1 transition-[grid-template-columns] duration-400 ease-out"
           style={{ gridTemplateColumns: editorOpen ? "1.05fr 1fr 0.7fr" : "1.3fr 0px 0.85fr" }}
@@ -353,6 +367,7 @@ export function ZettelkastenScreen({
             />
           </div>
         </div>
+        )}
       </div>
 
       {openNoteId && (

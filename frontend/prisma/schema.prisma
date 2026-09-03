@@ -38,6 +38,22 @@ enum AiProvider {
   GOOGLE
 }
 
+enum ProjectStatus {
+  ACTIVE
+  CLOSED
+}
+
+/// Why a QuickNote ended up ARCHIVED — distinct from "why", not "whether":
+/// PROMOTED (the existing promotion workflow), STALE (the 1-week
+/// auto-archive sweep for notes with no Project), or PROJECT_CLOSED (swept
+/// along with its Project when that Project was closed). Null for any
+/// QuickNote that's still ACTIVE.
+enum QuickNoteArchiveReason {
+  PROMOTED
+  STALE
+  PROJECT_CLOSED
+}
+
 /// A temporary, quickly-captured note ("走り書き"). Either typed on the spot
 /// (SCRATCH) or, in a future phase, transcribed from a voice memo (VOICE — the
 /// voice* columns are a schema hook only, not wired up in Phase 1). Active
@@ -59,6 +75,16 @@ model QuickNote {
   literatureMemoId String?         @map("literature_memo_id")
   literatureMemo   LiteratureMemo? @relation(fields: [literatureMemoId], references: [id], onDelete: SetNull)
 
+  /// Optional link to a Project — a QuickNote with a Project is exempt from
+  /// the 1-week stale-auto-archive sweep (see archiveStaleQuickNotes in
+  /// src/lib/quickNoteArchiving.ts) until that Project itself is closed, at
+  /// which point it's archived along with it (archiveReason PROJECT_CLOSED).
+  projectId String?  @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  /// Set only when status is ARCHIVED — see QuickNoteArchiveReason.
+  archiveReason QuickNoteArchiveReason? @map("archive_reason")
+
   // Phase 2 hooks — not populated by any Phase 1 code path.
   voiceAudioUrl        String? @map("voice_audio_url")
   voiceTranscript       String? @map("voice_transcript")
@@ -79,6 +105,7 @@ model QuickNote {
 
   @@index([ownerSub, status, encounteredAt])
   @@index([literatureMemoId])
+  @@index([projectId])
   @@map("quick_note")
 }
 
@@ -98,6 +125,12 @@ model PermanentNote {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  /// Optional link to a Project — surfaced on the Project detail page's
+  /// linked-notes list. PermanentNote has no active/archived concept, so
+  /// unlike QuickNote there's nothing here to sweep when the Project closes.
+  projectId String?  @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   outboundLinks        PermanentNoteLink[]             @relation("LinkSource")
   inboundLinks         PermanentNoteLink[]             @relation("LinkTargetNote")
   indexEntries         IndexEntry[]
@@ -106,7 +139,57 @@ model PermanentNote {
 
   @@unique([ownerSub, orderKey])
   @@index([ownerSub, orderKey])
+  @@index([projectId])
   @@map("permanent_note")
+}
+
+/// A project ("プロジェクト") — the organizing unit for daily task notes. Every
+/// owner gets one default project (isDefault, named after them) lazily
+/// created on first need (see ensureDefaultProject in src/lib/projects.ts);
+/// further projects are created explicitly.
+model Project {
+  id        String        @id @default(uuid())
+  ownerSub  String        @map("owner_sub")
+  name      String
+  isDefault Boolean       @default(false) @map("is_default")
+  status    ProjectStatus @default(ACTIVE)
+  startedAt DateTime      @default(now()) @map("started_at")
+  closedAt  DateTime?     @map("closed_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  /// All optional; enforced together in application code, not by the DB —
+  /// if any goal tier is set, goalUltimate and goalDay must both be set too.
+  goalUltimate String? @map("goal_ultimate")
+  goalYear3    String? @map("goal_year3")
+  goalYear2    String? @map("goal_year2")
+  goalYear1    String? @map("goal_year1")
+  goalMonth3   String? @map("goal_month3")
+  goalMonth1   String? @map("goal_month1")
+  goalDay      String? @map("goal_day")
+
+  taskNotes      ProjectTaskNote[]
+  quickNotes     QuickNote[]
+  permanentNotes PermanentNote[]
+
+  @@index([ownerSub, status])
+  @@map("project")
+}
+
+/// One page of daily task-management notes for a Project — a composite key
+/// of (project, date), edited in place via MarkdownNoteEditor the same way a
+/// QuickNote/PermanentNote's content is.
+model ProjectTaskNote {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  content   String   @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([projectId, date])
+  @@map("project_task_note")
 }
 
 /// A PermanentNote can carry several 文献メモ — e.g. when several selected

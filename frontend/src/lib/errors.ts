@@ -26,7 +26,10 @@ export type DomainErrorCode =
   | "literatureMemoNotFound"
   | "quickNoteNotFound"
   | "linkNotFound"
-  | "discoveryCandidateNotFound";
+  | "discoveryCandidateNotFound"
+  | "projectNotFound"
+  | "projectNameRequired"
+  | "projectGoalInvalid";
 
 export class DomainError extends Error {
   code: DomainErrorCode;

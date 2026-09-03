@@ -23,6 +23,7 @@
     { "path": "/api/cron/discovery", "schedule": "0 11 * * *" },
     { "path": "/api/cron/discovery", "schedule": "0 12 * * *" },
     { "path": "/api/cron/discovery", "schedule": "0 13 * * *" },
-    { "path": "/api/cron/discovery", "schedule": "0 14 * * *" }
+    { "path": "/api/cron/discovery", "schedule": "0 14 * * *" },
+    { "path": "/api/cron/archive-stale-notes", "schedule": "0 18 * * *" }
   ]
 }

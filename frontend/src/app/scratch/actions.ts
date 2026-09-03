@@ -72,6 +72,17 @@ export async function setLiteratureMemoAction(id: string, selection: LiteratureS
   return note;
 }
 
+/** Links (or, with `projectId: null`, unlinks) this note to a Project — see
+ * quickNotes.setProject for the stale-archive exemption this grants. */
+export async function setQuickNoteProjectAction(id: string, projectId: string | null): Promise<QuickNoteDetail> {
+  const ownerSub = await requireOwnerSub();
+  const note = await quickNotes.setProject(ownerSub, id, projectId);
+  revalidatePath(`/scratch/${id}`);
+  revalidatePath("/projects");
+  if (projectId) revalidatePath(`/projects/${projectId}`);
+  return note;
+}
+
 /** Owner's existing literature memos, matched by citation substring — backs the
  * "既存の文献メモから選ぶ" reuse picker so a memo created once doesn't need a
  * fresh Zotero search to be reused on another note. */

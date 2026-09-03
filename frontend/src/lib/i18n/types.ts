@@ -131,6 +131,9 @@ export interface Dictionary {
     contentHeading: string;
     literatureHeading: string;
     homeSearchPlaceholder: string;
+    projectHeading: string;
+    projectNoneOption: string;
+    projectSaving: string;
   };
   discovery: {
     shelfLabel: (n: number) => string;

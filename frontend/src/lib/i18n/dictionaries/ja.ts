@@ -114,6 +114,9 @@ export const ja: Dictionary = {
     contentHeading: "内容",
     literatureHeading: "文献メモ（任意）",
     homeSearchPlaceholder: "単語・意味・関連語で検索…",
+    projectHeading: "プロジェクト",
+    projectNoneOption: "なし",
+    projectSaving: "保存中…",
   },
   discovery: {
     shelfLabel: (n) => `関連 (${n}) — タップで詳細`,

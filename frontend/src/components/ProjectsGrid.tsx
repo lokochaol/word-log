@@ -15,7 +15,17 @@ function daysSince(startedAt: Date): number {
 /** ①プロジェクト一覧 — a grid of boxes, one per active project, plus an
  * always-visible "add" form. Reuses HudFrame the same way every other
  * card/panel in the app does. */
-export function ProjectsGrid({ initialProjects }: { initialProjects: ProjectSummary[] }) {
+export function ProjectsGrid({
+  initialProjects,
+  onOpenProject,
+}: {
+  initialProjects: ProjectSummary[];
+  /** When provided, opening a project calls this instead of navigating to
+   * /projects/[id] — used inline within ZettelkastenScreen so the whole
+   * flow stays on that one screen. Omitted, this falls back to a real
+   * <Link> (the standalone /projects page's own behavior). */
+  onOpenProject?: (id: string) => void;
+}) {
   const { t } = useI18n();
   const [items, setItems] = useState(initialProjects);
   const [name, setName] = useState("");
@@ -37,8 +47,8 @@ export function ProjectsGrid({ initialProjects }: { initialProjects: ProjectSumm
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {items.map((project) => (
-          <Link key={project.id} href={`/projects/${project.id}`}>
+        {items.map((project) => {
+          const card = (
             <HudFrame active={false} innerClassName="flex flex-col gap-2 rounded-xl px-4 py-3.5 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate font-bold text-ink">{project.name}</span>
@@ -52,8 +62,17 @@ export function ProjectsGrid({ initialProjects }: { initialProjects: ProjectSumm
                 {t.projects.daysSinceStart(daysSince(project.startedAt))}
               </p>
             </HudFrame>
-          </Link>
-        ))}
+          );
+          return onOpenProject ? (
+            <button key={project.id} onClick={() => onOpenProject(project.id)} className="text-left">
+              {card}
+            </button>
+          ) : (
+            <Link key={project.id} href={`/projects/${project.id}`}>
+              {card}
+            </Link>
+          );
+        })}
         {items.length === 0 && <p className="col-span-full py-8 text-center text-sm text-ink-soft">{t.projects.emptyList}</p>}
       </div>
 

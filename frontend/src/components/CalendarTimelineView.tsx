@@ -18,9 +18,27 @@ function dateKeyOf(date: Date): string {
  * closed via ProjectCloseButton, never from a goal deadline). Days with a
  * task note get a tappable mark that opens that day's note on the Project
  * detail page. */
-export function CalendarTimelineView({ marks, todayKey }: { marks: ProjectTimelineMark[]; todayKey: string }) {
+export function CalendarTimelineView({
+  marks,
+  todayKey,
+  onOpenProjectDay,
+}: {
+  marks: ProjectTimelineMark[];
+  todayKey: string;
+  /** When provided, tapping a day-mark (or a project's name) calls this
+   * instead of navigating to /projects/[id]?date=... — used inline within
+   * ZettelkastenScreen so the whole flow stays on that one screen. Omitted,
+   * this falls back to a real navigation (the standalone /calendar page's
+   * own behavior). */
+  onOpenProjectDay?: (projectId: string, dateKey: string) => void;
+}) {
   const router = useRouter();
   const { t } = useI18n();
+
+  function openDay(projectId: string, dateKey: string) {
+    if (onOpenProjectDay) onOpenProjectDay(projectId, dateKey);
+    else router.push(`/projects/${projectId}?date=${dateKey}`);
+  }
 
   if (marks.length === 0) {
     return <p className="py-16 text-center text-sm text-ink-soft">{t.calendar.timelineNoNotes}</p>;
@@ -39,7 +57,12 @@ export function CalendarTimelineView({ marks, todayKey }: { marks: ProjectTimeli
         const widthPct = (span / maxSpan) * 100;
         return (
           <div key={mark.projectId} className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] text-ink-soft">{mark.projectName}</span>
+            <button
+              onClick={() => openDay(mark.projectId, todayKey)}
+              className="w-fit font-mono text-[10px] text-ink-soft transition-colors hover:text-accent"
+            >
+              {mark.projectName}
+            </button>
             <div className="relative h-6 w-full rounded-full bg-surface-alt">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-accent/25"
@@ -52,7 +75,7 @@ export function CalendarTimelineView({ marks, todayKey }: { marks: ProjectTimeli
                   <button
                     key={dateKey}
                     title={t.calendar.timelineOpenDay(dateKey)}
-                    onClick={() => router.push(`/projects/${mark.projectId}?date=${dateKey}`)}
+                    onClick={() => openDay(mark.projectId, dateKey)}
                     style={{ left: `${leftPct}%` }}
                     className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent"
                   />

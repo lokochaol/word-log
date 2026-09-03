@@ -12,7 +12,7 @@ import type { ProjectSummary } from "@/lib/projects";
  * インプレース切り替え）。個々のプロジェクトを開く操作自体は
  * /projects/[id] への実ナビゲーション — 詳細ページは目標編集・日毎メモ・
  * 紐づいたメモ一覧を持つ独立した画面として維持する。 */
-export function ZettelkastenProjectsPane() {
+export function ZettelkastenProjectsPane({ onOpenProject }: { onOpenProject: (id: string) => void }) {
   const { t } = useI18n();
   const [projects, setProjects] = useState<ProjectSummary[] | null>(null);
 
@@ -38,7 +38,7 @@ export function ZettelkastenProjectsPane() {
         <h1 className="text-lg font-extrabold tracking-tight text-ink">{t.projects.heading}</h1>
         <p className="font-mono text-xs text-ink-soft">{t.projects.description}</p>
       </div>
-      <ProjectsGrid initialProjects={projects} />
+      <ProjectsGrid initialProjects={projects} onOpenProject={onOpenProject} />
     </div>
   );
 }

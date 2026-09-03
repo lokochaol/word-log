@@ -17,7 +17,11 @@ function todayKeyValue() {
  * （今日／タイムライン）を表示する — /calendar ページ自体と違い、ここでの
  * 表示切り替えはURLのクエリではなくローカル状態で行う（このペインは
  * ZettelkastenScreen上のインプレース表示なので、独立したルートではない）。 */
-export function ZettelkastenCalendarPane() {
+export function ZettelkastenCalendarPane({
+  onOpenProjectDay,
+}: {
+  onOpenProjectDay: (projectId: string, dateKey: string) => void;
+}) {
   const { t, locale } = useI18n();
   const [view, setView] = useState<"today" | "timeline">("today");
   const [todayNotes, setTodayNotes] = useState<TodayProjectNote[] | null>(null);
@@ -77,7 +81,7 @@ export function ZettelkastenCalendarPane() {
         (timelineMarks === null ? (
           <LoadingBlock label={t.calendar.projectTaskLoading} />
         ) : (
-          <CalendarTimelineView marks={timelineMarks} todayKey={todayKey} />
+          <CalendarTimelineView marks={timelineMarks} todayKey={todayKey} onOpenProjectDay={onOpenProjectDay} />
         ))}
     </div>
   );

@@ -8,7 +8,16 @@ import { closeProjectAction } from "@/app/projects/actions";
 
 /** The only UI action that ever closes a Project — never automatic, never
  * tied to a goal deadline (see projects.close in src/lib/projects.ts). */
-export function ProjectCloseButton({ projectId }: { projectId: string }) {
+export function ProjectCloseButton({
+  projectId,
+  onClosed,
+}: {
+  projectId: string;
+  /** Called after a successful close, in addition to router.refresh() — the
+   * inline pane inside ZettelkastenScreen isn't on the /projects/[id] route,
+   * so it needs its own way to know the close finished and update its state. */
+  onClosed?: () => void;
+}) {
   const { t } = useI18n();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -20,6 +29,7 @@ export function ProjectCloseButton({ projectId }: { projectId: string }) {
     setPending(false);
     setOpen(false);
     router.refresh();
+    onClosed?.();
   }
 
   return (

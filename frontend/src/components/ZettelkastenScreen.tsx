@@ -34,6 +34,7 @@ import { HeaderMenu } from "@/components/HeaderMenu";
 import { ZettelkastenSideActionBar, type ZettelkastenMainView } from "@/components/ZettelkastenSideActionBar";
 import { ZettelkastenProjectsPane } from "@/components/ZettelkastenProjectsPane";
 import { ZettelkastenCalendarPane } from "@/components/ZettelkastenCalendarPane";
+import { ZettelkastenProjectDetailPane } from "@/components/ZettelkastenProjectDetailPane";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { SignOutButton } from "@/components/SignOutButton";
 import { RotateDeviceGate } from "@/components/RotateDeviceGate";
@@ -68,6 +69,13 @@ export function ZettelkastenScreen({
   const [openNoteId, setOpenNoteId] = useState<string | null>(deepLinkOpenId ?? null);
   const [col1Mode, setCol1Mode] = useState<"notes" | "literature">("notes");
   const [mainView, setMainView] = useState<ZettelkastenMainView>("notes");
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [activeProjectDate, setActiveProjectDate] = useState<string | null>(null);
+
+  function openProject(id: string, date: string | null = null) {
+    setActiveProjectId(id);
+    setActiveProjectDate(date);
+  }
   const [focusQuickNoteRequest, setFocusQuickNoteRequest] = useState<{ id: string; token: number } | null>(null);
 
   function focusQuickNote(id: string) {
@@ -216,18 +224,34 @@ export function ZettelkastenScreen({
       </div>
 
       <div className="flex min-h-0 flex-1">
-        <ZettelkastenSideActionBar active={mainView} onSelect={setMainView} />
-        {mainView === "projects" && (
+        <ZettelkastenSideActionBar
+          active={mainView}
+          onSelect={(view) => {
+            setActiveProjectId(null);
+            setMainView(view);
+          }}
+        />
+        {activeProjectId && (
           <div className="min-h-0 min-w-0 flex-1 overflow-auto px-6 py-6">
-            <ZettelkastenProjectsPane />
+            <ZettelkastenProjectDetailPane
+              key={activeProjectId}
+              projectId={activeProjectId}
+              initialDate={activeProjectDate}
+              onBack={() => setActiveProjectId(null)}
+            />
           </div>
         )}
-        {mainView === "calendar" && (
+        {!activeProjectId && mainView === "projects" && (
           <div className="min-h-0 min-w-0 flex-1 overflow-auto px-6 py-6">
-            <ZettelkastenCalendarPane />
+            <ZettelkastenProjectsPane onOpenProject={(id) => openProject(id)} />
           </div>
         )}
-        {mainView === "notes" && (
+        {!activeProjectId && mainView === "calendar" && (
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto px-6 py-6">
+            <ZettelkastenCalendarPane onOpenProjectDay={(id, date) => openProject(id, date)} />
+          </div>
+        )}
+        {!activeProjectId && mainView === "notes" && (
         <div
           className="grid min-h-0 min-w-0 flex-1 transition-[grid-template-columns] duration-400 ease-out"
           style={{ gridTemplateColumns: editorOpen ? "1.05fr 1fr 0.7fr" : "1.3fr 0px 0.85fr" }}

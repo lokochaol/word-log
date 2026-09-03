@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireSession } from "@/lib/session";
 import * as projectTaskNotes from "@/lib/projectTaskNotes";
 import { CalendarViewSwitch } from "@/components/CalendarViewSwitch";
+import { CalendarMonthNav } from "@/components/CalendarMonthNav";
 import { CalendarTodayView } from "@/components/CalendarTodayView";
 import { CalendarTimelineView } from "@/components/CalendarTimelineView";
 import { HeaderMenu } from "@/components/HeaderMenu";
@@ -18,14 +19,32 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
 
   const view = searchParams.view === "timeline" ? "timeline" : "today";
   const todayKey = projectTaskNotes.todayKey();
-  const todayLabel = new Date(`${todayKey}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
+  const today = new Date(`${todayKey}T00:00:00.000Z`);
+  const todayLabel = today.toLocaleDateString(localeTag(locale), { year: "numeric", month: "2-digit", day: "2-digit" });
+
+  const currentYear = today.getUTCFullYear();
+  const currentMonth = today.getUTCMonth() + 1;
+  const requestedYear = Number(searchParams.year);
+  const requestedMonth = Number(searchParams.month);
+  const isValidRequestedMonth =
+    Number.isInteger(requestedYear) && Number.isInteger(requestedMonth) && requestedMonth >= 1 && requestedMonth <= 12;
+  let viewedYear = isValidRequestedMonth ? requestedYear : currentYear;
+  let viewedMonth = isValidRequestedMonth ? requestedMonth : currentMonth;
+  // Clamp to the current month rather than trust an arbitrary future ?year=/?month= —
+  // a project can't have notes ahead of today.
+  if (viewedYear > currentYear || (viewedYear === currentYear && viewedMonth > currentMonth)) {
+    viewedYear = currentYear;
+    viewedMonth = currentMonth;
+  }
+  const isCurrentViewedMonth = viewedYear === currentYear && viewedMonth === currentMonth;
+  const monthLabel = new Date(Date.UTC(viewedYear, viewedMonth - 1, 1)).toLocaleDateString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
-    day: "2-digit",
   });
 
   const todayNotes = view === "today" ? await projectTaskNotes.listAllProjectsTodayNotes(ownerSub, todayKey) : [];
-  const timelineMarks = view === "timeline" ? await projectTaskNotes.listTimelineMarks(ownerSub) : [];
+  const timelineMarks =
+    view === "timeline" ? await projectTaskNotes.listTimelineMarks(ownerSub, viewedYear, viewedMonth) : [];
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
@@ -57,14 +76,20 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
+          {view === "today" ? (
+            <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
+          ) : (
+            <CalendarMonthNav year={viewedYear} month={viewedMonth} isCurrentMonth={isCurrentViewedMonth}>
+              <h1 className="text-lg font-extrabold tracking-tight text-ink">{monthLabel}</h1>
+            </CalendarMonthNav>
+          )}
           <CalendarViewSwitch view={view} />
         </div>
 
         {view === "today" ? (
           <CalendarTodayView initialNotes={todayNotes} />
         ) : (
-          <CalendarTimelineView marks={timelineMarks} todayKey={todayKey} />
+          <CalendarTimelineView marks={timelineMarks} year={viewedYear} month={viewedMonth} todayKey={todayKey} />
         )}
       </div>
     </main>

@@ -54,6 +54,8 @@ export interface Dictionary {
     backToScratch: string;
     backToLiterature: string;
     toZettelkasten: string;
+    projectsLabel: string;
+    calendarLabel: string;
   };
   confirmDialog: {
     confirmLabel: string;
@@ -296,9 +298,64 @@ export interface Dictionary {
     discoveryHour1Label: string;
     discoveryHour2Label: string;
   };
+  projects: {
+    heading: string;
+    description: string;
+    addButton: string;
+    namePlaceholder: string;
+    creating: string;
+    emptyList: string;
+    defaultBadge: string;
+    closedBadge: string;
+    daysSinceStart: (n: number) => string;
+    backToScratch: string;
+    detailLoading: string;
+    goalsHeading: string;
+    goalOptionalHint: string;
+    goalUltimateLabel: string;
+    goalYear3Label: string;
+    goalYear2Label: string;
+    goalYear1Label: string;
+    goalMonth3Label: string;
+    goalMonth1Label: string;
+    goalDayLabel: string;
+    goalSaveButton: string;
+    goalSaving: string;
+    goalSaved: string;
+    todayNoteHeading: string;
+    openTodayButton: string;
+    dayStripHeading: string;
+    linkedNotesHeading: string;
+    linkedQuickNotesHeading: (n: number) => string;
+    linkedPermanentNotesHeading: (n: number) => string;
+    noLinkedNotes: string;
+    archivedSuffix: string;
+    closeButton: string;
+    closeConfirmTitle: string;
+    closeConfirmWarning: string;
+    closeOnlyManualNote: string;
+    startedLabel: (date: string) => string;
+    closedLabel: (date: string) => string;
+    renamePlaceholder: string;
+  };
+  calendar: {
+    heading: string;
+    backToScratch: string;
+    viewToday: string;
+    viewTimeline: string;
+    todayHeading: (date: string) => string;
+    projectTaskLoading: string;
+    timelineHeading: string;
+    timelineTodayLabel: string;
+    timelineNoNotes: string;
+    timelineOpenDay: (date: string) => string;
+  };
   errors: {
     keywordRequired: string;
     permanentNoteNotFound: string;
+    projectNotFound: string;
+    projectNameRequired: string;
+    projectGoalInvalid: (problems: string) => string;
     indexKeywordTaken: (keyword: string) => string;
     indexEntryNotFound: string;
     quickNoteSelectionRequired: string;
@@ -327,5 +384,7 @@ export interface Dictionary {
     linkRequired: string;
     linkRelationRequired: string;
     positionRequired: string;
+    goalUltimateRequired: string;
+    goalDayRequired: string;
   };
 }

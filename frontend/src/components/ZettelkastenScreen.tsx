@@ -31,6 +31,7 @@ import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
+import { ZettelkastenSideActionBar } from "@/components/ZettelkastenSideActionBar";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { SignOutButton } from "@/components/SignOutButton";
 import { RotateDeviceGate } from "@/components/RotateDeviceGate";
@@ -211,143 +212,146 @@ export function ZettelkastenScreen({
         </div>
       </div>
 
-      <div
-        className="grid min-h-0 flex-1 transition-[grid-template-columns] duration-400 ease-out"
-        style={{ gridTemplateColumns: editorOpen ? "1.05fr 1fr 0.7fr" : "1.3fr 0px 0.85fr" }}
-      >
-        {/* ① */}
-        <div ref={col1Ref} className="relative min-w-0 overflow-hidden border-r border-line">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
-            <span className="text-accent">①</span>
-            <div className="flex gap-1 normal-case">
-              <button
-                onClick={() => setCol1Mode("notes")}
-                className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
-                  col1Mode === "notes"
-                    ? "border-accent bg-accent-soft text-ink"
-                    : "border-line-strong text-ink-soft hover:text-ink"
-                }`}
-              >
-                {t.zettelkasten.columnTitle}
-              </button>
-              <button
-                onClick={() => setCol1Mode("literature")}
-                className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
-                  col1Mode === "literature"
-                    ? "border-accent bg-accent-soft text-ink"
-                    : "border-line-strong text-ink-soft hover:text-ink"
-                }`}
-              >
-                {t.zettelkasten.literatureTabLabel}
-              </button>
-            </div>
-            {col1Mode === "notes" && (
-              <>
-                <span className="normal-case">{t.zettelkasten.countAll(globalOrder.length)}</span>
-                <button
-                  onClick={() => setIndexPanelOpen((v) => !v)}
-                  className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
-                >
-                  {t.zettelkasten.indexToggle}
-                </button>
-              </>
-            )}
-          </div>
-
-          {col1Mode === "notes" && indexPanelOpen && (
-            <IndexPanel
-              entries={indexEntries}
-              onSelect={(noteId) => {
-                setOpenNoteId(noteId);
-                setIndexPanelOpen(false);
-              }}
-              onRemove={async (id) => {
-                await removeIndexEntryAction(id);
-                setIndexEntries((prev) => prev.filter((e) => e.id !== id));
-              }}
-            />
-          )}
-
-          <div className="flex min-h-0 flex-col" style={{ height: "calc(100dvh - 130px)" }}>
-            {col1Mode === "notes" ? (
-              <div className="overflow-auto p-4">
-                <PileDrill
-                  items={globalOrder}
-                  drillPath={drillPath}
-                  onDrillPathChange={setDrillPath}
-                  columns={columns}
-                  mode={mode}
-                  onOpenNote={(id) => setOpenNoteId(id)}
-                  onSelectGap={handleSelectGap}
-                  selectedGap={activeDraft?.gap ?? null}
-                  loadContent={loadContent}
-                />
-              </div>
-            ) : (
-              <LiteratureMemoPane onOpenPermanentNote={(id) => setOpenNoteId(id)} onOpenQuickNote={focusQuickNote} />
-            )}
-          </div>
-        </div>
-
-        {/* ② */}
-        <div className="min-w-0 overflow-hidden border-r border-line">
-          {editorOpen && (
-            <PromotionEditor
-              drafts={drafts}
-              onChangeDrafts={setDrafts}
-              activeDraftId={activeDraftId}
-              onSetActiveDraftId={setActiveDraftId}
-              indexEntries={indexEntries}
-              globalOrder={globalOrder}
-              onComplete={handleComplete}
-              completing={completing}
-              completeError={completeError}
-            />
-          )}
-        </div>
-
-        {/* ③ — shares view-transition-name with /scratch's timeline container (§5).
-            The column itself doesn't scroll; only the note list inside
-            QuickNoteInlineTimeline does, anchored to the bottom by default. */}
+      <div className="flex min-h-0 flex-1">
+        <ZettelkastenSideActionBar />
         <div
-          className="flex min-h-0 min-w-0 flex-col"
-          style={{ viewTransitionName: "note-timeline" } as CSSProperties}
+          className="grid min-h-0 min-w-0 flex-1 transition-[grid-template-columns] duration-400 ease-out"
+          style={{ gridTemplateColumns: editorOpen ? "1.05fr 1fr 0.7fr" : "1.3fr 0px 0.85fr" }}
         >
-          <QuickNoteInlineTimeline
-            notes={activeQuickNotes}
-            onNotesChange={setActiveQuickNotes}
-            selectedIds={selectedQuickNoteIds}
-            onToggleSelect={toggleQuickNoteSelection}
-            focusRequest={focusQuickNoteRequest}
-            onDeleted={(id) =>
-              setSelectedQuickNoteIds((prev) => {
-                if (!prev.has(id)) return prev;
-                const next = new Set(prev);
-                next.delete(id);
-                return next;
-              })
-            }
-            header={
-              <>
-                <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
-                  <span className="text-accent">③</span> {t.zettelkasten.scratchColumnHeading}
-                  {selectedQuickNoteIds.size > 0 && (
-                    <span className="ml-auto font-mono text-[10px] text-accent normal-case">
-                      {t.zettelkasten.selectedCount(selectedQuickNoteIds.size)}
-                    </span>
-                  )}
-                </div>
-                {selectedQuickNoteIds.size > 0 && drafts.length === 0 && (
+          {/* ① */}
+          <div ref={col1Ref} className="relative min-w-0 overflow-hidden border-r border-line">
+            <div className="flex items-center gap-2 border-b border-line px-4 py-3 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
+              <span className="text-accent">①</span>
+              <div className="flex gap-1 normal-case">
+                <button
+                  onClick={() => setCol1Mode("notes")}
+                  className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                    col1Mode === "notes"
+                      ? "border-accent bg-accent-soft text-ink"
+                      : "border-line-strong text-ink-soft hover:text-ink"
+                  }`}
+                >
+                  {t.zettelkasten.columnTitle}
+                </button>
+                <button
+                  onClick={() => setCol1Mode("literature")}
+                  className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                    col1Mode === "literature"
+                      ? "border-accent bg-accent-soft text-ink"
+                      : "border-line-strong text-ink-soft hover:text-ink"
+                  }`}
+                >
+                  {t.zettelkasten.literatureTabLabel}
+                </button>
+              </div>
+              {col1Mode === "notes" && (
+                <>
+                  <span className="normal-case">{t.zettelkasten.countAll(globalOrder.length)}</span>
                   <button
-                    onClick={buildDraftFromSelection}
-                    className="btn-sheen w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
+                    onClick={() => setIndexPanelOpen((v) => !v)}
+                    className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
                   >
-                    {t.zettelkasten.createFromSelection(selectedQuickNoteIds.size)}
+                    {t.zettelkasten.indexToggle}
                   </button>
-                )}
-              </>
-            }
-          />
+                </>
+              )}
+            </div>
+
+            {col1Mode === "notes" && indexPanelOpen && (
+              <IndexPanel
+                entries={indexEntries}
+                onSelect={(noteId) => {
+                  setOpenNoteId(noteId);
+                  setIndexPanelOpen(false);
+                }}
+                onRemove={async (id) => {
+                  await removeIndexEntryAction(id);
+                  setIndexEntries((prev) => prev.filter((e) => e.id !== id));
+                }}
+              />
+            )}
+
+            <div className="flex min-h-0 flex-col" style={{ height: "calc(100dvh - 130px)" }}>
+              {col1Mode === "notes" ? (
+                <div className="overflow-auto p-4">
+                  <PileDrill
+                    items={globalOrder}
+                    drillPath={drillPath}
+                    onDrillPathChange={setDrillPath}
+                    columns={columns}
+                    mode={mode}
+                    onOpenNote={(id) => setOpenNoteId(id)}
+                    onSelectGap={handleSelectGap}
+                    selectedGap={activeDraft?.gap ?? null}
+                    loadContent={loadContent}
+                  />
+                </div>
+              ) : (
+                <LiteratureMemoPane onOpenPermanentNote={(id) => setOpenNoteId(id)} onOpenQuickNote={focusQuickNote} />
+              )}
+            </div>
+          </div>
+
+          {/* ② */}
+          <div className="min-w-0 overflow-hidden border-r border-line">
+            {editorOpen && (
+              <PromotionEditor
+                drafts={drafts}
+                onChangeDrafts={setDrafts}
+                activeDraftId={activeDraftId}
+                onSetActiveDraftId={setActiveDraftId}
+                indexEntries={indexEntries}
+                globalOrder={globalOrder}
+                onComplete={handleComplete}
+                completing={completing}
+                completeError={completeError}
+              />
+            )}
+          </div>
+
+          {/* ③ — shares view-transition-name with /scratch's timeline container (§5).
+              The column itself doesn't scroll; only the note list inside
+              QuickNoteInlineTimeline does, anchored to the bottom by default. */}
+          <div
+            className="flex min-h-0 min-w-0 flex-col"
+            style={{ viewTransitionName: "note-timeline" } as CSSProperties}
+          >
+            <QuickNoteInlineTimeline
+              notes={activeQuickNotes}
+              onNotesChange={setActiveQuickNotes}
+              selectedIds={selectedQuickNoteIds}
+              onToggleSelect={toggleQuickNoteSelection}
+              focusRequest={focusQuickNoteRequest}
+              onDeleted={(id) =>
+                setSelectedQuickNoteIds((prev) => {
+                  if (!prev.has(id)) return prev;
+                  const next = new Set(prev);
+                  next.delete(id);
+                  return next;
+                })
+              }
+              header={
+                <>
+                  <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider text-ink-faint uppercase">
+                    <span className="text-accent">③</span> {t.zettelkasten.scratchColumnHeading}
+                    {selectedQuickNoteIds.size > 0 && (
+                      <span className="ml-auto font-mono text-[10px] text-accent normal-case">
+                        {t.zettelkasten.selectedCount(selectedQuickNoteIds.size)}
+                      </span>
+                    )}
+                  </div>
+                  {selectedQuickNoteIds.size > 0 && drafts.length === 0 && (
+                    <button
+                      onClick={buildDraftFromSelection}
+                      className="btn-sheen w-full rounded-lg bg-accent px-3 py-2.5 text-xs font-bold text-on-accent"
+                    >
+                      {t.zettelkasten.createFromSelection(selectedQuickNoteIds.size)}
+                    </button>
+                  )}
+                </>
+              }
+            />
+          </div>
         </div>
       </div>
 

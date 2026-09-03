@@ -6,10 +6,13 @@ import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { upsertCalendarTaskNoteAction } from "@/app/calendar/actions";
 import type { TodayProjectNote } from "@/lib/projectTaskNotes";
 
-/** ③カレンダー・今日 — every active project's task note for today, all shown
- * fully expanded and editable at once (never a summarized/collapsed list),
- * per spec: "省略した一覧表示ではなく、編集可能な開いた状態で、すべて表示する". */
-export function CalendarTodayView({ initialNotes }: { initialNotes: TodayProjectNote[] }) {
+/** ③カレンダー・今日 — every active project's task note for a given day, all
+ * shown fully expanded and editable at once (never a summarized/collapsed
+ * list), per spec: "省略した一覧表示ではなく、編集可能な開いた状態で、すべて
+ * 表示する". `dateKey` defaults to "today" for the ③今日 tab itself, but this
+ * same view is reused to show any day tapped on the ④タイムライン — the
+ * selection there is per-day, not per-project. */
+export function CalendarTodayView({ dateKey, initialNotes }: { dateKey: string; initialNotes: TodayProjectNote[] }) {
   const { t } = useI18n();
 
   return (
@@ -27,15 +30,11 @@ export function CalendarTodayView({ initialNotes }: { initialNotes: TodayProject
           <MarkdownNoteEditor
             content={note.content}
             onSave={async (content) => {
-              await upsertCalendarTaskNoteAction(note.projectId, todayKeyValue(), content);
+              await upsertCalendarTaskNoteAction(note.projectId, dateKey, content);
             }}
           />
         </HudFrame>
       ))}
     </div>
   );
-}
-
-function todayKeyValue() {
-  return new Date().toISOString().slice(0, 10);
 }

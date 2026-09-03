@@ -2,17 +2,11 @@
 
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { NoteTimeline } from "@/components/NoteTimeline";
-import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { QuickNoteActionMenu } from "@/components/QuickNoteActionMenu";
+import { QuickNoteDetailOverlay } from "@/components/QuickNoteDetailOverlay";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { LoadingBlock } from "@/components/LoadingSpinner";
-import {
-  createQuickNoteAction,
-  deleteQuickNoteAction,
-  getQuickNoteDetailAction,
-  updateQuickNoteContentAction,
-} from "@/app/scratch/actions";
-import type { QuickNoteSummary } from "@/lib/quickNotes";
+import { createQuickNoteAction, deleteQuickNoteAction } from "@/app/scratch/actions";
+import type { QuickNoteDetail, QuickNoteSummary } from "@/lib/quickNotes";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
@@ -31,9 +25,13 @@ const HEADER_FADE_MASK = "linear-gradient(to bottom, black 0%, black 70%, transp
 
 /**
  * The ③ column's quick-note list — unlike /scratch's ScratchTimeline, add/
- * edit/delete all complete inline here (no navigation), since leaving the
- * Zettelkasten screen mid-flow is disruptive. Selection (for promotion) stays
- * owned by the parent; this component owns the notes list + inline editing.
+ * edit/delete all complete without leaving the Zettelkasten screen.
+ * Editing opens the same detail layout /scratch/[id] uses (content,
+ * literature, project sections) but as an overlay (QuickNoteDetailOverlay)
+ * rather than a real navigation — mirroring how a PermanentNote opens via
+ * NoteDetailOverlay instead of routing to it. Selection (for promotion)
+ * stays owned by the parent; this component owns the notes list + the
+ * detail overlay.
  */
 export interface FocusNoteRequest {
   id: string;
@@ -64,9 +62,7 @@ export function QuickNoteInlineTimeline({
   focusRequest?: FocusNoteRequest | null;
 }) {
   const { t, locale } = useI18n();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
-  const [editingContent, setEditingContent] = useState("");
+  const [openDetailId, setOpenDetailId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
   const [creating, setCreating] = useState(false);
@@ -83,22 +79,10 @@ export function QuickNoteInlineTimeline({
     return () => clearTimeout(timer);
   }, [focusRequest?.id, focusRequest?.token]);
 
-  async function startEdit(id: string) {
-    setLoadingEditId(id);
-    try {
-      const detail = await getQuickNoteDetailAction(id);
-      setEditingContent(detail.content);
-      setEditingId(id);
-    } finally {
-      setLoadingEditId(null);
-    }
-  }
-
-  async function saveEdit(id: string, content: string) {
-    const detail = await updateQuickNoteContentAction(id, content);
+  function handleContentSaved(detail: QuickNoteDetail) {
     onNotesChange(
       notes.map((n) =>
-        n.id === id
+        n.id === detail.id
           ? { ...n, preview: previewFrom(detail.content), hasLiterature: !!detail.literatureMemo, literatureCitation: detail.literatureMemo?.citation ?? null }
           : n,
       ),
@@ -113,7 +97,7 @@ export function QuickNoteInlineTimeline({
       onNotesChange(notes.filter((n) => n.id !== id));
       onDeleted(id);
       setDeleteTargetId(null);
-      if (editingId === id) setEditingId(null);
+      if (openDetailId === id) setOpenDetailId(null);
     });
   }
 
@@ -132,8 +116,7 @@ export function QuickNoteInlineTimeline({
           literatureCitation: null,
         },
       ]);
-      setEditingContent("");
-      setEditingId(detail.id);
+      setOpenDetailId(detail.id);
     } finally {
       setCreating(false);
     }
@@ -151,10 +134,7 @@ export function QuickNoteInlineTimeline({
 
         <NoteTimeline
         emptyLabel={t.zettelkasten.emptyTimeline}
-        rows={notes.map((note) => {
-          const isEditing = editingId === note.id;
-          const isLoadingEdit = loadingEditId === note.id;
-          return {
+        rows={notes.map((note) => ({
             key: note.id,
             meta: <span className="font-mono text-[9.5px] text-ink-faint">{formatDate(note.encounteredAt, locale)}</span>,
             card: (
@@ -164,58 +144,37 @@ export function QuickNoteInlineTimeline({
                   highlightId === note.id ? "ring-2 ring-accent ring-offset-2 ring-offset-bg" : ""
                 }`}
               >
-                {isEditing ? (
-                  <div className="rounded-lg border border-accent/60 bg-surface-alt p-3">
-                    <div className="mb-1 flex justify-end">
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="font-mono text-[9.5px] text-ink-soft transition-colors hover:text-accent"
-                      >
-                        {t.common.close}
-                      </button>
-                    </div>
-                    <MarkdownNoteEditor content={editingContent} onSave={(content) => saveEdit(note.id, content)} />
-                  </div>
-                ) : isLoadingEdit ? (
-                  <div className="rounded-lg border border-line bg-surface-alt p-3">
-                    <LoadingBlock label={t.common.loading} className="py-1" />
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => onToggleSelect(note.id)}
-                      className={`flex w-full flex-col gap-1.5 rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
-                        selectedIds.has(note.id)
-                          ? "border-accent/70 bg-accent-soft"
-                          : "border-line bg-surface-alt hover:border-line-strong"
-                      }`}
-                    >
-                      {note.preview || t.common.noContent}
-                      {note.literatureCitation && (
-                        <span className="flex items-start gap-1.5 border-t border-line/60 pt-1.5 font-mono text-[9.5px] text-ink-soft">
-                          <span className="shrink-0 text-accent">📖</span>
-                          <span className="line-clamp-1">{note.literatureCitation}</span>
-                        </span>
-                      )}
-                    </button>
-                    <QuickNoteActionMenu onEdit={() => startEdit(note.id)} onDelete={() => setDeleteTargetId(note.id)} />
-                    <ConfirmDialog
-                      open={deleteTargetId === note.id}
-                      title={t.zettelkasten.deleteConfirmTitle}
-                      warning={t.zettelkasten.deleteConfirmWarning}
-                      confirmLabel={t.common.delete}
-                      onCancel={() => setDeleteTargetId(null)}
-                      onConfirm={confirmDelete}
-                      confirmDisabled={deletePending}
-                      confirmPending={deletePending}
-                    />
-                  </>
-                )}
+                <button
+                  onClick={() => onToggleSelect(note.id)}
+                  className={`flex w-full flex-col gap-1.5 rounded-lg border p-3 text-left text-xs text-ink transition-colors ${
+                    selectedIds.has(note.id)
+                      ? "border-accent/70 bg-accent-soft"
+                      : "border-line bg-surface-alt hover:border-line-strong"
+                  }`}
+                >
+                  {note.preview || t.common.noContent}
+                  {note.literatureCitation && (
+                    <span className="flex items-start gap-1.5 border-t border-line/60 pt-1.5 font-mono text-[9.5px] text-ink-soft">
+                      <span className="shrink-0 text-accent">📖</span>
+                      <span className="line-clamp-1">{note.literatureCitation}</span>
+                    </span>
+                  )}
+                </button>
+                <QuickNoteActionMenu onEdit={() => setOpenDetailId(note.id)} onDelete={() => setDeleteTargetId(note.id)} />
+                <ConfirmDialog
+                  open={deleteTargetId === note.id}
+                  title={t.zettelkasten.deleteConfirmTitle}
+                  warning={t.zettelkasten.deleteConfirmWarning}
+                  confirmLabel={t.common.delete}
+                  onCancel={() => setDeleteTargetId(null)}
+                  onConfirm={confirmDelete}
+                  confirmDisabled={deletePending}
+                  confirmPending={deletePending}
+                />
               </div>
             ),
             dotClassName: selectedIds.has(note.id) ? "bg-accent" : "",
-          };
-        })}
+          }))}
         />
 
         <div className="flex flex-col items-center gap-3 pt-10 pb-4">
@@ -243,6 +202,14 @@ export function QuickNoteInlineTimeline({
           </button>
         </div>
       </div>
+
+      {openDetailId && (
+        <QuickNoteDetailOverlay
+          noteId={openDetailId}
+          onClose={() => setOpenDetailId(null)}
+          onContentSaved={handleContentSaved}
+        />
+      )}
     </div>
   );
 }

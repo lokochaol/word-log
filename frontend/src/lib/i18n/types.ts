@@ -354,6 +354,8 @@ export interface Dictionary {
     timelineOpenDay: (date: string) => string;
     timelinePrevMonth: string;
     timelineNextMonth: string;
+    openProjectDetail: string;
+    createQuickNoteButton: string;
   };
   errors: {
     keywordRequired: string;

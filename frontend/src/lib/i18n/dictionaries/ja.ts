@@ -342,6 +342,8 @@ export const ja: Dictionary = {
     timelineOpenDay: (date) => `${date}のメモを開く`,
     timelinePrevMonth: "前の月",
     timelineNextMonth: "次の月",
+    openProjectDetail: "プロジェクト詳細",
+    createQuickNoteButton: "＋ 走り書き",
   },
   errors: {
     keywordRequired: "キーワードを入力してください",

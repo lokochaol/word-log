@@ -248,7 +248,7 @@ export function ZettelkastenScreen({
         )}
         {!activeProjectId && mainView === "calendar" && (
           <div className="min-h-0 min-w-0 flex-1 overflow-auto px-6 py-6">
-            <ZettelkastenCalendarPane />
+            <ZettelkastenCalendarPane onOpenProject={(id) => openProject(id)} />
           </div>
         )}
         {!activeProjectId && mainView === "notes" && (

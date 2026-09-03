@@ -124,8 +124,24 @@ export interface ProjectTimelineMark {
  * scoped to a single calendar month (1-indexed `month`). A project's bar
  * always extends only up to today while it stays open (never further,
  * never less — closing is the only thing that ever freezes it, see
- * src/lib/projects.ts#close) and only ever within the requested month. */
-export async function listTimelineMarks(ownerSub: string, year: number, month: number): Promise<ProjectTimelineMark[]> {
+ * src/lib/projects.ts#close) and only ever within the requested month.
+ *
+ * `todayKey` is passed in rather than computed here from `new Date()` — the
+ * caller (a client component) already computed it from the same clock its
+ * `year`/`month` request and its own displayed "today" all came from. If
+ * this function instead asked its OWN server clock what "today" is, any
+ * client/server clock skew would make an ostensibly-current month look like
+ * it's in the future relative to the server, silently filtering every
+ * project out of the requested month (rangeStart ends up after rangeEnd for
+ * all of them — this is exactly what happened before todayKey was threaded
+ * through: the timeline rendered as empty even though the projects and
+ * their notes were all still there). */
+export async function listTimelineMarks(
+  ownerSub: string,
+  year: number,
+  month: number,
+  todayKey: string,
+): Promise<ProjectTimelineMark[]> {
   const activeProjects = await prisma.project.findMany({
     where: { ownerSub, status: "ACTIVE" },
     orderBy: [{ isDefault: "desc" }, { startedAt: "asc" }],
@@ -134,8 +150,7 @@ export async function listTimelineMarks(ownerSub: string, year: number, month: n
 
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
   const monthEnd = new Date(Date.UTC(year, month, 0));
-  const now = new Date();
-  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const today = toDate(todayKey);
 
   const notes = await prisma.projectTaskNote.findMany({
     where: { projectId: { in: activeProjects.map((p) => p.id) }, date: { gte: monthStart, lte: monthEnd } },

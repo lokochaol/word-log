@@ -44,7 +44,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
 
   const todayNotes = view === "today" ? await projectTaskNotes.listAllProjectsTodayNotes(ownerSub, todayKey) : [];
   const timelineMarks =
-    view === "timeline" ? await projectTaskNotes.listTimelineMarks(ownerSub, viewedYear, viewedMonth) : [];
+    view === "timeline" ? await projectTaskNotes.listTimelineMarks(ownerSub, viewedYear, viewedMonth, todayKey) : [];
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">

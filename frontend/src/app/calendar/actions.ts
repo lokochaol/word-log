@@ -10,9 +10,9 @@ export async function listTodayProjectNotesAction(dateKey: string): Promise<Toda
   return projectTaskNotes.listAllProjectsTodayNotes(ownerSub, dateKey);
 }
 
-export async function listTimelineMarksAction(year: number, month: number): Promise<ProjectTimelineMark[]> {
+export async function listTimelineMarksAction(year: number, month: number, todayKey: string): Promise<ProjectTimelineMark[]> {
   const ownerSub = await requireOwnerSub();
-  return projectTaskNotes.listTimelineMarks(ownerSub, year, month);
+  return projectTaskNotes.listTimelineMarks(ownerSub, year, month, todayKey);
 }
 
 /** Editing a project's task note directly from Calendar's 今日 view — same

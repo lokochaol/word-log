@@ -44,7 +44,7 @@ export function ZettelkastenCalendarPane({
       });
     }
     if (view === "timeline" && timelineData?.key !== monthKey) {
-      listTimelineMarksAction(viewedYear, viewedMonth).then((result) => {
+      listTimelineMarksAction(viewedYear, viewedMonth, todayKey).then((result) => {
         if (!cancelled) setTimelineData({ key: monthKey, marks: result });
       });
     }

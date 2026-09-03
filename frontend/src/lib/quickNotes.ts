@@ -17,12 +17,18 @@ export interface QuickNoteSummary {
   literatureCitation: string | null;
 }
 
+export interface QuickNoteProjectRef {
+  id: string;
+  name: string;
+}
+
 export interface QuickNoteDetail {
   id: string;
   source: QuickNoteSource;
   status: QuickNoteStatus;
   content: string;
   literatureMemo: LiteratureMemoRef | null;
+  project: QuickNoteProjectRef | null;
   encounteredAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +36,7 @@ export interface QuickNoteDetail {
 
 const quickNoteInclude = {
   literatureMemo: true,
+  project: true,
 } satisfies Prisma.QuickNoteInclude;
 
 type QuickNoteWithDetail = Prisma.QuickNoteGetPayload<{ include: typeof quickNoteInclude }>;
@@ -51,6 +58,7 @@ function toDetail(note: QuickNoteWithDetail): QuickNoteDetail {
     status: note.status,
     content: note.content,
     literatureMemo: toLiteratureMemoRef(note.literatureMemo),
+    project: note.project ? { id: note.project.id, name: note.project.name } : null,
     encounteredAt: note.encounteredAt,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
@@ -127,6 +135,19 @@ export async function setLiteratureMemo(
     data: { literatureMemoId },
   });
 
+  return toDetail(await requireOwnedQuickNote(ownerSub, id));
+}
+
+/** Links (or unlinks, with `projectId: null`) a QuickNote to a Project —
+ * exempts it from the 1-week stale-archive sweep until that Project closes
+ * (see archiveStaleQuickNotes in src/lib/quickNoteArchiving.ts). */
+export async function setProject(ownerSub: string, id: string, projectId: string | null): Promise<QuickNoteDetail> {
+  await requireOwnedQuickNote(ownerSub, id);
+  if (projectId) {
+    const project = await prisma.project.findFirst({ where: { id: projectId, ownerSub } });
+    if (!project) throw new NotFoundError("projectNotFound", `Project not found: ${projectId}`);
+  }
+  await prisma.quickNote.update({ where: { id }, data: { projectId } });
   return toDetail(await requireOwnedQuickNote(ownerSub, id));
 }
 

@@ -5,6 +5,7 @@ import { requireOwnerSub } from "@/lib/session";
 import { NotFoundError } from "@/lib/errors";
 import { QuickNoteContentSection } from "@/components/QuickNoteContentSection";
 import { QuickNoteLiteratureSection } from "@/components/QuickNoteLiteratureSection";
+import { QuickNoteProjectSection } from "@/components/QuickNoteProjectSection";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary, localeTag } from "@/lib/i18n/dictionary";
 import type { Locale } from "@/lib/i18n/types";
@@ -67,6 +68,13 @@ export default async function QuickNoteDetailPage(props: PageProps<"/scratch/[id
             <span className="text-accent">{"//"}</span> {dict.scratch.literatureHeading}
           </h2>
           <QuickNoteLiteratureSection noteId={note.id} literatureMemo={note.literatureMemo} />
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+            <span className="text-accent">{"//"}</span> {dict.scratch.projectHeading}
+          </h2>
+          <QuickNoteProjectSection noteId={note.id} initialProject={note.project} />
         </section>
       </div>
     </main>

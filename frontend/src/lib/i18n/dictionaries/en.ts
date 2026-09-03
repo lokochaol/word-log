@@ -114,6 +114,9 @@ export const en: Dictionary = {
     contentHeading: "Content",
     literatureHeading: "Literature memo (optional)",
     homeSearchPlaceholder: "Search by word, meaning, related term…",
+    projectHeading: "Project",
+    projectNoneOption: "None",
+    projectSaving: "Saving…",
   },
   discovery: {
     shelfLabel: (n) => `Related (${n}) — tap for details`,

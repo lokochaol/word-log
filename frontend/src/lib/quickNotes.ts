@@ -104,9 +104,14 @@ export async function create(
   ownerSub: string,
   source: QuickNoteSource = "SCRATCH",
   literatureMemoId?: string,
+  projectId?: string,
 ): Promise<QuickNoteDetail> {
+  if (projectId) {
+    const project = await prisma.project.findFirst({ where: { id: projectId, ownerSub } });
+    if (!project) throw new NotFoundError("projectNotFound", `Project not found: ${projectId}`);
+  }
   const note = await prisma.quickNote.create({
-    data: { ownerSub, source, literatureMemoId },
+    data: { ownerSub, source, literatureMemoId, projectId },
     include: quickNoteInclude,
   });
   return toDetail(note);

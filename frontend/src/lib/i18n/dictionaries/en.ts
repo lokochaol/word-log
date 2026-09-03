@@ -343,6 +343,8 @@ export const en: Dictionary = {
     timelineOpenDay: (date) => `Open notes for ${date}`,
     timelinePrevMonth: "Previous month",
     timelineNextMonth: "Next month",
+    openProjectDetail: "Project details",
+    createQuickNoteButton: "+ Dash Off",
   },
   errors: {
     keywordRequired: "Please enter a keyword",

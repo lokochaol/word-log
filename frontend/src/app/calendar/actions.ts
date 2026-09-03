@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import * as projectTaskNotes from "@/lib/projectTaskNotes";
 import type { TodayProjectNote, ProjectTimelineMark, ProjectTaskNoteView } from "@/lib/projectTaskNotes";
+import * as quickNotes from "@/lib/quickNotes";
+import type { QuickNoteDetail } from "@/lib/quickNotes";
 import { requireOwnerSub } from "@/lib/session";
 
 export async function listTodayProjectNotesAction(dateKey: string): Promise<TodayProjectNote[]> {
@@ -27,6 +29,17 @@ export async function upsertCalendarTaskNoteAction(
   const ownerSub = await requireOwnerSub();
   const note = await projectTaskNotes.upsertContent(ownerSub, projectId, dateKey, content);
   revalidatePath("/calendar");
+  revalidatePath(`/projects/${projectId}`);
+  return note;
+}
+
+/** "＋ 走り書きを作成" from a Calendar project card — a new QuickNote already
+ * linked to that project, ready for the caller to open (e.g. in
+ * QuickNoteDetailOverlay) for editing. */
+export async function createQuickNoteForProjectAction(projectId: string): Promise<QuickNoteDetail> {
+  const ownerSub = await requireOwnerSub();
+  const note = await quickNotes.create(ownerSub, "SCRATCH", undefined, projectId);
+  revalidatePath("/scratch");
   revalidatePath(`/projects/${projectId}`);
   return note;
 }

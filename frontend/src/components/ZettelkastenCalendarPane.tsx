@@ -45,16 +45,21 @@ export function ZettelkastenCalendarPane({
   }, [view, todayNotes, timelineMarks]);
 
   const todayKey = todayKeyValue();
-  const todayLabel = new Date(`${todayKey}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
+  const today = new Date(`${todayKey}T00:00:00.000Z`);
+  const todayLabel = today.toLocaleDateString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
+  // The timeline currently spans a project's whole lifetime, but that won't
+  // hold once it's paginated by month — so its title only ever commits to
+  // month-level granularity, never a specific day.
+  const monthLabel = today.toLocaleDateString(localeTag(locale), { year: "numeric", month: "2-digit" });
 
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
+        <h1 className="text-lg font-extrabold tracking-tight text-ink">{view === "today" ? todayLabel : monthLabel}</h1>
         <div className="flex gap-1.5 rounded-full border border-line-strong bg-surface p-1">
           {(["today", "timeline"] as const).map((v) => (
             <button

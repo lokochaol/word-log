@@ -18,11 +18,12 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
 
   const view = searchParams.view === "timeline" ? "timeline" : "today";
   const todayKey = projectTaskNotes.todayKey();
-  const todayLabel = new Date(`${todayKey}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
+  const today = new Date(`${todayKey}T00:00:00.000Z`);
+  const todayLabel = today.toLocaleDateString(localeTag(locale), { year: "numeric", month: "2-digit", day: "2-digit" });
+  // The timeline currently spans a project's whole lifetime, but that won't
+  // hold once it's paginated by month — so its title only ever commits to
+  // month-level granularity, never a specific day.
+  const monthLabel = today.toLocaleDateString(localeTag(locale), { year: "numeric", month: "2-digit" });
 
   const todayNotes = view === "today" ? await projectTaskNotes.listAllProjectsTodayNotes(ownerSub, todayKey) : [];
   const timelineMarks = view === "timeline" ? await projectTaskNotes.listTimelineMarks(ownerSub) : [];
@@ -57,7 +58,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-ink">{view === "today" ? todayLabel : monthLabel}</h1>
           <CalendarViewSwitch view={view} />
         </div>
 

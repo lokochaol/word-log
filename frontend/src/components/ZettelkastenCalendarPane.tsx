@@ -54,7 +54,7 @@ export function ZettelkastenCalendarPane({
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-extrabold tracking-tight text-ink">{t.calendar.heading}</h1>
+        <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
         <div className="flex gap-1.5 rounded-full border border-line-strong bg-surface p-1">
           {(["today", "timeline"] as const).map((v) => (
             <button
@@ -74,7 +74,7 @@ export function ZettelkastenCalendarPane({
         (todayNotes === null ? (
           <LoadingBlock label={t.calendar.projectTaskLoading} />
         ) : (
-          <CalendarTodayView heading={t.calendar.todayHeading(todayLabel)} initialNotes={todayNotes} />
+          <CalendarTodayView initialNotes={todayNotes} />
         ))}
 
       {view === "timeline" &&

@@ -57,12 +57,12 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-lg font-extrabold tracking-tight text-ink">{dict.calendar.heading}</h1>
+          <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
           <CalendarViewSwitch view={view} />
         </div>
 
         {view === "today" ? (
-          <CalendarTodayView heading={dict.calendar.todayHeading(todayLabel)} initialNotes={todayNotes} />
+          <CalendarTodayView initialNotes={todayNotes} />
         ) : (
           <CalendarTimelineView marks={timelineMarks} todayKey={todayKey} />
         )}

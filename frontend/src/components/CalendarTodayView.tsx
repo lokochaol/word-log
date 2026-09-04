@@ -54,7 +54,12 @@ export function CalendarTodayView({
   return (
     <div className="flex flex-col gap-4">
       {initialNotes.map((note) => (
-        <HudFrame key={note.projectId} active={false} innerClassName="flex flex-col gap-2 rounded-xl px-4 py-3.5">
+        <HudFrame
+          key={note.projectId}
+          active={false}
+          scanline={false}
+          innerClassName="flex flex-col gap-2 rounded-xl px-4 py-3.5"
+        >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="font-bold text-ink">{note.projectName}</span>

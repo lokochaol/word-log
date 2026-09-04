@@ -41,7 +41,7 @@ export function DiscoveryConfirmDialog() {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
-      <div className="hud-scanline relative w-full max-w-[380px] overflow-hidden rounded-2xl border border-accent/50 bg-surface shadow-[0_0_60px_-15px_var(--color-accent)]">
+      <div className="relative w-full max-w-[380px] overflow-hidden rounded-2xl border border-accent/50 bg-surface shadow-[0_0_60px_-15px_var(--color-accent)]">
         <div className="relative flex flex-col gap-4 p-5">
           <div className="flex items-center gap-2">
             <span aria-hidden="true" className="animate-pulse-dot h-2 w-2 rounded-full bg-accent" />

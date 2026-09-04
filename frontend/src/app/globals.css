@@ -121,29 +121,6 @@ body {
   }
 }
 
-@keyframes scan-sweep {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(320%);
-  }
-}
-
-.hud-scanline {
-  overflow: hidden;
-}
-
-.hud-scanline::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 22%;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent);
-  animation: scan-sweep 3.6s linear infinite;
-  pointer-events: none;
-}
-
 @keyframes radar-ping {
   0% {
     transform: scale(1);

@@ -4,6 +4,7 @@ import * as projectTaskNotes from "@/lib/projectTaskNotes";
 import { CalendarViewSwitch } from "@/components/CalendarViewSwitch";
 import { CalendarMonthNav } from "@/components/CalendarMonthNav";
 import { CalendarTodayView } from "@/components/CalendarTodayView";
+import { CalendarTodaySection } from "@/components/CalendarTodaySection";
 import { CalendarTimelineSection } from "@/components/CalendarTimelineSection";
 import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
@@ -21,7 +22,6 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
   const selectedDate = searchParams.view === "day" && typeof searchParams.date === "string" ? searchParams.date : null;
   const todayKey = projectTaskNotes.todayKey();
   const today = new Date(`${todayKey}T00:00:00.000Z`);
-  const todayLabel = today.toLocaleDateString(localeTag(locale), { year: "numeric", month: "2-digit", day: "2-digit" });
 
   const currentYear = today.getUTCFullYear();
   const currentMonth = today.getUTCMonth() + 1;
@@ -100,24 +100,18 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
             </div>
             <CalendarTodayView key={selectedDate} dateKey={selectedDate} initialNotes={selectedDayNotes} />
           </>
+        ) : topView === "today" ? (
+          <CalendarTodaySection initialNotes={todayNotes} headerRight={<CalendarViewSwitch view={topView} />} />
         ) : (
           <>
             <div className="flex items-center justify-between gap-3">
-              {topView === "today" ? (
-                <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
-              ) : (
-                <CalendarMonthNav year={viewedYear} month={viewedMonth} isCurrentMonth={isCurrentViewedMonth}>
-                  <h1 className="text-lg font-extrabold tracking-tight text-ink">{monthLabel}</h1>
-                </CalendarMonthNav>
-              )}
+              <CalendarMonthNav year={viewedYear} month={viewedMonth} isCurrentMonth={isCurrentViewedMonth}>
+                <h1 className="text-lg font-extrabold tracking-tight text-ink">{monthLabel}</h1>
+              </CalendarMonthNav>
               <CalendarViewSwitch view={topView} />
             </div>
 
-            {topView === "today" ? (
-              <CalendarTodayView key={todayKey} dateKey={todayKey} initialNotes={todayNotes} />
-            ) : (
-              <CalendarTimelineSection marks={timelineMarks} year={viewedYear} month={viewedMonth} todayKey={todayKey} />
-            )}
+            <CalendarTimelineSection marks={timelineMarks} year={viewedYear} month={viewedMonth} todayKey={todayKey} />
           </>
         )}
       </div>

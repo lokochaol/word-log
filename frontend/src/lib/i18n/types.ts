@@ -354,6 +354,10 @@ export interface Dictionary {
     timelineOpenDay: (date: string) => string;
     timelinePrevMonth: string;
     timelineNextMonth: string;
+    todayBadge: string;
+    backToToday: string;
+    prevDay: string;
+    nextDay: string;
     openProjectDetail: string;
     createQuickNoteButton: string;
   };

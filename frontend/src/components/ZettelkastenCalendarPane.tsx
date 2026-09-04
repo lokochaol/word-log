@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LoadingBlock } from "@/components/LoadingSpinner";
+import { CalendarTodaySection } from "@/components/CalendarTodaySection";
 import { CalendarTodayView } from "@/components/CalendarTodayView";
 import { CalendarTimelineView } from "@/components/CalendarTimelineView";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
@@ -20,7 +21,6 @@ function todayKeyValue() {
 export function ZettelkastenCalendarPane({ onOpenProject }: { onOpenProject: (projectId: string) => void }) {
   const { t, locale } = useI18n();
   const [view, setView] = useState<"today" | "timeline">("today");
-  const [todayNotes, setTodayNotes] = useState<TodayProjectNote[] | null>(null);
 
   const todayKey = todayKeyValue();
   const todayDate = new Date(`${todayKey}T00:00:00.000Z`);
@@ -41,11 +41,6 @@ export function ZettelkastenCalendarPane({ onOpenProject }: { onOpenProject: (pr
 
   useEffect(() => {
     let cancelled = false;
-    if (view === "today" && todayNotes === null) {
-      listTodayProjectNotesAction(todayKey).then((result) => {
-        if (!cancelled) setTodayNotes(result);
-      });
-    }
     if (view === "timeline" && timelineData?.key !== monthKey) {
       listTimelineMarksAction(viewedYear, viewedMonth, todayKey).then((result) => {
         if (!cancelled) setTimelineData({ key: monthKey, marks: result });
@@ -68,11 +63,6 @@ export function ZettelkastenCalendarPane({ onOpenProject }: { onOpenProject: (pr
     setViewedMonth(base.getUTCMonth() + 1);
   }
 
-  const todayLabel = todayDate.toLocaleDateString(localeTag(locale), {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
   const monthLabel = new Date(Date.UTC(viewedYear, viewedMonth - 1, 1)).toLocaleDateString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
@@ -87,6 +77,22 @@ export function ZettelkastenCalendarPane({ onOpenProject }: { onOpenProject: (pr
   const isCurrentViewedMonth = viewedYear === currentYear && viewedMonth === currentMonth;
   const timelineLoading = view === "timeline" && timelineData?.key !== monthKey;
   const selectedDayLoading = selectedDay !== null && selectedDayData?.key !== selectedDay;
+
+  const viewSwitch = (
+    <div className="flex gap-1.5 rounded-full border border-line-strong bg-surface p-1">
+      {(["today", "timeline"] as const).map((v) => (
+        <button
+          key={v}
+          onClick={() => setView(v)}
+          className={`rounded-full px-3 py-1.5 font-mono text-[10.5px] transition-colors ${
+            view === v ? "bg-accent text-on-accent" : "text-ink-soft hover:text-accent"
+          }`}
+        >
+          {v === "today" ? t.calendar.viewToday : t.calendar.viewTimeline}
+        </button>
+      ))}
+    </div>
+  );
 
   if (selectedDay) {
     return (
@@ -116,63 +122,45 @@ export function ZettelkastenCalendarPane({ onOpenProject }: { onOpenProject: (pr
 
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
-        {view === "today" ? (
-          <h1 className="text-lg font-extrabold tracking-tight text-ink">{todayLabel}</h1>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => shiftMonth(-1)}
-              aria-label={t.calendar.timelinePrevMonth}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
-            >
-              ‹
-            </button>
-            <h1 className="text-lg font-extrabold tracking-tight text-ink">{monthLabel}</h1>
-            <button
-              onClick={() => shiftMonth(1)}
-              disabled={isCurrentViewedMonth}
-              aria-label={t.calendar.timelineNextMonth}
-              className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent"
-            >
-              ›
-            </button>
+      {view === "today" ? (
+        <CalendarTodaySection onOpenProject={onOpenProject} headerRight={viewSwitch} />
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => shiftMonth(-1)}
+                aria-label={t.calendar.timelinePrevMonth}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
+              >
+                ‹
+              </button>
+              <h1 className="text-lg font-extrabold tracking-tight text-ink">{monthLabel}</h1>
+              <button
+                onClick={() => shiftMonth(1)}
+                disabled={isCurrentViewedMonth}
+                aria-label={t.calendar.timelineNextMonth}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent disabled:opacity-30 disabled:hover:bg-transparent"
+              >
+                ›
+              </button>
+            </div>
+            {viewSwitch}
           </div>
-        )}
-        <div className="flex gap-1.5 rounded-full border border-line-strong bg-surface p-1">
-          {(["today", "timeline"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`rounded-full px-3 py-1.5 font-mono text-[10.5px] transition-colors ${
-                view === v ? "bg-accent text-on-accent" : "text-ink-soft hover:text-accent"
-              }`}
-            >
-              {v === "today" ? t.calendar.viewToday : t.calendar.viewTimeline}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {view === "today" &&
-        (todayNotes === null ? (
-          <LoadingBlock label={t.calendar.projectTaskLoading} />
-        ) : (
-          <CalendarTodayView key={todayKey} dateKey={todayKey} initialNotes={todayNotes} onOpenProject={onOpenProject} />
-        ))}
-
-      {view === "timeline" &&
-        (timelineLoading ? (
-          <LoadingBlock label={t.calendar.projectTaskLoading} />
-        ) : (
-          <CalendarTimelineView
-            marks={timelineData!.marks}
-            year={viewedYear}
-            month={viewedMonth}
-            todayKey={todayKey}
-            onSelectDay={setSelectedDay}
-          />
-        ))}
+          {timelineLoading ? (
+            <LoadingBlock label={t.calendar.projectTaskLoading} />
+          ) : (
+            <CalendarTimelineView
+              marks={timelineData!.marks}
+              year={viewedYear}
+              month={viewedMonth}
+              todayKey={todayKey}
+              onSelectDay={setSelectedDay}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

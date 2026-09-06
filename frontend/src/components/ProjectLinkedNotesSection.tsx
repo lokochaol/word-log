@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { QuickNoteDetailOverlay } from "@/components/QuickNoteDetailOverlay";
+import { Spinner } from "@/components/LoadingSpinner";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { createQuickNoteForProjectAction } from "@/app/calendar/actions";
 import type { Locale } from "@/lib/i18n/types";
 import type { LinkedPermanentNoteRef, LinkedQuickNoteRef } from "@/lib/projects";
 import type { QuickNoteDetail } from "@/lib/quickNotes";
@@ -18,12 +20,16 @@ function previewFrom(content: string): string {
  * project, both still-active and (for QuickNote) archived-by-project-close.
  * Opening a QuickNote shows it in QuickNoteDetailOverlay in place — never a
  * real navigation to /scratch/[id] — the same pattern the Zettelkasten
- * screen's own 走り書き list uses. */
+ * screen's own 走り書き list uses. Also lets you create a new QuickNote
+ * already linked to this project directly from here (reusing the same
+ * createQuickNoteForProjectAction the Calendar project cards use). */
 export function ProjectLinkedNotesSection({
+  projectId,
   quickNotes: initialQuickNotes,
   permanentNotes,
   locale,
 }: {
+  projectId: string;
   quickNotes: LinkedQuickNoteRef[];
   permanentNotes: LinkedPermanentNoteRef[];
   locale: Locale;
@@ -31,14 +37,35 @@ export function ProjectLinkedNotesSection({
   const t = getDictionary(locale);
   const [quickNotes, setQuickNotes] = useState(initialQuickNotes);
   const [openQuickNoteId, setOpenQuickNoteId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const isEmpty = quickNotes.length === 0 && permanentNotes.length === 0;
 
   function handleContentSaved(detail: QuickNoteDetail) {
     setQuickNotes((prev) => prev.map((n) => (n.id === detail.id ? { ...n, preview: previewFrom(detail.content) } : n)));
   }
 
+  async function createQuickNote() {
+    setCreating(true);
+    try {
+      const note = await createQuickNoteForProjectAction(projectId);
+      setQuickNotes((prev) => [{ id: note.id, preview: "", status: "ACTIVE" }, ...prev]);
+      setOpenQuickNoteId(note.id);
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
+      <button
+        onClick={createQuickNote}
+        disabled={creating}
+        className="flex w-fit items-center gap-1.5 rounded-full border border-line-strong px-2.5 py-1 font-mono text-[10px] text-ink-soft transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+      >
+        {creating && <Spinner size="xs" />}
+        {t.calendar.createQuickNoteButton}
+      </button>
+
       {isEmpty && <p className="text-sm text-ink-soft">{t.projects.noLinkedNotes}</p>}
 
       {quickNotes.length > 0 && (

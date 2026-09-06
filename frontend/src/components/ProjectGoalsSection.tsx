@@ -16,10 +16,18 @@ const TIERS: { key: keyof ProjectGoals; label: (t: ReturnType<typeof useI18n>["t
   { key: "goalDay", label: (t) => t.projects.goalDayLabel },
 ];
 
+function hasAnyGoal(goals: ProjectGoals): boolean {
+  return TIERS.some(({ key }) => goals[key]?.trim());
+}
+
 export function ProjectGoalsSection({ projectId, initialGoals }: { projectId: string; initialGoals: ProjectGoals }) {
   const { t, locale } = useI18n();
   const [goals, setGoals] = useState(initialGoals);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [savedGoals, setSavedGoals] = useState(initialGoals);
+  // Nothing set yet? Go straight to the form — there's nothing to display.
+  // Otherwise start read-only, showing only the tiers that are registered.
+  const [editing, setEditing] = useState(() => !hasAnyGoal(initialGoals));
+  const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const problems = validateGoals(goals, locale);
@@ -34,8 +42,41 @@ export function ProjectGoalsSection({ projectId, initialGoals }: { projectId: st
       setStatus("idle");
       return;
     }
-    setStatus("saved");
-    setTimeout(() => setStatus("idle"), 2000);
+    setStatus("idle");
+    setSavedGoals(goals);
+    setEditing(false);
+  }
+
+  function startEditing() {
+    setGoals(savedGoals);
+    setError(null);
+    setEditing(true);
+  }
+
+  if (!editing) {
+    const setTiers = TIERS.filter(({ key }) => savedGoals[key]?.trim());
+    return (
+      <div className="flex flex-col gap-3">
+        {setTiers.length === 0 ? (
+          <p className="text-sm text-ink-soft">{t.projects.goalOptionalHint}</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {setTiers.map(({ key, label }) => (
+              <div key={key} className="flex flex-col gap-1">
+                <span className="font-mono text-[9.5px] tracking-wide text-ink-faint uppercase">{label(t)}</span>
+                <p className="text-sm text-ink">{savedGoals[key]}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={startEditing}
+          className="w-fit rounded-lg border border-line-strong px-3 py-1.5 font-mono text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent"
+        >
+          {t.common.edit}
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -53,12 +94,17 @@ export function ProjectGoalsSection({ projectId, initialGoals }: { projectId: st
           </label>
         ))}
       </div>
-      {problems.length > 0 && (
-        <p className="font-mono text-[10px] text-accent">{problems.join(" / ")}</p>
-      )}
+      {problems.length > 0 && <p className="font-mono text-[10px] text-accent">{problems.join(" / ")}</p>}
       {error && <p className="font-mono text-[10px] text-accent">{error}</p>}
       <div className="flex items-center justify-end gap-2">
-        {status === "saved" && <span className="font-mono text-[9.5px] text-ink-faint">{t.projects.goalSaved}</span>}
+        {hasAnyGoal(savedGoals) && (
+          <button
+            onClick={() => setEditing(false)}
+            className="rounded-lg border border-line-strong px-3 py-2 font-mono text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent"
+          >
+            {t.common.cancel}
+          </button>
+        )}
         <button
           onClick={handleSave}
           disabled={problems.length > 0 || status === "saving"}

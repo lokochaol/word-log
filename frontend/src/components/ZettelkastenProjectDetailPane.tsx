@@ -145,6 +145,7 @@ export function ZettelkastenProjectDetailPane({
           <span className="text-accent">{"//"}</span> {t.projects.linkedNotesHeading}
         </h2>
         <ProjectLinkedNotesSection
+          projectId={project.id}
           quickNotes={linkedNotes.quickNotes}
           permanentNotes={linkedNotes.permanentNotes}
           locale={locale}

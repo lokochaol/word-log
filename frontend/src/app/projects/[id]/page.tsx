@@ -105,6 +105,7 @@ export default async function ProjectDetailPage(props: PageProps<"/projects/[id]
             <span className="text-accent">{"//"}</span> {dict.projects.linkedNotesHeading}
           </h2>
           <ProjectLinkedNotesSection
+            projectId={project.id}
             quickNotes={linkedNotes.quickNotes}
             permanentNotes={linkedNotes.permanentNotes}
             locale={locale}

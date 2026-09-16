@@ -59,7 +59,7 @@ export const en: Dictionary = {
       ">": "Migrated",
       "<": "Scheduled",
       o: "Event",
-      "-": "Note",
+      "~": "Note",
       "*": "Priority",
       "!": "Inspiration",
     },

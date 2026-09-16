@@ -8,10 +8,12 @@ import { usePreferences } from "@/lib/preferences/PreferencesProvider";
  * their meanings come from the dictionary. Kept to characters that are one
  * keystroke on any keyboard, since the task note is a plain textarea and
  * these get typed by hand: "." stands in for Bullet Journal's task bullet
- * (•) and "o" for its event circle (○), while "-" is the note dash as-is.
+ * (•) and "o" for its event circle (○). The note is "~" rather than the
+ * canonical dash, because a Japanese IME turns "-" into a full-width 「ー」
+ * mid-sentence and switching width just to open a note isn't worth it.
  * Ordered task / its states first, then the other entry kinds, then the two
  * signifiers that prefix any of them. */
-const SIGNIFIERS = [".", "x", ">", "<", "o", "-", "*", "!"] as const;
+const SIGNIFIERS = [".", "x", ">", "<", "o", "~", "*", "!"] as const;
 
 /**
  * A quiet reminder of the Bullet Journal notation, shown wherever a daily

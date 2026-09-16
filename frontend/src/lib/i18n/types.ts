@@ -76,7 +76,7 @@ export interface Dictionary {
       ">": string;
       "<": string;
       o: string;
-      "-": string;
+      "~": string;
       "*": string;
       "!": string;
     };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BulletJournalLegend } from "@/components/BulletJournalLegend";
 import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
@@ -69,6 +70,8 @@ export function ProjectTaskSection({
           </button>
         ))}
       </div>
+
+      <BulletJournalLegend />
 
       {loading ? (
         <p className="py-4 text-center font-mono text-xs text-ink-soft">{t.projects.detailLoading}</p>

@@ -309,7 +309,8 @@ export const ja: Dictionary = {
     discoveryHour1Label: "1回目の時刻",
     discoveryHour2Label: "2回目の時刻",
     bulletLegendHeading: "バレットジャーナルの凡例",
-    bulletLegendDescription: "カレンダーの日毎のタスクメモに、記号の凡例を折りたたんだ状態で表示します。",
+    bulletLegendDescription:
+      "カレンダーとプロジェクト詳細の日毎のタスクメモに、記号の凡例を折りたたんだ状態で表示します。",
     bulletLegendShow: "表示",
     bulletLegendHide: "非表示",
   },

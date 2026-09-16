@@ -310,7 +310,8 @@ export const en: Dictionary = {
     discoveryHour1Label: "First run time",
     discoveryHour2Label: "Second run time",
     bulletLegendHeading: "Bullet Journal legend",
-    bulletLegendDescription: "Show a collapsed legend of the signifiers on the calendar's daily task notes.",
+    bulletLegendDescription:
+      "Show a collapsed legend of the signifiers on the daily task notes, in the calendar and on project detail pages.",
     bulletLegendShow: "Show",
     bulletLegendHide: "Hide",
   },

@@ -11,11 +11,12 @@ import { usePreferences } from "@/lib/preferences/PreferencesProvider";
 const SIGNIFIERS = ["-", "x", ">", "<", "o", "*", "!"] as const;
 
 /**
- * A quiet reminder of the Bullet Journal notation, for the day's project
- * task notes — the one place in the app where what gets written is a
- * checklist rather than prose. Collapsed to a single faint line by default
- * and expanded on click, so it stays out of the way of the notes it
- * annotates; it can be turned off entirely in Settings (see
+ * A quiet reminder of the Bullet Journal notation, shown wherever a daily
+ * project task note is edited — the calendar's day view and the project
+ * detail page's day strip, the two places in the app where what gets
+ * written is a checklist rather than prose. Collapsed to a single faint
+ * line by default and expanded on click, so it stays out of the way of the
+ * notes it annotates; it can be turned off entirely in Settings (see
  * PreferencesProvider), in which case it renders nothing at all.
  */
 export function BulletJournalLegend() {

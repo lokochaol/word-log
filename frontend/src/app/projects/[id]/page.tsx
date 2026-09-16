@@ -10,6 +10,7 @@ import { ProjectLinkedNotesSection } from "@/components/ProjectLinkedNotesSectio
 import { ProjectCloseButton } from "@/components/ProjectCloseButton";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary, localeTag } from "@/lib/i18n/dictionary";
+import { getTodayKey } from "@/lib/preferences/preferences";
 import type { Locale } from "@/lib/i18n/types";
 
 const DAY_STRIP_SIZE = 6;
@@ -39,7 +40,7 @@ export default async function ProjectDetailPage(props: PageProps<"/projects/[id]
   ]);
 
   const requestedDate = typeof searchParams.date === "string" ? searchParams.date : undefined;
-  const selectedDate = requestedDate ?? projectTaskNotes.todayKey();
+  const selectedDate = requestedDate ?? (await getTodayKey());
   const selectedNote = await projectTaskNotes.getOrEmpty(ownerSub, id, selectedDate);
 
   return (

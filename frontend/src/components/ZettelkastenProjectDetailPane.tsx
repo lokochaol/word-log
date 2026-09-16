@@ -16,12 +16,9 @@ import {
 } from "@/app/projects/actions";
 import type { ProjectDetail, LinkedQuickNoteRef, LinkedPermanentNoteRef } from "@/lib/projects";
 import type { DayStripEntry, ProjectTaskNoteView } from "@/lib/projectTaskNotes";
+import { todayKey as todayKeyValue } from "@/lib/dateKey";
 
 const DAY_STRIP_SIZE = 6;
-
-function todayKeyValue() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /** A Project's detail — goal ladder, day-strip task editor, linked notes,
  * close button — rendered inline inside ZettelkastenScreen's pane area

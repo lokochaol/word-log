@@ -8,11 +8,8 @@ import { CalendarTimelineView } from "@/components/CalendarTimelineView";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import { listTodayProjectNotesAction, listTimelineMarksAction } from "@/app/calendar/actions";
+import { formatDateKey, todayKey as todayKeyValue } from "@/lib/dateKey";
 import type { TodayProjectNote, ProjectTimelineMark } from "@/lib/projectTaskNotes";
-
-function todayKeyValue() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /** ①②③のツェッテルカステン本体の代わりに、ペイン部分にそのままカレンダー
  * （今日／タイムライン）を表示する — /calendar ページ自体と違い、ここでの
@@ -66,14 +63,9 @@ export function ZettelkastenCalendarPane({ onOpenProject }: { onOpenProject: (pr
   const monthLabel = new Date(Date.UTC(viewedYear, viewedMonth - 1, 1)).toLocaleDateString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
+    timeZone: "UTC",
   });
-  const selectedDayLabel = selectedDay
-    ? new Date(`${selectedDay}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-    : "";
+  const selectedDayLabel = selectedDay ? formatDateKey(selectedDay, localeTag(locale)) : "";
   const isCurrentViewedMonth = viewedYear === currentYear && viewedMonth === currentMonth;
   const timelineLoading = view === "timeline" && timelineData?.key !== monthKey;
   const selectedDayLoading = selectedDay !== null && selectedDayData?.key !== selectedDay;

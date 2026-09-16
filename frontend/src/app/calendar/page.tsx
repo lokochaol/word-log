@@ -10,6 +10,8 @@ import { HeaderMenu } from "@/components/HeaderMenu";
 import { HeaderAccountBadge } from "@/components/HeaderAccountBadge";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary, localeTag } from "@/lib/i18n/dictionary";
+import { formatDateKey } from "@/lib/dateKey";
+import { getTodayKey } from "@/lib/preferences/preferences";
 
 export default async function CalendarPage(props: PageProps<"/calendar">) {
   const searchParams = await props.searchParams;
@@ -20,7 +22,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
 
   const topView: "today" | "timeline" = searchParams.view === "timeline" ? "timeline" : "today";
   const selectedDate = searchParams.view === "day" && typeof searchParams.date === "string" ? searchParams.date : null;
-  const todayKey = projectTaskNotes.todayKey();
+  const todayKey = await getTodayKey();
   const today = new Date(`${todayKey}T00:00:00.000Z`);
 
   const currentYear = today.getUTCFullYear();
@@ -41,6 +43,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
   const monthLabel = new Date(Date.UTC(viewedYear, viewedMonth - 1, 1)).toLocaleDateString(localeTag(locale), {
     year: "numeric",
     month: "2-digit",
+    timeZone: "UTC",
   });
 
   const todayNotes =
@@ -50,13 +53,7 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
       ? await projectTaskNotes.listTimelineMarks(ownerSub, viewedYear, viewedMonth, todayKey)
       : [];
   const selectedDayNotes = selectedDate ? await projectTaskNotes.listAllProjectsTodayNotes(ownerSub, selectedDate) : [];
-  const selectedDayLabel = selectedDate
-    ? new Date(`${selectedDate}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-    : "";
+  const selectedDayLabel = selectedDate ? formatDateKey(selectedDate, localeTag(locale)) : "";
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-bg px-6 py-16">
@@ -101,7 +98,11 @@ export default async function CalendarPage(props: PageProps<"/calendar">) {
             <CalendarTodayView key={selectedDate} dateKey={selectedDate} initialNotes={selectedDayNotes} />
           </>
         ) : topView === "today" ? (
-          <CalendarTodaySection initialNotes={todayNotes} headerRight={<CalendarViewSwitch view={topView} />} />
+          <CalendarTodaySection
+            initialNotes={todayNotes}
+            initialNotesDateKey={todayKey}
+            headerRight={<CalendarViewSwitch view={topView} />}
+          />
         ) : (
           <>
             <div className="flex items-center justify-between gap-3">

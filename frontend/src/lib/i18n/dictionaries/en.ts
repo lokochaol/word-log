@@ -54,11 +54,12 @@ export const en: Dictionary = {
   bulletLegend: {
     title: "Legend",
     meanings: {
-      "-": "Task",
+      ".": "Task",
       x: "Done",
       ">": "Migrated",
       "<": "Scheduled",
       o: "Event",
+      "-": "Note",
       "*": "Priority",
       "!": "Inspiration",
     },

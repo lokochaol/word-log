@@ -70,7 +70,16 @@ export interface Dictionary {
   };
   bulletLegend: {
     title: string;
-    meanings: { "-": string; x: string; ">": string; "<": string; o: string; "*": string; "!": string };
+    meanings: {
+      ".": string;
+      x: string;
+      ">": string;
+      "<": string;
+      o: string;
+      "-": string;
+      "*": string;
+      "!": string;
+    };
   };
   unsavedChanges: {
     title: string;

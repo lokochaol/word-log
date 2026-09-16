@@ -220,7 +220,10 @@ function DraftCard({
         <label className="mb-1.5 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
           {t.promotionEditor.contentField}
         </label>
-        <MarkdownNoteEditor content={draft.content} onSave={(content) => onChange({ content })} />
+        {/* Live-sync, not a save: this only mirrors keystrokes into the
+            surrounding draft state, which the promotion form itself submits.
+            An inner Save button would read as a second, competing save. */}
+        <MarkdownNoteEditor content={draft.content} onChange={(content) => onChange({ content })} />
       </div>
 
       <div className="mt-2.5">

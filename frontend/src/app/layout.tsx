@@ -6,6 +6,7 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 import { getLocale } from "@/lib/i18n/locale";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
+import { UnsavedChangesProvider } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import { getTheme } from "@/lib/theme/theme";
 
 const inter = Inter({
@@ -44,9 +45,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full bg-bg text-ink">
         <ThemeProvider initialTheme={theme}>
           <LocaleProvider initialLocale={locale}>
-            <CustomCursor />
-            <ServiceWorkerRegister />
-            {children}
+            <UnsavedChangesProvider>
+              <CustomCursor />
+              <ServiceWorkerRegister />
+              {children}
+            </UnsavedChangesProvider>
           </LocaleProvider>
         </ThemeProvider>
       </body>

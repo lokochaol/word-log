@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
+import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import type { DayStripEntry, ProjectTaskNoteView } from "@/lib/projectTaskNotes";
 import { getProjectTaskNoteAction, upsertProjectTaskNoteAction } from "@/app/projects/actions";
 
@@ -27,17 +28,22 @@ export function ProjectTaskSection({
   initialNote: ProjectTaskNoteView;
 }) {
   const { t, locale } = useI18n();
+  const { guard } = useUnsavedChanges();
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [note, setNote] = useState(initialNote);
   const [loading, setLoading] = useState(false);
 
-  async function selectDay(date: string) {
+  function selectDay(date: string) {
     if (date === selectedDate) return;
-    setSelectedDate(date);
-    setLoading(true);
-    const result = await getProjectTaskNoteAction(projectId, date);
-    setNote(result);
-    setLoading(false);
+    // Switching day remounts the editor (key={selectedDate}), so an unsaved
+    // buffer would vanish — guard asks 保存 / 破棄 first.
+    guard(async () => {
+      setSelectedDate(date);
+      setLoading(true);
+      const result = await getProjectTaskNoteAction(projectId, date);
+      setNote(result);
+      setLoading(false);
+    });
   }
 
   async function save(content: string) {

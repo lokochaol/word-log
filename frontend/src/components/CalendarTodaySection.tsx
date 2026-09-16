@@ -6,6 +6,7 @@ import { CalendarTodayView } from "@/components/CalendarTodayView";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import { listTodayProjectNotesAction } from "@/app/calendar/actions";
+import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import type { TodayProjectNote } from "@/lib/projectTaskNotes";
 
 /** How many days' worth of notes stay cached at once (least-recently-viewed
@@ -49,6 +50,7 @@ export function CalendarTodaySection({
   headerRight?: ReactNode;
 }) {
   const { t, locale } = useI18n();
+  const { guard } = useUnsavedChanges();
   const todayKey = todayKeyValue();
   const [viewedDateKey, setViewedDateKey] = useState(todayKey);
   const [notesCache, setNotesCache] = useState<Record<string, TodayProjectNote[]>>(
@@ -99,13 +101,17 @@ export function CalendarTodaySection({
   });
   const isToday = viewedDateKey === todayKey;
   const viewedNotes = notesCache[viewedDateKey];
+  /** Each day renders its own set of task-note editors (key={viewedDateKey}),
+   * so stepping days drops any unsaved buffer — ask first. */
+  const goToDay = (next: (current: string) => string) =>
+    guard(() => setViewedDateKey((current) => next(current)));
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setViewedDateKey((k) => shiftDateKey(k, -1))}
+            onClick={() => goToDay((k) => shiftDateKey(k, -1))}
             aria-label={t.calendar.prevDay}
             className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
           >
@@ -120,7 +126,7 @@ export function CalendarTodaySection({
             )}
           </h1>
           <button
-            onClick={() => setViewedDateKey((k) => shiftDateKey(k, 1))}
+            onClick={() => goToDay((k) => shiftDateKey(k, 1))}
             aria-label={t.calendar.nextDay}
             className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-surface-alt hover:text-accent"
           >
@@ -128,7 +134,7 @@ export function CalendarTodaySection({
           </button>
           {!isToday && (
             <button
-              onClick={() => setViewedDateKey(todayKey)}
+              onClick={() => goToDay(() => todayKey)}
               className="rounded-full border border-line-strong px-2.5 py-1 font-mono text-[10px] text-ink-soft transition-colors hover:border-accent hover:text-accent"
             >
               {t.calendar.backToToday}

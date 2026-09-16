@@ -5,12 +5,13 @@ import { BulletJournalLegend } from "@/components/BulletJournalLegend";
 import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
+import { formatDateKey } from "@/lib/dateKey";
 import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import type { DayStripEntry, ProjectTaskNoteView } from "@/lib/projectTaskNotes";
 import { getProjectTaskNoteAction, upsertProjectTaskNoteAction } from "@/app/projects/actions";
 
 function formatDayLabel(dateKey: string, locale: string) {
-  return new Date(`${dateKey}T00:00:00.000Z`).toLocaleDateString(locale, { month: "numeric", day: "numeric" });
+  return formatDateKey(dateKey, locale, { month: "numeric", day: "numeric" });
 }
 
 /** Day-strip + editable task-note for one Project — "プロジェクトタスク管理

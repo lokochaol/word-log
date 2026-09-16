@@ -6,7 +6,8 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 import { getLocale } from "@/lib/i18n/locale";
 import { PreferencesProvider } from "@/lib/preferences/PreferencesProvider";
-import { getBulletLegendVisible } from "@/lib/preferences/preferences";
+import { getBulletLegendVisible, getTimeZone } from "@/lib/preferences/preferences";
+import { TimeZoneSync } from "@/components/TimeZoneSync";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { UnsavedChangesProvider } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import { getTheme } from "@/lib/theme/theme";
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const theme = await getTheme();
   const bulletLegendVisible = await getBulletLegendVisible();
+  const timeZone = await getTimeZone();
   return (
     <html lang={locale} data-theme={theme} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-ink">
@@ -50,6 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <LocaleProvider initialLocale={locale}>
             <PreferencesProvider initialBulletLegendVisible={bulletLegendVisible}>
               <UnsavedChangesProvider>
+                <TimeZoneSync serverTimeZone={timeZone} />
                 <CustomCursor />
                 <ServiceWorkerRegister />
                 {children}

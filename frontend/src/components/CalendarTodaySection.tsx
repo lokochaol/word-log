@@ -5,6 +5,7 @@ import { LoadingBlock } from "@/components/LoadingSpinner";
 import { CalendarTodayView } from "@/components/CalendarTodayView";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
+import { formatDateKey, shiftDateKey, todayKey as todayKeyValue } from "@/lib/dateKey";
 import { listTodayProjectNotesAction } from "@/app/calendar/actions";
 import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import type { TodayProjectNote } from "@/lib/projectTaskNotes";
@@ -13,16 +14,6 @@ import type { TodayProjectNote } from "@/lib/projectTaskNotes";
  * evicted first once exceeded) — enough for a session of hopping back and
  * forth over a couple of weeks without the cache growing unbounded. */
 const CACHE_LIMIT = 14;
-
-function todayKeyValue() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function shiftDateKey(dateKey: string, delta: number): string {
-  const d = new Date(`${dateKey}T00:00:00.000Z`);
-  d.setUTCDate(d.getUTCDate() + delta);
-  return d.toISOString().slice(0, 10);
-}
 
 /**
  * ③今日の表示 — lets you step to the day before/after (and jump back to
@@ -36,13 +27,20 @@ function shiftDateKey(dateKey: string, delta: number): string {
  */
 export function CalendarTodaySection({
   initialNotes,
+  initialNotesDateKey,
   onOpenProject,
   headerRight,
 }: {
-  /** Seeds the cache for today specifically, so the standalone /calendar
-   * page's SSR-fetched data doesn't get re-fetched on mount. Omit to always
-   * fetch client-side (the inline Zettelkasten pane has no SSR data). */
+  /** Seeds the cache so the standalone /calendar page's SSR-fetched data
+   * doesn't get re-fetched on mount. Omit to always fetch client-side (the
+   * inline Zettelkasten pane has no SSR data). */
   initialNotes?: TodayProjectNote[];
+  /** Which day `initialNotes` is for. The server works this out from the tz
+   * cookie, which is empty on a first-ever visit — so it can land on a
+   * different day than the browser does, and seeding it under the browser's
+   * key would file yesterday's notes under today. Caching it under the day
+   * it's actually for just means a fetch for the real today. */
+  initialNotesDateKey?: string;
   onOpenProject?: (projectId: string) => void;
   /** Rendered at the right edge of the same header row as the day nav —
    * callers place their ③今日／④タイムライン view-switch pills here so the
@@ -52,14 +50,15 @@ export function CalendarTodaySection({
   const { t, locale } = useI18n();
   const { guard } = useUnsavedChanges();
   const todayKey = todayKeyValue();
+  const seededKey = initialNotesDateKey ?? todayKey;
   const [viewedDateKey, setViewedDateKey] = useState(todayKey);
   const [notesCache, setNotesCache] = useState<Record<string, TodayProjectNote[]>>(
-    initialNotes ? { [todayKey]: initialNotes } : {},
+    initialNotes ? { [seededKey]: initialNotes } : {},
   );
   // Recency order (oldest-viewed first) for eviction — a ref, not state, so
   // recording a visit doesn't itself trigger a render; only the async fetch
   // completions below ever call setNotesCache.
-  const recencyRef = useRef<string[]>(initialNotes ? [todayKey] : []);
+  const recencyRef = useRef<string[]>(initialNotes ? [seededKey] : []);
 
   function touchRecency(key: string) {
     recencyRef.current = [...recencyRef.current.filter((k) => k !== key), key];
@@ -94,11 +93,7 @@ export function CalendarTodaySection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewedDateKey]);
 
-  const viewedLabel = new Date(`${viewedDateKey}T00:00:00.000Z`).toLocaleDateString(localeTag(locale), {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
+  const viewedLabel = formatDateKey(viewedDateKey, localeTag(locale));
   const isToday = viewedDateKey === todayKey;
   const viewedNotes = notesCache[viewedDateKey];
   /** Each day renders its own set of task-note editors (key={viewedDateKey}),

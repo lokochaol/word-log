@@ -12,12 +12,12 @@ function toDate(dateKey: string): Date {
   return new Date(`${dateKey}T00:00:00.000Z`);
 }
 
+/** Only ever applied to a Date this module itself put at UTC midnight (a
+ * dateKey round-trip), never to "now" — which day "now" falls on depends on
+ * the owner's time zone, not the server's, and that lives in
+ * src/lib/dateKey.ts. */
 function toDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
-}
-
-export function todayKey(): string {
-  return toDateKey(new Date());
 }
 
 export interface ProjectTaskNoteView {

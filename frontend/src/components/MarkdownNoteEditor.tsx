@@ -212,6 +212,12 @@ export function MarkdownNoteEditor({
     discard: () => setValue(savedValue),
   });
 
+  // Stays true from compositionstart until a tick after compositionend, so
+  // the keydown that commits a conversion still sees it even on browsers
+  // that end the composition first. A ref, not state: it's read inside the
+  // very keydown that must not re-render to learn about it.
+  const composingRef = useRef(false);
+
   function commit(next: string) {
     setValue(next);
     onChange?.(next);
@@ -225,6 +231,15 @@ export function MarkdownNoteEditor({
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     const el = e.currentTarget;
+
+    // While an IME is composing, Enter and Tab belong to the IME — Enter
+    // commits the conversion, Tab picks a candidate — so none of the key
+    // handling below may run, or confirming 変換 also inserts a newline.
+    // Three checks because browsers disagree: `isComposing` is the standard
+    // one, keyCode 229 is what Chrome reports for a key the IME swallowed,
+    // and Safari has already ended composition by the time the committing
+    // Enter arrives, which is what composingRef's deferred reset covers.
+    if (composingRef.current || e.nativeEvent.isComposing || e.keyCode === 229) return;
 
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
       e.preventDefault();
@@ -290,6 +305,14 @@ export function MarkdownNoteEditor({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onCompositionStart={() => {
+          composingRef.current = true;
+        }}
+        onCompositionEnd={() => {
+          setTimeout(() => {
+            composingRef.current = false;
+          }, 0);
+        }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={t.noteEditor.placeholder}

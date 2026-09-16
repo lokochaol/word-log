@@ -5,6 +5,8 @@ import { CustomCursor } from "@/components/CustomCursor";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { LocaleProvider } from "@/lib/i18n/LocaleProvider";
 import { getLocale } from "@/lib/i18n/locale";
+import { PreferencesProvider } from "@/lib/preferences/PreferencesProvider";
+import { getBulletLegendVisible } from "@/lib/preferences/preferences";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { UnsavedChangesProvider } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 import { getTheme } from "@/lib/theme/theme";
@@ -40,16 +42,19 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   const theme = await getTheme();
+  const bulletLegendVisible = await getBulletLegendVisible();
   return (
     <html lang={locale} data-theme={theme} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full bg-bg text-ink">
         <ThemeProvider initialTheme={theme}>
           <LocaleProvider initialLocale={locale}>
-            <UnsavedChangesProvider>
-              <CustomCursor />
-              <ServiceWorkerRegister />
-              {children}
-            </UnsavedChangesProvider>
+            <PreferencesProvider initialBulletLegendVisible={bulletLegendVisible}>
+              <UnsavedChangesProvider>
+                <CustomCursor />
+                <ServiceWorkerRegister />
+                {children}
+              </UnsavedChangesProvider>
+            </PreferencesProvider>
           </LocaleProvider>
         </ThemeProvider>
       </body>

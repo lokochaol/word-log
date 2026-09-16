@@ -68,6 +68,10 @@ export interface Dictionary {
     saveLabel: string;
     unsavedLabel: string;
   };
+  bulletLegend: {
+    title: string;
+    meanings: { "-": string; x: string; ">": string; "<": string; o: string; "*": string; "!": string };
+  };
   unsavedChanges: {
     title: string;
     body: string;
@@ -309,6 +313,10 @@ export interface Dictionary {
     discoveryTimesTwice: string;
     discoveryHour1Label: string;
     discoveryHour2Label: string;
+    bulletLegendHeading: string;
+    bulletLegendDescription: string;
+    bulletLegendShow: string;
+    bulletLegendHide: string;
   };
   projects: {
     heading: string;

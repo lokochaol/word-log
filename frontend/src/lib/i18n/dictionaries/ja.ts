@@ -51,6 +51,18 @@ export const ja: Dictionary = {
     saveLabel: "保存",
     unsavedLabel: "未保存",
   },
+  bulletLegend: {
+    title: "凡例",
+    meanings: {
+      "-": "タスク",
+      x: "完了",
+      ">": "翌日へ移動",
+      "<": "予定へ移動",
+      o: "予定・出来事",
+      "*": "優先",
+      "!": "ひらめき",
+    },
+  },
   unsavedChanges: {
     title: "保存されていない変更があります",
     body: "このまま移動すると編集内容が失われます。",
@@ -296,6 +308,10 @@ export const ja: Dictionary = {
     discoveryTimesTwice: "2回",
     discoveryHour1Label: "1回目の時刻",
     discoveryHour2Label: "2回目の時刻",
+    bulletLegendHeading: "バレットジャーナルの凡例",
+    bulletLegendDescription: "カレンダーの日毎のタスクメモに、記号の凡例を折りたたんだ状態で表示します。",
+    bulletLegendShow: "表示",
+    bulletLegendHide: "非表示",
   },
   projects: {
     heading: "プロジェクト",

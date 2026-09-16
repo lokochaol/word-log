@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BulletJournalLegend } from "@/components/BulletJournalLegend";
 import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { HudFrame } from "@/components/HudFrame";
 import { QuickNoteDetailOverlay } from "@/components/QuickNoteDetailOverlay";
@@ -53,6 +54,11 @@ export function CalendarTodayView({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* One legend for the whole day rather than one per project card —
+          it's the same notation in every card, and repeating it down the
+          column would be the opposite of unobtrusive. */}
+      {initialNotes.length > 0 && <BulletJournalLegend />}
+
       {initialNotes.map((note) => (
         <HudFrame key={note.projectId} active={false} innerClassName="flex flex-col gap-2 rounded-xl px-4 py-3.5">
           <div className="flex items-center justify-between gap-2">

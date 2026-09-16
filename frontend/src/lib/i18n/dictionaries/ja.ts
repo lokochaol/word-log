@@ -54,7 +54,7 @@ export const ja: Dictionary = {
   bulletLegend: {
     title: "凡例",
     meanings: {
-      ".": "タスク",
+      "-": "タスク",
       x: "完了",
       ">": "翌日へ移動",
       "<": "予定へ移動",

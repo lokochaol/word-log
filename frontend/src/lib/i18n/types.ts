@@ -71,7 +71,7 @@ export interface Dictionary {
   bulletLegend: {
     title: string;
     meanings: {
-      ".": string;
+      "-": string;
       x: string;
       ">": string;
       "<": string;

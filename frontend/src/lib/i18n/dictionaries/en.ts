@@ -51,6 +51,19 @@ export const en: Dictionary = {
     saveLabel: "Save",
     unsavedLabel: "Unsaved",
   },
+  bulletLegend: {
+    title: "Legend",
+    meanings: {
+      "-": "Task",
+      x: "Done",
+      ">": "Migrated",
+      "<": "Scheduled",
+      o: "Event",
+      "~": "Note",
+      "*": "Priority",
+      "!": "Inspiration",
+    },
+  },
   unsavedChanges: {
     title: "You have unsaved changes",
     body: "Leaving now will discard your edits.",
@@ -297,6 +310,11 @@ export const en: Dictionary = {
     discoveryTimesTwice: "Twice",
     discoveryHour1Label: "First run time",
     discoveryHour2Label: "Second run time",
+    bulletLegendHeading: "Bullet Journal legend",
+    bulletLegendDescription:
+      "Show a collapsed legend of the signifiers on the daily task notes, in the calendar and on project detail pages.",
+    bulletLegendShow: "Show",
+    bulletLegendHide: "Hide",
   },
   projects: {
     heading: "Projects",

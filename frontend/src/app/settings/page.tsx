@@ -4,6 +4,7 @@ import { getZoteroSettingsAction, getAiSettingsAction, getDiscoveryScheduleActio
 import { ZoteroSettingsForm } from "@/components/ZoteroSettingsForm";
 import { AiSettingsForm } from "@/components/AiSettingsForm";
 import { DiscoveryScheduleForm } from "@/components/DiscoveryScheduleForm";
+import { BulletLegendToggle } from "@/components/BulletLegendToggle";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HeaderMenu } from "@/components/HeaderMenu";
@@ -70,6 +71,14 @@ export default async function SettingsPage() {
             <span className="text-accent">{"//"}</span> {dict.settings.zoteroHeading}
           </h2>
           <ZoteroSettingsForm initial={zotero} />
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="font-mono text-[10.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
+            <span className="text-accent">{"//"}</span> {dict.settings.bulletLegendHeading}
+          </h2>
+          <p className="font-mono text-[10.5px] text-ink-soft">{dict.settings.bulletLegendDescription}</p>
+          <BulletLegendToggle />
         </section>
       </div>
     </main>

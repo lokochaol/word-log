@@ -65,6 +65,17 @@ export interface Dictionary {
     placeholder: string;
     savingLabel: string;
     savedLabel: string;
+    saveLabel: string;
+    unsavedLabel: string;
+    editLabel: string;
+    previewLabel: string;
+  };
+  unsavedChanges: {
+    title: string;
+    body: string;
+    saveAndLeave: string;
+    discardAndLeave: string;
+    stay: string;
   };
   quickNoteActionMenu: {
     actionsAriaLabel: string;

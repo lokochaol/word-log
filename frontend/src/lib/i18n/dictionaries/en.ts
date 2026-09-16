@@ -48,6 +48,17 @@ export const en: Dictionary = {
     placeholder: "Type content… fence with ```lang for code, ```mermaid for a diagram, ![](url) for an image",
     savingLabel: "Saving…",
     savedLabel: "Saved",
+    saveLabel: "Save",
+    unsavedLabel: "Unsaved",
+    editLabel: "Edit",
+    previewLabel: "Preview",
+  },
+  unsavedChanges: {
+    title: "You have unsaved changes",
+    body: "Leaving now will discard your edits.",
+    saveAndLeave: "Save and leave",
+    discardAndLeave: "Discard and leave",
+    stay: "Cancel",
   },
   quickNoteActionMenu: {
     actionsAriaLabel: "Actions",

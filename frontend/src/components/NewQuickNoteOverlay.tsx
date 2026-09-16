@@ -8,6 +8,7 @@ import { createQuickNoteWithContentAction, updateQuickNoteContentAction, setLite
 import type { LiteratureSelection } from "@/lib/literatureMemos";
 import type { QuickNoteSummary } from "@/lib/quickNotes";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 
 function previewFrom(content: string): string {
   const firstLine = content.split("\n").find((line) => line.trim().length > 0);
@@ -25,12 +26,11 @@ function previewFrom(content: string): string {
  * returns, same as any Next.js navigation under experimental.useOffline —
  * exactly the immediacy this is meant to preserve).
  *
- * The very first autosave has to *create* the note; every one after that
- * just replaces its content. `onCreated` fires once, right when that first
- * save lands, so the owner ScratchTimeline can add it to the synced notes
- * list — but this overlay itself stays open and editable regardless, so a
- * background autosave completing never yanks the screen out from under
- * whoever's still writing.
+ * The very first save has to *create* the note; every one after that just
+ * replaces its content. `onCreated` fires once, right when that first save
+ * lands, so the owner ScratchTimeline can add it to the synced notes list —
+ * but this overlay itself stays open and editable regardless, so a save
+ * landing never yanks the screen out from under whoever's still writing.
  */
 export function NewQuickNoteOverlay({
   onClose,
@@ -40,6 +40,7 @@ export function NewQuickNoteOverlay({
   onCreated: (note: QuickNoteSummary) => void;
 }) {
   const { t } = useI18n();
+  const { guard } = useUnsavedChanges();
   const isOffline = useOffline();
   const noteIdRef = useRef<string | null>(null);
   const [literatureSelection, setLiteratureSelectionState] = useState<LiteratureSelection | null>(null);
@@ -72,7 +73,7 @@ export function NewQuickNoteOverlay({
     <div className="fixed inset-0 z-40 flex flex-col items-center overflow-y-auto bg-bg px-6 py-16">
       <div className="flex w-full max-w-[860px] flex-col gap-8">
         <button
-          onClick={onClose}
+          onClick={() => guard(onClose)}
           className="inline-flex w-fit items-center gap-1.5 font-mono text-xs font-medium tracking-wide text-ink-soft transition-colors hover:text-accent"
         >
           <span className="text-accent">&lt;</span> {t.nav.backToScratch}

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 
 export type ZettelkastenMainView = "notes" | "projects" | "calendar";
 
@@ -87,15 +88,19 @@ export function ZettelkastenSideActionBar({
   onSelect: (view: ZettelkastenMainView) => void;
 }) {
   const { t } = useI18n();
+  const { guard } = useUnsavedChanges();
+  // Swapping the pane content unmounts whatever editor is open in it, so an
+  // unsaved buffer gets a 保存 / 破棄 prompt before the switch happens.
+  const select = (view: ZettelkastenMainView) => guard(() => onSelect(view));
   return (
     <div className="flex w-11 shrink-0 flex-col items-center gap-2 border-r border-line py-3">
-      <ActionBarButton active={active === "notes"} label={t.brand.zettelkasten} onClick={() => onSelect("notes")}>
+      <ActionBarButton active={active === "notes"} label={t.brand.zettelkasten} onClick={() => select("notes")}>
         <NotesIcon />
       </ActionBarButton>
-      <ActionBarButton active={active === "projects"} label={t.nav.projectsLabel} onClick={() => onSelect("projects")}>
+      <ActionBarButton active={active === "projects"} label={t.nav.projectsLabel} onClick={() => select("projects")}>
         <ProjectsIcon />
       </ActionBarButton>
-      <ActionBarButton active={active === "calendar"} label={t.nav.calendarLabel} onClick={() => onSelect("calendar")}>
+      <ActionBarButton active={active === "calendar"} label={t.nav.calendarLabel} onClick={() => select("calendar")}>
         <CalendarIcon />
       </ActionBarButton>
     </div>

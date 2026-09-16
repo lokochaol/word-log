@@ -48,6 +48,17 @@ export const ja: Dictionary = {
     placeholder: "内容を入力…　```言語 で囲むとコード、```mermaid で図、![](URL) で画像",
     savingLabel: "保存中…",
     savedLabel: "保存済み",
+    saveLabel: "保存",
+    unsavedLabel: "未保存",
+    editLabel: "編集",
+    previewLabel: "プレビュー",
+  },
+  unsavedChanges: {
+    title: "保存されていない変更があります",
+    body: "このまま移動すると編集内容が失われます。",
+    saveAndLeave: "保存して移動",
+    discardAndLeave: "破棄して移動",
+    stay: "キャンセル",
   },
   quickNoteActionMenu: {
     actionsAriaLabel: "操作",

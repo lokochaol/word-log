@@ -2,12 +2,25 @@ import { parseEmbeddedContent } from "@/lib/embeddedContent";
 import { MermaidPreview } from "@/components/MermaidPreview";
 
 /** Renders a note's content string as text/code/mermaid/image segments —
- * the read-only counterpart to MarkdownNoteEditor's source mode. Used both
- * by that editor (its own "not currently focused" preview) and by places
- * that only ever display a note's content, never edit it (the Zettelkasten
- * permanent-note detail modal, PileDrill's flat-pile cards). */
-export function EmbeddedContentPreview({ content, emptyLabel }: { content: string; emptyLabel?: string }) {
-  const segments = parseEmbeddedContent(content);
+ * the read-only view of a note. Used by places that only ever display a
+ * note's content, never edit it (the Zettelkasten permanent-note detail
+ * modal, PileDrill's flat-pile cards), and by MarkdownNoteEditor with
+ * `embedsOnly` to render just the rich segments under its always-editable
+ * textarea. */
+export function EmbeddedContentPreview({
+  content,
+  emptyLabel,
+  embedsOnly = false,
+}: {
+  content: string;
+  emptyLabel?: string;
+  /** Drops the plain-text segments, keeping only code/mermaid/image. For an
+   * editor the raw text is already on screen in the textarea, so repeating
+   * it below would just be the same words twice. */
+  embedsOnly?: boolean;
+}) {
+  const parsed = parseEmbeddedContent(content);
+  const segments = embedsOnly ? parsed.filter((seg) => seg.type !== "text") : parsed;
 
   if (segments.length === 0) {
     return emptyLabel ? <p className="text-sm text-ink-faint">{emptyLabel}</p> : null;

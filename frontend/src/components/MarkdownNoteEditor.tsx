@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { useRegisterUnsavedEditor } from "@/lib/unsavedChanges/UnsavedChangesProvider";
 
 const SAVED_FLASH_MS = 2000;
+const PREVIEW_DELAY_MS = 600;
 const TAB_WIDTH = 4;
 /** How much room to keep between the caret and the bottom of the scrollport
  * while typing, so the line being written never sits on the screen edge. */
@@ -114,9 +115,14 @@ function deleteRange(el: HTMLTextAreaElement, start: number, end: number) {
  * registration below is for: overlay closes, day switches and link
  * navigations all stop and offer 保存 / 破棄.
  *
- * Source and preview are an explicit toggle (blur used to flip to preview,
- * which meant reaching for the Save button changed the mode out from under
- * the click). Tab/Shift+Tab insert or remove soft-tab spaces aligned to the
+ * There is no preview mode to switch into: the textarea is always live and
+ * always editable. Rendering the text as a read-only preview only ever
+ * meant showing the same words again — the only segments that actually gain
+ * anything from being rendered are diagrams, code fences and images, so
+ * those render underneath the textarea (and only when the content has
+ * any), leaving a plain-text note as pure textarea and nothing else.
+ *
+ * Tab/Shift+Tab insert or remove soft-tab spaces aligned to the
  * next/previous 4-column stop at the cursor, and Enter carries the current
  * line's indentation — both routed through execCommand so undo still works.
  *
@@ -142,7 +148,6 @@ export function MarkdownNoteEditor({
   const { t } = useI18n();
   const [value, setValue] = useState(content);
   const [savedValue, setSavedValue] = useState(content);
-  const [mode, setMode] = useState<"source" | "preview">(content.trim() ? "preview" : "source");
   const [focused, setFocused] = useState(false);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -164,11 +169,18 @@ export function MarkdownNoteEditor({
     [],
   );
 
-  // Both the mode flip and the focus padding change the box height, so the
-  // textarea has to be re-fitted after either.
+  // The focus padding changes the box height, so re-fit after it lands.
+  useEffect(() => autoGrow(textareaRef.current), [focused]);
+
+  // The embed preview trails the buffer rather than tracking it keystroke by
+  // keystroke: a Mermaid diagram half-typed is a syntax error, and
+  // re-rendering one on every character would flash errors under the cursor
+  // while you write it.
+  const [previewSource, setPreviewSource] = useState(content);
   useEffect(() => {
-    if (mode === "source") autoGrow(textareaRef.current);
-  }, [mode, focused]);
+    const timer = setTimeout(() => setPreviewSource(value), PREVIEW_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [value]);
 
   function save(): Promise<void> {
     if (!onSave) return Promise.resolve();
@@ -245,11 +257,6 @@ export function MarkdownNoteEditor({
     insertText(el, " ".repeat(TAB_WIDTH - (column % TAB_WIDTH)));
   }
 
-  function showSource() {
-    setMode("source");
-    requestAnimationFrame(() => textareaRef.current?.focus());
-  }
-
   const statusLabel =
     status === "saving"
       ? (savingLabelOverride ?? t.noteEditor.savingLabel)
@@ -267,53 +274,42 @@ export function MarkdownNoteEditor({
       <div className="flex h-6 items-center justify-end gap-2">
         <span className="font-mono text-[9.5px] tracking-wide text-ink-faint">{statusLabel}</span>
         {!live && (
-          <>
-            <button
-              type="button"
-              onClick={() => (mode === "source" ? setMode("preview") : showSource())}
-              className="rounded border border-line px-1.5 py-0.5 font-mono text-[9.5px] tracking-wide text-ink-soft uppercase transition-colors hover:bg-surface-alt"
-            >
-              {mode === "source" ? t.noteEditor.previewLabel : t.noteEditor.editLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => void save().catch(() => {})}
-              disabled={!dirty || status === "saving"}
-              className="btn-sheen rounded bg-accent px-2 py-0.5 font-mono text-[9.5px] font-semibold tracking-wide text-on-accent uppercase transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-40 disabled:hover:scale-100"
-            >
-              {t.noteEditor.saveLabel}
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={() => void save().catch(() => {})}
+            disabled={!dirty || status === "saving"}
+            className="btn-sheen rounded bg-accent px-2 py-0.5 font-mono text-[9.5px] font-semibold tracking-wide text-on-accent uppercase transition-transform hover:scale-[1.03] active:scale-[0.97] disabled:opacity-40 disabled:hover:scale-100"
+          >
+            {t.noteEditor.saveLabel}
+          </button>
         )}
       </div>
 
-      {mode === "source" ? (
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder={t.noteEditor.placeholder}
-          rows={1}
-          style={{
-            caretColor: "var(--color-accent)",
-            tabSize: TAB_WIDTH,
-            // Breathing room under the last line, only while actually being
-            // typed in — it's what gives keepCaretInView somewhere to scroll
-            // to when the caret is at the end of the document. Unfocused
-            // editors keep their compact height (a Calendar day can show a
-            // whole column of them).
-            paddingBottom: focused ? CARET_MARGIN_PX : 0,
-          }}
-          className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-relaxed text-ink transition-[padding] placeholder:font-sans placeholder:text-ink-faint focus:outline-none"
-        />
-      ) : (
-        <div onClick={showSource} className="cursor-text">
-          <EmbeddedContentPreview content={value} emptyLabel={t.noteEditor.placeholder} />
-        </div>
-      )}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder={t.noteEditor.placeholder}
+        rows={1}
+        style={{
+          caretColor: "var(--color-accent)",
+          tabSize: TAB_WIDTH,
+          // Breathing room under the last line, only while actually being
+          // typed in — it's what gives keepCaretInView somewhere to scroll
+          // to when the caret is at the end of the document. Unfocused
+          // editors keep their compact height (a Calendar day can show a
+          // whole column of them).
+          paddingBottom: focused ? CARET_MARGIN_PX : 0,
+        }}
+        className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-relaxed text-ink transition-[padding] placeholder:font-sans placeholder:text-ink-faint focus:outline-none"
+      />
+
+      {/* Only renders when the content actually has a diagram, code fence or
+          image in it — a plain-text note is nothing but the textarea. */}
+      <EmbeddedContentPreview content={previewSource} embedsOnly />
     </div>
   );
 }

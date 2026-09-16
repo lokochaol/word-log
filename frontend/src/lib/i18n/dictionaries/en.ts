@@ -50,8 +50,6 @@ export const en: Dictionary = {
     savedLabel: "Saved",
     saveLabel: "Save",
     unsavedLabel: "Unsaved",
-    editLabel: "Edit",
-    previewLabel: "Preview",
   },
   unsavedChanges: {
     title: "You have unsaved changes",

@@ -50,8 +50,6 @@ export const ja: Dictionary = {
     savedLabel: "保存済み",
     saveLabel: "保存",
     unsavedLabel: "未保存",
-    editLabel: "編集",
-    previewLabel: "プレビュー",
   },
   unsavedChanges: {
     title: "保存されていない変更があります",

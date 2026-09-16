@@ -67,8 +67,6 @@ export interface Dictionary {
     savedLabel: string;
     saveLabel: string;
     unsavedLabel: string;
-    editLabel: string;
-    previewLabel: string;
   };
   unsavedChanges: {
     title: string;

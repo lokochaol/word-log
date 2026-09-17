@@ -9,6 +9,7 @@ import { getQuickNoteDetailAction } from "@/app/scratch/actions";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { localeTag } from "@/lib/i18n/dictionary";
 import { useUnsavedChanges } from "@/lib/unsavedChanges/UnsavedChangesProvider";
+import { useBackdropDismiss } from "@/lib/useBackdropDismiss";
 import type { QuickNoteDetail } from "@/lib/quickNotes";
 import type { Locale } from "@/lib/i18n/types";
 
@@ -47,6 +48,7 @@ export function QuickNoteDetailOverlay({
    * 破棄 prompt first — for the backdrop click too, which is the easiest way
    * to lose a buffer by accident. */
   const requestClose = () => guard(onClose);
+  const backdrop = useBackdropDismiss(requestClose);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +61,7 @@ export function QuickNoteDetailOverlay({
   }, [noteId]);
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-6" onClick={requestClose}>
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-6" {...backdrop}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="relative flex max-h-[85vh] w-full max-w-[720px] flex-col gap-6 overflow-auto rounded-xl border border-line bg-surface p-6 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)]"

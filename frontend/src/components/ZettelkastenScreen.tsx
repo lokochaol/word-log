@@ -27,6 +27,7 @@ import { getQuickNoteDetailAction, listActiveQuickNotesAction } from "@/app/scra
 import type { CompletePromotionInput } from "@/lib/promotion";
 import { midpointRank } from "@/lib/rank";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
+import { useBackdropDismiss } from "@/lib/useBackdropDismiss";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -454,6 +455,7 @@ function NoteDetailOverlay({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const backdrop = useBackdropDismiss(onClose);
 
   useEffect(() => {
     let cancelled = false;
@@ -478,7 +480,7 @@ function NoteDetailOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-6" {...backdrop}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="relative max-h-[80vh] w-full max-w-[560px] overflow-auto rounded-xl border border-line bg-surface p-6 shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)]"

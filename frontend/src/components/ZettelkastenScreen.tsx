@@ -12,14 +12,18 @@ import { LiteratureMemoPane } from "@/components/LiteratureMemoPane";
 import { QuickNoteInlineTimeline } from "@/components/QuickNoteInlineTimeline";
 import { LoadingBlock } from "@/components/LoadingSpinner";
 import { navigateWithViewTransition } from "@/lib/viewTransition";
-import type { GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
+import type { DeletionImpact, GlobalOrderEntry, PermanentNoteDetail } from "@/lib/permanentNotes";
 import type { IndexEntrySummary } from "@/lib/indexEntries";
 import type { QuickNoteSummary } from "@/lib/quickNotes";
 import {
   computeInsertRankAction,
   createIndexEntryAction,
   removeIndexEntryAction,
+  listIndexEntriesAction,
   getPermanentNoteDetailAction,
+  updatePermanentNoteAction,
+  getPermanentNoteDeletionImpactAction,
+  deletePermanentNoteAction,
   completePromotionAction,
   getGlobalOrderAction,
 } from "@/app/zettelkasten/actions";
@@ -28,6 +32,8 @@ import type { CompletePromotionInput } from "@/lib/promotion";
 import { midpointRank } from "@/lib/rank";
 import { useI18n } from "@/lib/i18n/LocaleProvider";
 import { useBackdropDismiss } from "@/lib/useBackdropDismiss";
+import { useUnsavedChanges, useRegisterUnsavedEditor } from "@/lib/unsavedChanges/UnsavedChangesProvider";
+import { MarkdownNoteEditor } from "@/components/MarkdownNoteEditor";
 import { AppBrand } from "@/components/AppBrand";
 import { LocaleToggle } from "@/components/LocaleToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -123,20 +129,10 @@ export function ZettelkastenScreen({
     });
   }
 
-  async function buildDraftFromSelection() {
-    const ids = [...selectedQuickNoteIds];
-    if (ids.length === 0) return;
-    const details = await Promise.all(ids.map((id) => getQuickNoteDetailAction(id)));
-    // One merged 永久保存版メモ draft from all selected 走り書き — content is
-    // intentionally NOT carried over (it gets rewritten from scratch), but
-    // each source note's own linked 文献メモ carries through, deduped, so a
-    // memo cited by two of the selected 走り書き doesn't show up twice.
-    const seenMemoIds = new Set<string>();
-    const literatureSelections = details
-      .map((d) => d.literatureMemo)
-      .filter((m): m is NonNullable<typeof m> => !!m)
-      .filter((m) => (seenMemoIds.has(m.id) ? false : (seenMemoIds.add(m.id), true)))
-      .map((m) => ({ type: "existing" as const, id: m.id, citation: m.citation }));
+  /** Appends an empty draft. `literatureSelections` carries over whatever the
+   * source 走り書き cited when promoting; writing straight into the
+   * Zettelkasten passes none. */
+  function addDraft(literatureSelections: EditableDraft["literatureSelections"]) {
     // With zero existing PermanentNotes there's only one possible position —
     // fill it in automatically rather than sending the owner into an empty
     // pile picker (see PromotionEditor's matching addDraft logic).
@@ -153,6 +149,27 @@ export function ZettelkastenScreen({
         literatureSelections,
       },
     ]);
+  }
+
+  async function buildDraftFromSelection() {
+    const ids = [...selectedQuickNoteIds];
+    if (ids.length === 0) return;
+    const details = await Promise.all(ids.map((id) => getQuickNoteDetailAction(id)));
+    // One merged 永久保存版メモ draft from all selected 走り書き — content is
+    // intentionally NOT carried over (it gets rewritten from scratch), but
+    // each source note's own linked 文献メモ carries through, deduped, so a
+    // memo cited by two of the selected 走り書き doesn't show up twice.
+    const seenMemoIds = new Set<string>();
+    const literatureSelections = details
+      .map((d) => d.literatureMemo)
+      .filter((m): m is NonNullable<typeof m> => !!m)
+      .filter((m) => (seenMemoIds.has(m.id) ? false : (seenMemoIds.add(m.id), true)))
+      .map((m) => ({ type: "existing" as const, id: m.id, citation: m.citation }));
+    addDraft(literatureSelections);
+  }
+
+  async function refreshGlobalOrder() {
+    setGlobalOrder(await getGlobalOrderAction());
   }
 
   async function handleComplete() {
@@ -286,9 +303,18 @@ export function ZettelkastenScreen({
               {col1Mode === "notes" && (
                 <>
                   <span className="normal-case">{t.zettelkasten.countAll(globalOrder.length)}</span>
+                  {/* Writing one straight into the Zettelkasten, with no
+                      走り書き behind it — lives here because picking its
+                      position happens in this very column. */}
+                  <button
+                    onClick={() => addDraft([])}
+                    className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:border-accent hover:text-accent"
+                  >
+                    {t.zettelkasten.addPermanentNote}
+                  </button>
                   <button
                     onClick={() => setIndexPanelOpen((v) => !v)}
-                    className="ml-auto rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
+                    className="rounded-full border border-line-strong px-2.5 py-1 text-[10px] text-ink-soft normal-case hover:text-ink"
                   >
                     {t.zettelkasten.indexToggle}
                   </button>
@@ -400,6 +426,16 @@ export function ZettelkastenScreen({
           noteId={openNoteId}
           onClose={() => setOpenNoteId(null)}
           onIndexEntryAdded={(entry) => setIndexEntries((prev) => [...prev, entry].sort((a, b) => a.keyword.localeCompare(b.keyword)))}
+          onNoteChanged={refreshGlobalOrder}
+          onNoteDeleted={async () => {
+            setOpenNoteId(null);
+            // A deleted note can take index entries with it (they cascade),
+            // so the index panel has to be re-read, not just the pile.
+            const [order, entries] = await Promise.all([getGlobalOrderAction(), listIndexEntriesAction()]);
+            setGlobalOrder(order);
+            setIndexEntries(entries);
+            setDrillPath([]);
+          }}
         />
       )}
     </div>
@@ -445,17 +481,72 @@ function NoteDetailOverlay({
   noteId,
   onClose,
   onIndexEntryAdded,
+  onNoteChanged,
+  onNoteDeleted,
 }: {
   noteId: string;
   onClose: () => void;
   onIndexEntryAdded: (entry: IndexEntrySummary) => void;
+  /** A retitled note has to be relabeled in the pile behind this overlay. */
+  onNoteChanged: () => void;
+  onNoteDeleted: () => void;
 }) {
   const { t } = useI18n();
+  const { guard } = useUnsavedChanges();
   const [detail, setDetail] = useState<PermanentNoteDetail | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const backdrop = useBackdropDismiss(onClose);
+
+  // Editing covers the title and the body together — they're one note, and
+  // one Save. The body uses MarkdownNoteEditor in live-sync mode (onChange)
+  // rather than its own save button for exactly that reason; see
+  // PromotionEditor, which drives its draft the same way.
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftContent, setDraftContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deleteImpact, setDeleteImpact] = useState<DeletionImpact | null>(null);
+
+  const dirty = !!detail && editing && (draftTitle !== detail.title || draftContent !== detail.content);
+  const requestClose = () => guard(onClose);
+  const backdrop = useBackdropDismiss(requestClose);
+
+  function startEditing(note: PermanentNoteDetail) {
+    setDraftTitle(note.title);
+    setDraftContent(note.content);
+    setError(null);
+    setEditing(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    const res = await updatePermanentNoteAction(noteId, draftTitle, draftContent);
+    setSaving(false);
+    if ("error" in res) {
+      setError(res.error);
+      throw new Error(res.error); // keeps the unsaved-changes guard from leaving
+    }
+    setDetail(res.note);
+    setEditing(false);
+    onNoteChanged();
+  }
+
+  useRegisterUnsavedEditor({
+    isDirty: () => dirty,
+    save,
+    discard: () => setEditing(false),
+  });
+
+  async function openDeleteConfirm() {
+    setDeleteImpact(await getPermanentNoteDeletionImpactAction(noteId));
+  }
+
+  async function confirmDelete() {
+    await deletePermanentNoteAction(noteId);
+    setDeleteImpact(null);
+    onNoteDeleted();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -490,18 +581,66 @@ function NoteDetailOverlay({
         ) : (
           <>
             <div className="mb-4 flex items-start justify-between gap-3">
-              <h2 className="text-xl font-extrabold text-ink">{detail.title}</h2>
+              {editing ? (
+                <div className="flex-1">
+                  <label className="mb-1 block font-mono text-[9.5px] tracking-wider text-ink-faint uppercase">
+                    {t.zettelkasten.noteTitleLabel}
+                  </label>
+                  <input
+                    value={draftTitle}
+                    onChange={(e) => setDraftTitle(e.target.value)}
+                    autoFocus
+                    className="w-full bg-transparent text-xl font-extrabold text-ink focus:outline-none"
+                  />
+                </div>
+              ) : (
+                <h2 className="text-xl font-extrabold text-ink">{detail.title}</h2>
+              )}
               <div className="flex shrink-0 gap-2">
-                <button onClick={() => setConfirmOpen(true)} className="font-mono text-[10px] text-ink-soft hover:text-accent">
-                  {t.zettelkasten.addToIndex}
-                </button>
-                <button onClick={onClose} className="font-mono text-[10px] text-ink-soft hover:text-accent">
-                  {t.zettelkasten.detailClose}
-                </button>
+                {editing ? (
+                  <>
+                    <button
+                      onClick={() => void save().catch(() => {})}
+                      disabled={saving || !draftTitle.trim() || !draftContent.trim()}
+                      className="btn-sheen rounded bg-accent px-2 py-0.5 font-mono text-[10px] font-semibold text-on-accent disabled:opacity-40"
+                    >
+                      {saving ? t.common.saving : t.common.save}
+                    </button>
+                    <button
+                      onClick={() => setEditing(false)}
+                      className="font-mono text-[10px] text-ink-soft hover:text-accent"
+                    >
+                      {t.common.cancel}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => startEditing(detail)}
+                      className="font-mono text-[10px] text-ink-soft hover:text-accent"
+                    >
+                      {t.common.edit}
+                    </button>
+                    <button onClick={() => setConfirmOpen(true)} className="font-mono text-[10px] text-ink-soft hover:text-accent">
+                      {t.zettelkasten.addToIndex}
+                    </button>
+                    <button onClick={() => void openDeleteConfirm()} className="font-mono text-[10px] text-ink-soft hover:text-accent">
+                      {t.common.delete}
+                    </button>
+                    <button onClick={requestClose} className="font-mono text-[10px] text-ink-soft hover:text-accent">
+                      {t.zettelkasten.detailClose}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
-            <EmbeddedContentPreview content={detail.content} />
+            {editing ? (
+              <MarkdownNoteEditor key={detail.id} content={detail.content} onChange={setDraftContent} />
+            ) : (
+              <EmbeddedContentPreview content={detail.content} />
+            )}
+            {error && <p className="mt-1.5 text-[10.5px] text-accent">{error}</p>}
 
             <div className="mt-4 border-t border-line pt-3">
               <h3 className="mb-2 font-mono text-[9.5px] font-semibold tracking-[0.2em] text-ink-soft uppercase">
@@ -546,6 +685,25 @@ function NoteDetailOverlay({
             {error && <p className="mt-1.5 text-[10.5px] text-accent">{error}</p>}
           </div>
         </ConfirmDialog>
+
+        <ConfirmDialog
+          open={deleteImpact !== null}
+          title={t.zettelkasten.noteDeleteTitle}
+          warning={[
+            t.zettelkasten.noteDeleteWarning,
+            deleteImpact && deleteImpact.inboundLinkCount > 0
+              ? t.zettelkasten.noteDeleteInboundLinks(deleteImpact.inboundLinkCount)
+              : null,
+            deleteImpact && deleteImpact.indexKeywords.length > 0
+              ? t.zettelkasten.noteDeleteIndexKeywords(deleteImpact.indexKeywords.join("、"))
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          confirmLabel={t.common.delete}
+          onCancel={() => setDeleteImpact(null)}
+          onConfirm={confirmDelete}
+        />
       </div>
     </div>
   );

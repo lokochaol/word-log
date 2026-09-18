@@ -22,6 +22,35 @@ export async function getPermanentNoteDetailAction(id: string) {
   return permanentNotes.getDetail(ownerSub, id);
 }
 
+export async function updatePermanentNoteAction(
+  id: string,
+  title: string,
+  content: string,
+): Promise<{ note: PermanentNoteDetail } | { error: string }> {
+  const ownerSub = await requireOwnerSub();
+  try {
+    const note = await permanentNotes.updateTitleAndContent(ownerSub, id, title, content);
+    revalidatePath("/zettelkasten");
+    return { note };
+  } catch (e) {
+    if (e instanceof NotFoundError || e instanceof ValidationError) {
+      return { error: translateDomainError(await getLocale(), e) };
+    }
+    throw e;
+  }
+}
+
+export async function getPermanentNoteDeletionImpactAction(id: string) {
+  const ownerSub = await requireOwnerSub();
+  return permanentNotes.deletionImpact(ownerSub, id);
+}
+
+export async function deletePermanentNoteAction(id: string) {
+  const ownerSub = await requireOwnerSub();
+  await permanentNotes.remove(ownerSub, id);
+  revalidatePath("/zettelkasten");
+}
+
 export async function addPermanentNoteLinkAction(
   sourceNoteId: string,
   target: { type: "PERMANENT_NOTE"; noteId: string } | { type: "INDEX_ENTRY"; indexEntryId: string },

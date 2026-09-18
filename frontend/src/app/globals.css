@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
-/* Dark is the default/fallback palette, defined on bare :root. Light only
-   activates when ThemeToggle stamps data-theme="light" on <html> (see
-   src/lib/theme/ThemeProvider.tsx) — there's no prefers-color-scheme
-   fallback, this app's theme (like its locale) is a manual, cookie-persisted
-   choice, not an OS-inherited one. --color-accent stays identical in both:
-   the brand color isn't a "dark mode" color, it's the app's HUD accent. */
+/* Both palettes are keyed off data-theme on <html>, which the root layout
+   always stamps from the theme cookie (see src/lib/theme/theme.ts) — so
+   which one is on bare :root is a fallback for markup that somehow lost the
+   attribute, not a statement about the default; the default lives in
+   DEFAULT_THEME, and is light. There's no prefers-color-scheme fallback:
+   this app's theme, like its locale, is a manual cookie-persisted choice,
+   not an OS-inherited one. --color-accent stays identical in both: the
+   brand color isn't a "dark mode" color, it's the app's HUD accent. */
 :root {
   --color-bg: #050505;
   --color-surface: #121212;

@@ -30,10 +30,16 @@ export async function generateMetadata(): Promise<Metadata> {
   // Google Search Console's HTML-meta-tag verification. The DNS/domain
   // property method can't be used here: the site lives on a *.vercel.app
   // hostname, so there's no zone to add a TXT record to — it has to be a
-  // URL-prefix property, verified by this tag. Kept in an env var rather
-  // than hardcoded so the token travels with the deployment, and left off
-  // entirely when unset (an empty content attribute fails verification).
-  const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
+  // URL-prefix property, verified by this tag.
+  //
+  // The token is checked in rather than kept as a secret because it isn't
+  // one: its whole job is to be served publicly in this page's <head>, on
+  // every response, to anyone who asks. Committing it means the property
+  // stays verified through a redeploy without depending on a value set by
+  // hand in the Vercel dashboard. GOOGLE_SITE_VERIFICATION still overrides
+  // it, for a different deployment of this codebase.
+  const googleSiteVerification =
+    process.env.GOOGLE_SITE_VERIFICATION?.trim() || "VcCqw2ebdpTBB-VKYGNXBIG8R5X4o3rhQQ0ImzCg_pk";
 
   return {
     title,

@@ -13,8 +13,11 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "書き留めた考えをリンクでつなぎ、育てていく個人的な知識システム。",
     start_url: "/scratch",
     display: "standalone",
-    background_color: "#050505",
-    theme_color: "#050505",
+    // The light palette, matching DEFAULT_THEME and the app icon — this
+    // is the splash screen behind a cold launch, so a dark one would flash
+    // black before a light app.
+    background_color: "#f3f4f7",
+    theme_color: "#f3f4f7",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },

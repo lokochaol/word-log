@@ -27,11 +27,26 @@ export async function generateMetadata(): Promise<Metadata> {
     locale === "ja"
       ? "書き留めた考えをリンクでつなぎ、育てていく個人的な知識システム。"
       : "A personal knowledge system where your notes grow by linking to one another.";
+  // Google Search Console's HTML-meta-tag verification. The DNS/domain
+  // property method can't be used here: the site lives on a *.vercel.app
+  // hostname, so there's no zone to add a TXT record to — it has to be a
+  // URL-prefix property, verified by this tag.
+  //
+  // The token is checked in rather than kept as a secret because it isn't
+  // one: its whole job is to be served publicly in this page's <head>, on
+  // every response, to anyone who asks. Committing it means the property
+  // stays verified through a redeploy without depending on a value set by
+  // hand in the Vercel dashboard. GOOGLE_SITE_VERIFICATION still overrides
+  // it, for a different deployment of this codebase.
+  const googleSiteVerification =
+    process.env.GOOGLE_SITE_VERIFICATION?.trim() || "VcCqw2ebdpTBB-VKYGNXBIG8R5X4o3rhQQ0ImzCg_pk";
+
   return {
     title,
     description,
     manifest: "/manifest.webmanifest",
     appleWebApp: { title },
+    ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),
   };
 }
 

@@ -24,9 +24,11 @@ export async function completePromotion(
   input: CompletePromotionInput,
   locale: Locale = "ja",
 ): Promise<CompletePromotionResult> {
-  if (input.quickNoteIds.length === 0) {
-    throw new ValidationError("quickNoteSelectionRequired", "Select at least one scratch note");
-  }
+  // An empty quickNoteIds is a note written straight into the Zettelkasten
+  // rather than promoted from a 走り書き — same transaction, same validation,
+  // same position-picking, just no sources to archive. The batch it records
+  // then has outputs and no sources, which reads exactly right in the
+  // history: "this one wasn't promoted from anything."
   if (input.drafts.length === 0) {
     throw new ValidationError("permanentNoteDraftRequired", "Create at least one permanent note");
   }

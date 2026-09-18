@@ -13,6 +13,8 @@
 export type DomainErrorCode =
   | "keywordRequired"
   | "permanentNoteNotFound"
+  | "permanentNoteTitleRequired"
+  | "permanentNoteContentRequired"
   | "indexKeywordTaken"
   | "indexEntryNotFound"
   | "quickNoteSelectionRequired"

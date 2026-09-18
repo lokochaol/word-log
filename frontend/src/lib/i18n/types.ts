@@ -219,6 +219,12 @@ export interface Dictionary {
     drillGroupLabel: (index: number, count: number) => string;
     deleteConfirmTitle: string;
     deleteConfirmWarning: string;
+    addPermanentNote: string;
+    noteDeleteTitle: string;
+    noteDeleteWarning: string;
+    noteDeleteInboundLinks: (n: number) => string;
+    noteDeleteIndexKeywords: (keywords: string) => string;
+    noteTitleLabel: string;
     rotateTitle: string;
     rotateBody: string;
   };
@@ -390,6 +396,8 @@ export interface Dictionary {
   errors: {
     keywordRequired: string;
     permanentNoteNotFound: string;
+    permanentNoteTitleRequired: string;
+    permanentNoteContentRequired: string;
     projectNotFound: string;
     projectNameRequired: string;
     projectGoalInvalid: (problems: string) => string;

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { Prisma, LinkTargetType } from "@/generated/prisma/client";
-import { NotFoundError } from "@/lib/errors";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 import { midpointRank } from "@/lib/rank";
 import * as literatureMemos from "@/lib/literatureMemos";
 import type { LiteratureMemoRef, LiteratureSelection } from "@/lib/literatureMemos";
@@ -104,6 +104,63 @@ export async function getGlobalOrder(ownerSub: string): Promise<GlobalOrderEntry
 export async function getDetail(ownerSub: string, id: string): Promise<PermanentNoteDetail> {
   const note = await requireOwnedPermanentNote(ownerSub, id);
   return toDetail(note);
+}
+
+/**
+ * A permanent note's title and body stay editable after it's filed. The
+ * method's "write it in your own words" step isn't a one-shot — rereading a
+ * note later and sharpening the wording is the same act as writing it. What
+ * stays fixed is the note's place in the order: that was chosen in relation
+ * to its neighbors, and moving it is a different decision from rewording it.
+ */
+export async function updateTitleAndContent(
+  ownerSub: string,
+  id: string,
+  title: string,
+  content: string,
+): Promise<PermanentNoteDetail> {
+  await requireOwnedPermanentNote(ownerSub, id);
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) throw new ValidationError("permanentNoteTitleRequired", "Title is required");
+  if (!content.trim()) throw new ValidationError("permanentNoteContentRequired", "Content is required");
+  const updated = await prisma.permanentNote.update({
+    where: { id },
+    data: { title: trimmedTitle, content },
+    include: detailInclude,
+  });
+  return toDetail(updated);
+}
+
+export interface DeletionImpact {
+  /** Links *from other notes* pointing at this one. Deleting cascades them
+   * away, so this is other notes losing a link they wrote. */
+  inboundLinkCount: number;
+  /** Index keywords pointing at this note; they cascade away with it, which
+   * would silently remove an entry point into the whole order. */
+  indexKeywords: string[];
+}
+
+/** What would be lost along with this note — the delete confirmation needs
+ * to say it out loud, because the cascades reach records the owner made
+ * elsewhere, not just this note's own rows. */
+export async function deletionImpact(ownerSub: string, id: string): Promise<DeletionImpact> {
+  await requireOwnedPermanentNote(ownerSub, id);
+  const [inboundLinkCount, indexEntries] = await Promise.all([
+    prisma.permanentNoteLink.count({ where: { targetNoteId: id } }),
+    prisma.indexEntry.findMany({ where: { noteId: id, ownerSub }, select: { keyword: true } }),
+  ]);
+  return { inboundLinkCount, indexKeywords: indexEntries.map((e) => e.keyword) };
+}
+
+/** Deletes the note. Its own outbound links, other notes' links *to* it, its
+ * index entries and its literature-memo joins all cascade (see
+ * prisma/schema.prisma); the literature memos themselves are shared and
+ * stay. The promotion batch that produced it loses its output row, so a
+ * batch can end up recording sources with nothing to show for them — that's
+ * accurate history, not a gap. */
+export async function remove(ownerSub: string, id: string): Promise<void> {
+  await requireOwnedPermanentNote(ownerSub, id);
+  await prisma.permanentNote.delete({ where: { id } });
 }
 
 /** Thin wrapper around rank.midpointRank that resolves the actual neighboring ranks first. */

@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { APP_ICON_SVG } from "@/lib/appIcon";
+import { APP_ICON_CACHE_HEADERS, APP_ICON_SVG } from "@/lib/appIcon";
 
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
@@ -17,6 +17,6 @@ export default function AppleIcon() {
         alt=""
       />
     ),
-    { ...size },
+    { ...size, headers: APP_ICON_CACHE_HEADERS },
   );
 }
